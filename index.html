@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+A<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -580,7 +580,7 @@ async function doLogin(){
   if(!username||!pwd){err.textContent='請填寫帳號和密碼';return}
   // 先從 user_profiles 找到對應的 email
   const{data:profile,error:pe}=await sb.from('user_profiles').select('email').eq('username',username).single()
-  if(pe||!profile){err.textContent='帳號不存在';setTimeout(()=>err.textContent='',3000);return}
+  if(pe||!profile){err.textContent='帳號或密碼錯誤';setTimeout(()=>err.textContent='',3000);return}
   const{data,error}=await sb.auth.signInWithPassword({email:profile.email,password:pwd})
   if(error){err.textContent='帳號或密碼錯誤';setTimeout(()=>err.textContent='',3000);return}
   afterLogin(data.user)
@@ -670,7 +670,7 @@ async function addUser(){
   // 暫時登出避免影響目前 session
   const curSession=await sb.auth.getSession()
   const{data,error}=await sb.auth.signUp({email,password:pwd})
-  if(error){toast('新增失敗：'+error.message);return}
+  if(error){const msg=error.message.includes('rate limit')?'新增太頻繁，請等一小時後再試':error.message.includes('already')?'此帳號名稱已存在':'新增失敗，請再試一次';toast(msg);return}
   if(data.user){
     await sb.from('user_profiles').upsert({id:data.user.id,email,display_name:name,role,username})
     toast('使用者「'+name+'」已新增 ✓')
