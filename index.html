@@ -573,15 +573,15 @@ textarea.fi{resize:vertical;min-height:56px}
 // ═══════════════════════════════════════
 let currentUser=null,currentProfile=null
 
-function toEmail(username){return username.toLowerCase().replace(/\s+/g,'_')+'@finance.app'}
-
 async function doLogin(){
   const username=document.getElementById('l-user').value.trim()
   const pwd=document.getElementById('l-pwd').value
   const err=document.getElementById('l-err')
   if(!username||!pwd){err.textContent='請填寫帳號和密碼';return}
-  const email=toEmail(username)
-  const{data,error}=await sb.auth.signInWithPassword({email,password:pwd})
+  // 先從 user_profiles 找到對應的 email
+  const{data:profile,error:pe}=await sb.from('user_profiles').select('email').eq('username',username).single()
+  if(pe||!profile){err.textContent='帳號不存在';setTimeout(()=>err.textContent='',3000);return}
+  const{data,error}=await sb.auth.signInWithPassword({email:profile.email,password:pwd})
   if(error){err.textContent='帳號或密碼錯誤';setTimeout(()=>err.textContent='',3000);return}
   afterLogin(data.user)
 }
@@ -592,7 +592,7 @@ async function afterLogin(user){
   document.getElementById('loading').style.display='flex'
   const{data:profile}=await sb.from('user_profiles').select('*').eq('id',user.id).single()
   currentProfile=profile||{role:'user',display_name:user.email}
-  const name=currentProfile.display_name||user.email.replace('@finance.app','')
+  const name=currentProfile.display_name||currentProfile.username||'使用者'
   document.getElementById('user-name').textContent=name
   document.getElementById('user-avatar').textContent=name[0].toUpperCase()
   document.getElementById('user-role').textContent=currentProfile.role==='admin'?'👑 管理者':'一般使用者'
@@ -621,7 +621,7 @@ async function changePwd(){
   if(!o||!n||!c){toast('請填寫完整');return}
   if(n!==c){toast('兩次密碼不一致');return}
   if(n.length<6){toast('新密碼至少需要 6 個字元');return}
-  const{error:e1}=await sb.auth.signInWithPassword({email:currentUser.email,password:o}) // email is username@finance.app
+  const{error:e1}=await sb.auth.signInWithPassword({email:currentUser.email,password:o})
   if(e1){toast('目前密碼錯誤');return}
   const{error}=await sb.auth.updateUser({password:n})
   if(error){toast('更新失敗');return}
@@ -664,15 +664,18 @@ async function addUser(){
   const pwd=document.getElementById('au-pwd').value
   const role=document.getElementById('au-role').value
   if(!username||!pwd||!name){toast('請填寫完整資訊');return}
-  const email=toEmail(username)
-  // 用 signUp 建立帳號（管理者操作）
-  const{data,error}=await sb.auth.signUp({email,password:pwd,options:{data:{display_name:name}}})
+  // 用隨機 UUID 產生唯一 email
+  const uid='u'+Date.now()
+  const email=uid+'@app.local'
+  // 暫時登出避免影響目前 session
+  const curSession=await sb.auth.getSession()
+  const{data,error}=await sb.auth.signUp({email,password:pwd})
   if(error){toast('新增失敗：'+error.message);return}
   if(data.user){
-    await sb.from('user_profiles').upsert({id:data.user.id,email,display_name:name,role})
+    await sb.from('user_profiles').upsert({id:data.user.id,email,display_name:name,role,username})
     toast('使用者「'+name+'」已新增 ✓')
   }else{
-    toast('帳號已存在或需確認 Email')
+    toast('新增失敗，請再試一次')
   }
   ;['au-username','au-name','au-pwd'].forEach(id=>document.getElementById(id).value='')
   closeMo('adduser');rAdmin()
