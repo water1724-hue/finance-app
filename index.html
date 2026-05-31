@@ -715,7 +715,7 @@ const defFx={NTD:{sym:'NT$',rate:1},USD:{sym:'$',rate:32},JPY:{sym:'¥',rate:0.2
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
-async function load(){
+async function loadData(){
   try{
     const [r,h,tr,tg,rc,fxr]=await Promise.all([
       sb.from('records').select('*'),
@@ -1187,7 +1187,6 @@ document.querySelectorAll('.mo').forEach(el=>el.addEventListener('click',e=>{if(
 
 function sv(){}
 
-load()
 </script>
 </body>
 </html>
