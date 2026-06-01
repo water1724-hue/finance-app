@@ -1,4 +1,4 @@
-A<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -562,7 +562,7 @@ textarea.fi{resize:vertical;min-height:56px}
     <div class="hint" style="margin-top:8px">新增後使用者可用此帳號名稱和密碼登入</div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem">
       <button class="btn" onclick="closeMo('adduser')">取消</button>
-      <button class="btn p" onclick="addUser()"><i class="ti ti-check"></i>新增</button>
+      <button class="btn p" onclick="saveUser()"><i class="ti ti-check"></i>儲存</button>
     </div>
   </div>
 </div>
@@ -657,28 +657,80 @@ async function rAdmin(){
     </tr>`).join('')
 }
 
-function openAddUser(){openMo('adduser')}
+function openAddUser(){
+  document.getElementById('au-username').value=''
+  document.getElementById('au-name').value=''
+  document.getElementById('au-pwd').value=''
+  document.getElementById('au-role').value='user'
+  document.getElementById('mo-adduser').querySelector('.mt').textContent='新增使用者'
+  openMo('adduser')
+}
+
+let editUserId=null
+function openEditUser(id,name,username,role){
+  editUserId=id
+  document.getElementById('au-username').value=username||''
+  document.getElementById('au-name').value=name||''
+  document.getElementById('au-pwd').value=''
+  document.getElementById('au-role').value=role||'user'
+  document.getElementById('mo-adduser').querySelector('.mt').textContent='修改使用者'
+  openMo('adduser')
+}
+
+async function resetUserPwd(id,name){
+  const pwd=prompt('請輸入「'+name+'」的新密碼（至少6字元）：')
+  if(!pwd||pwd.length<6){toast('密碼至少需要 6 個字元');return}
+  const{error}=await sbAdmin.auth.admin.updateUserById(id,{password:pwd})
+  if(error){toast('修改失敗');return}
+  toast('「'+name+'」密碼已更新 ✓')
+}
+
+async function delUser(id,name){
+  if(!confirm('確定刪除使用者「'+name+'」？此操作無法還原！'))return
+  await sbAdmin.auth.admin.deleteUser(id)
+  await sb.from('user_profiles').delete().eq('id',id)
+  toast('使用者已刪除');rAdmin()
+}
 async function addUser(){
   const username=document.getElementById('au-username').value.trim()
   const name=document.getElementById('au-name').value.trim()
   const pwd=document.getElementById('au-pwd').value
   const role=document.getElementById('au-role').value
   if(!username||!pwd||!name){toast('請填寫完整資訊');return}
-  // 用隨機 UUID 產生唯一 email
+  // 檢查帳號是否已存在
+  const{data:exist}=await sb.from('user_profiles').select('id').eq('username',username).single()
+  if(exist){toast('此帳號名稱已存在');return}
+  // 用管理員 Key 建立帳號，不受 rate limit 限制
   const uid='u'+Date.now()
-  const email=uid+'@app.local'
-  // 暫時登出避免影響目前 session
-  const curSession=await sb.auth.getSession()
-  const{data,error}=await sb.auth.signUp({email,password:pwd})
-  if(error){const msg=error.message.includes('rate limit')?'新增太頻繁，請等一小時後再試':error.message.includes('already')?'此帳號名稱已存在':'新增失敗，請再試一次';toast(msg);return}
-  if(data.user){
-    await sb.from('user_profiles').upsert({id:data.user.id,email,display_name:name,role,username})
-    toast('使用者「'+name+'」已新增 ✓')
-  }else{
-    toast('新增失敗，請再試一次')
-  }
+  const email=uid+'@finance.internal'
+  const{data,error}=await sbAdmin.auth.admin.createUser({email,password:pwd,email_confirm:true})
+  if(error){toast('新增失敗，請再試一次');return}
+  await sb.from('user_profiles').upsert({id:data.user.id,email,display_name:name,role,username})
+  toast('使用者「'+name+'」已新增 ✓')
   ;['au-username','au-name','au-pwd'].forEach(id=>document.getElementById(id).value='')
-  closeMo('adduser');rAdmin()
+  closeMo('adduser');editUserId=null;rAdmin()
+}
+
+async function saveUser(){
+  if(editUserId) await updateUser()
+  else await addUser()
+}
+
+async function updateUser(){
+  const username=document.getElementById('au-username').value.trim()
+  const name=document.getElementById('au-name').value.trim()
+  const pwd=document.getElementById('au-pwd').value
+  const role=document.getElementById('au-role').value
+  if(!username||!name){toast('請填寫完整資訊');return}
+  await sb.from('user_profiles').update({display_name:name,username,role}).eq('id',editUserId)
+  if(pwd&&pwd.length>=6){
+    await sbAdmin.auth.admin.updateUserById(editUserId,{password:pwd})
+  }else if(pwd&&pwd.length<6){
+    toast('密碼至少需要 6 個字元');return
+  }
+  toast('使用者資料已更新 ✓')
+  ;['au-username','au-name','au-pwd'].forEach(id=>document.getElementById(id).value='')
+  closeMo('adduser');editUserId=null;rAdmin()
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{
