@@ -831,9 +831,9 @@ async function loadHome(){
   const today=now.toISOString().slice(0,10);
   try{
     const [todos,events,announces]=await Promise.all([
-      sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false`,{},true),
-      sb(`/rest/v1/events?start_date=eq.${today}&or=(user_id.eq.${prof.id},is_shared.eq.true)&order=start_time.asc`,{},true),
-      sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{},true)
+      sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false`,{},false),
+      sb(`/rest/v1/events?start_date=eq.${today}&or=(user_id.eq.${prof.id},is_shared.eq.true)&order=start_time.asc`,{},false),
+      sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{},false)
     ]);
     document.getElementById('h-todo-count').textContent=todos.length;
     document.getElementById('h-event-count').textContent=events.length;
@@ -881,7 +881,7 @@ async function loadHome(){
 }
 
 async function quickDone(id){
-  try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({completed:true,completed_at:new Date().toISOString()})},true);toast('已完成 ✓');loadHome();}
+  try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({completed:true,completed_at:new Date().toISOString()})},false);toast('已完成 ✓');loadHome();}
   catch(e){}
 }
 
@@ -890,9 +890,9 @@ let accCats=[];
 async function loadFinance(){
   try{
     const [cats,accounts,txns]=await Promise.all([
-      sb('/rest/v1/account_categories?order=sort_order.asc',{},true),
-      sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},true),
-      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&order=date.desc,created_at.desc&limit=20`,{},true)
+      sb('/rest/v1/account_categories?order=sort_order.asc',{},false),
+      sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false),
+      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&order=date.desc,created_at.desc&limit=20`,{},false)
     ]);
     accCats=cats;
 
@@ -962,8 +962,8 @@ function renderFinTxns(txns,accounts){
 
 async function loadAllTxns(){
   try{
-    const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&order=date.desc,created_at.desc`,{},true);
-    const accounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}`,{},true);
+    const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&order=date.desc,created_at.desc`,{},false);
+    const accounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}`,{},false);
     renderFinTxns(txns,accounts);
   }catch(e){}
 }
@@ -972,15 +972,15 @@ function setFinCat(type,btn){
   finCatFilter=type;
   document.querySelectorAll('#cat-tabs .ftab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{},true).then(accounts=>renderAccounts(accounts,accCats));
+  sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{},false).then(accounts=>renderAccounts(accounts,accCats));
 }
 
 // Account detail
 async function openAccDetail(id){
   try{
     const [acc,cats]=await Promise.all([
-      sb(`/rest/v1/accounts?id=eq.${id}`,{},true),
-      sb('/rest/v1/account_categories',{},true)
+      sb(`/rest/v1/accounts?id=eq.${id}`,{},false),
+      sb('/rest/v1/account_categories',{},false)
     ]);
     currentAcc=acc[0];
     currentHoldingAccId=id;
@@ -992,7 +992,7 @@ async function openAccDetail(id){
     // Holdings or info
     const contEl=document.getElementById('det-acc-content');
     if(isInv){
-      const holdings=await sb(`/rest/v1/holdings?account_id=eq.${id}&order=created_at.desc`,{},true);
+      const holdings=await sb(`/rest/v1/holdings?account_id=eq.${id}&order=created_at.desc`,{},false);
       if(!holdings.length){contEl.innerHTML='<div class="empty"><p>尚無持倉</p></div>';}
       else{contEl.innerHTML=holdings.map(h=>`
         <div class="holding-row">
@@ -1015,7 +1015,7 @@ async function openAccDetail(id){
         ${currentAcc.payment_day?`<div class="list-row"><div class="list-info"><div class="list-sub">繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}`;
     }
     // Txns
-    const txns=await sb(`/rest/v1/transactions?account_id=eq.${id}&order=date.desc&limit=20`,{},true);
+    const txns=await sb(`/rest/v1/transactions?account_id=eq.${id}&order=date.desc&limit=20`,{},false);
     const txEl=document.getElementById('det-acc-txns');
     if(!txns.length){txEl.innerHTML='<div class="empty"><p>尚無記錄</p></div>';}
     else{txEl.innerHTML=txns.map(t=>`
@@ -1039,7 +1039,7 @@ function showAddHolding(){
 async function saveHolding(){
   const body={user_id:prof.id,account_id:currentHoldingAccId,symbol:document.getElementById('h-symbol').value.trim(),name:document.getElementById('h-name').value.trim(),type:document.getElementById('h-type').value,quantity:0,avg_cost:0,current_price:0};
   if(!body.symbol||!body.name){toast('請填寫代號和名稱','err');return;}
-  try{await sb('/rest/v1/holdings',{method:'POST',body:JSON.stringify(body)},true);closeSheet('sh-holding');toast('已新增');openAccDetail(currentHoldingAccId);}
+  try{await sb('/rest/v1/holdings',{method:'POST',body:JSON.stringify(body)},false);closeSheet('sh-holding');toast('已新增');openAccDetail(currentHoldingAccId);}
   catch(e){toast('儲存失敗','err');}
 }
 
@@ -1059,22 +1059,22 @@ async function saveInvTxn(){
   const total=Math.round(qty*price+(invType==='buy'?fee:-fee));
   try{
     // Save investment txn
-    await sb('/rest/v1/investment_txns',{method:'POST',body:JSON.stringify({user_id:prof.id,holding_id:currentHoldingId,bank_account_id:bankAccId||null,type:invType,quantity:qty,price,fee,total,date})},true);
+    await sb('/rest/v1/investment_txns',{method:'POST',body:JSON.stringify({user_id:prof.id,holding_id:currentHoldingId,bank_account_id:bankAccId||null,type:invType,quantity:qty,price,fee,total,date})},false);
     // Update holding avg_cost & quantity
-    const holdings=await sb(`/rest/v1/holdings?id=eq.${currentHoldingId}`,{},true);
+    const holdings=await sb(`/rest/v1/holdings?id=eq.${currentHoldingId}`,{},false);
     if(holdings.length){
       const h=holdings[0];
       let newQty,newAvg;
       if(invType==='buy'){newQty=Number(h.quantity)+qty;newAvg=newQty>0?(Number(h.quantity)*Number(h.avg_cost)+qty*price)/newQty:0;}
       else{newQty=Math.max(0,Number(h.quantity)-qty);newAvg=Number(h.avg_cost);}
-      await sb(`/rest/v1/holdings?id=eq.${currentHoldingId}`,{method:'PATCH',body:JSON.stringify({quantity:newQty,avg_cost:newAvg})},true);
+      await sb(`/rest/v1/holdings?id=eq.${currentHoldingId}`,{method:'PATCH',body:JSON.stringify({quantity:newQty,avg_cost:newAvg})},false);
     }
     // Update bank balance
     if(bankAccId){
-      const bankAccs=await sb(`/rest/v1/accounts?id=eq.${bankAccId}`,{},true);
+      const bankAccs=await sb(`/rest/v1/accounts?id=eq.${bankAccId}`,{},false);
       if(bankAccs.length){
         const newBal=Number(bankAccs[0].balance)+(invType==='buy'?-total:total);
-        await sb(`/rest/v1/accounts?id=eq.${bankAccId}`,{method:'PATCH',body:JSON.stringify({balance:newBal})},true);
+        await sb(`/rest/v1/accounts?id=eq.${bankAccId}`,{method:'PATCH',body:JSON.stringify({balance:newBal})},false);
       }
     }
     closeSheet('sh-inv-txn');toast('交易完成');openAccDetail(currentHoldingAccId);
@@ -1093,7 +1093,7 @@ async function saveAccount(){
   if(cat?.type==='credit'){body.credit_limit=parseFloat(document.getElementById('acc-limit').value)||0;body.statement_day=parseInt(document.getElementById('acc-stmt-day').value)||null;body.payment_day=parseInt(document.getElementById('acc-pay-day').value)||null;}
   body.note=document.getElementById('acc-note').value.trim();
   if(!body.name){toast('請填寫帳戶名稱','err');return;}
-  try{await sb('/rest/v1/accounts',{method:'POST',body:JSON.stringify(body)},true);closeSheet('sh-account');toast('帳戶已新增');loadFinance();}
+  try{await sb('/rest/v1/accounts',{method:'POST',body:JSON.stringify(body)},false);closeSheet('sh-account');toast('帳戶已新增');loadFinance();}
   catch(e){toast('儲存失敗','err');}
 }
 
@@ -1106,7 +1106,7 @@ function setTxnType(t){
   document.getElementById('txn-type-inc').style.opacity=t==='income'?'1':'.4';
 }
 async function loadExpCatOptions(){
-  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},true);
+  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},false);
   const filtered=cats.filter(c=>c.type===txnType||c.type==='both');
   document.getElementById('txn-cat').innerHTML='<option value="">選擇類別</option>'+filtered.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 }
@@ -1121,12 +1121,12 @@ async function saveTxn(){
   if(!accId||!amt){toast('請填寫帳戶和金額','err');return;}
   const body={user_id:prof.id,account_id:accId,type:txnType,amount:amt,category_id:document.getElementById('txn-cat').value||null,note:document.getElementById('txn-note').value.trim(),date:document.getElementById('txn-date').value};
   try{
-    await sb('/rest/v1/transactions',{method:'POST',body:JSON.stringify(body)},true);
+    await sb('/rest/v1/transactions',{method:'POST',body:JSON.stringify(body)},false);
     // Update account balance
-    const accs=await sb(`/rest/v1/accounts?id=eq.${accId}`,{},true);
+    const accs=await sb(`/rest/v1/accounts?id=eq.${accId}`,{},false);
     if(accs.length){
       const delta=txnType==='income'?amt:-amt;
-      await sb(`/rest/v1/accounts?id=eq.${accId}`,{method:'PATCH',body:JSON.stringify({balance:Number(accs[0].balance)+delta})},true);
+      await sb(`/rest/v1/accounts?id=eq.${accId}`,{method:'PATCH',body:JSON.stringify({balance:Number(accs[0].balance)+delta})},false);
     }
     closeSheet('sh-txn');toast('記帳成功');
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
@@ -1151,7 +1151,7 @@ async function renderCal(){
   document.getElementById('cal-grid').innerHTML=html;
   const ms=`${calY}-${String(calM+1).padStart(2,'0')}`;
   try{
-    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-31&or=(user_id.eq.${prof.id},is_shared.eq.true)&order=start_time.asc`,{},true);
+    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-31&or=(user_id.eq.${prof.id},is_shared.eq.true)&order=start_time.asc`,{},false);
     calEvents.forEach(e=>{const el=document.getElementById(`cd-${e.start_date}`);if(el&&!el.querySelector('.evdot'))el.insertAdjacentHTML('beforeend',`<span class="evdot" style="background:${e.is_shared?'var(--blue)':'var(--gold)'}"></span>`);});
     showCalDay();
   }catch(er){}
@@ -1185,10 +1185,10 @@ function openSheet_event(){setEvType(false);document.getElementById('ev-date').v
 async function saveEvent(){
   const body={user_id:prof.id,title:document.getElementById('ev-title').value.trim(),start_date:document.getElementById('ev-date').value,start_time:document.getElementById('ev-start').value||null,end_time:document.getElementById('ev-end').value||null,description:document.getElementById('ev-desc').value.trim(),is_shared:evIsShared,color:evIsShared?'#6B9EF0':'#D4AA6A'};
   if(!body.title||!body.start_date){toast('請填寫標題和日期','err');return;}
-  try{await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(body)},true);closeSheet('sh-event');toast('行程已新增');renderCal();}
+  try{await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(body)},false);closeSheet('sh-event');toast('行程已新增');renderCal();}
   catch(e){toast('儲存失敗','err');}
 }
-async function delEvent(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/events?id=eq.${id}`,{method:'DELETE'},true);toast('已刪除');renderCal();}catch(e){}}
+async function delEvent(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/events?id=eq.${id}`,{method:'DELETE'},false);toast('已刪除');renderCal();}catch(e){}}
 
 // TODOS
 async function loadTodos(){
@@ -1200,7 +1200,7 @@ async function loadTodos(){
     else if(todoFilter==='done')url+=`&completed=eq.true&or=(user_id.eq.${prof.id},assigned_to.eq.${prof.id})`;
     else url+=`&or=(user_id.eq.${prof.id},assigned_to.eq.${prof.id})`;
     if(todoFilter!=='done')url+='&completed=eq.false';
-    const todos=await sb(url,{},true);
+    const todos=await sb(url,{},false);
     const el=document.getElementById('todo-list');
     if(!todos.length){el.innerHTML='<div class="empty"><i class="ti ti-checklist" aria-hidden="true"></i><p>沒有待辦事項</p></div>';return;}
     const priLabel={high:'高',normal:'一般',low:'低'};
@@ -1244,19 +1244,19 @@ async function saveTodo(){
   const body={user_id:prof.id,title:document.getElementById('todo-title').value.trim(),note:document.getElementById('todo-note').value.trim(),due_date:document.getElementById('todo-due').value||null,priority:document.getElementById('todo-pri').value,assigned_to:document.getElementById('todo-assign').value||null};
   if(!body.title){toast('請填寫標題','err');return;}
   try{
-    if(id)await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)},true);
-    else await sb('/rest/v1/todos',{method:'POST',body:JSON.stringify(body)},true);
+    if(id)await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)},false);
+    else await sb('/rest/v1/todos',{method:'POST',body:JSON.stringify(body)},false);
     closeSheet('sh-todo');document.getElementById('todo-id').value='';document.getElementById('sh-todo-title').textContent='新增待辦';
     toast('儲存成功');loadTodos();
   }catch(e){toast('儲存失敗','err');}
 }
-async function toggleTodo(id,cur){try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({completed:!cur,completed_at:!cur?new Date().toISOString():null})},true);loadTodos();}catch(e){}}
-async function delTodo(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'DELETE'},true);toast('已刪除');loadTodos();}catch(e){}}
+async function toggleTodo(id,cur){try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({completed:!cur,completed_at:!cur?new Date().toISOString():null})},false);loadTodos();}catch(e){}}
+async function delTodo(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'DELETE'},false);toast('已刪除');loadTodos();}catch(e){}}
 
 // ANNOUNCEMENTS
 async function loadAnnouncements(){
   try{
-    const ans=await sb('/rest/v1/announcements?order=pinned.desc,created_at.desc',{},true);
+    const ans=await sb('/rest/v1/announcements?order=pinned.desc,created_at.desc',{},false);
     const el=document.getElementById('announce-list');
     if(!ans.length){el.innerHTML='<div class="empty"><i class="ti ti-speakerphone" aria-hidden="true"></i><p>尚無公告</p></div>';return;}
     el.innerHTML=ans.map(a=>`
@@ -1276,13 +1276,13 @@ async function loadAnnouncements(){
 async function saveAnnounce(){
   const body={author_id:prof.id,title:document.getElementById('an-title').value.trim(),content:document.getElementById('an-content').value.trim(),pinned:document.getElementById('an-pin').checked};
   if(!body.title||!body.content){toast('請填寫標題和內容','err');return;}
-  try{await sb('/rest/v1/announcements',{method:'POST',body:JSON.stringify(body)},true);closeSheet('sh-announce');document.getElementById('an-title').value='';document.getElementById('an-content').value='';document.getElementById('an-pin').checked=false;toast('公告已發佈');loadAnnouncements();}
+  try{await sb('/rest/v1/announcements',{method:'POST',body:JSON.stringify(body)},false);closeSheet('sh-announce');document.getElementById('an-title').value='';document.getElementById('an-content').value='';document.getElementById('an-pin').checked=false;toast('公告已發佈');loadAnnouncements();}
   catch(e){toast('發佈失敗','err');}
 }
-async function delAnnounce(id){if(!confirm('確定刪除公告？'))return;try{await sb(`/rest/v1/announcements?id=eq.${id}`,{method:'DELETE'},true);toast('已刪除');loadAnnouncements();}catch(e){}}
+async function delAnnounce(id){if(!confirm('確定刪除公告？'))return;try{await sb(`/rest/v1/announcements?id=eq.${id}`,{method:'DELETE'},false);toast('已刪除');loadAnnouncements();}catch(e){}}
 
 // USERS
-async function loadAllUsers(){try{allUsers=await sb('/rest/v1/user_profiles?order=created_at.asc',{},true);}catch(e){}}
+async function loadAllUsers(){try{allUsers=await sb('/rest/v1/user_profiles?order=created_at.asc',{},false);}catch(e){}}
 async function loadUsers(){
   const el=document.getElementById('user-list');
   if(!allUsers.length){el.innerHTML='<div class="empty"><p>尚無使用者</p></div>';return;}
@@ -1304,7 +1304,7 @@ async function createUser(){
     const email=`${username}.${Date.now()}@lifeos.internal`;
     const au=await sbAdmin('/auth/v1/admin/users','POST',{email,password,email_confirm:true});
     if(!au.id)throw new Error(au.message||'建立失敗');
-    await sb('/rest/v1/user_profiles',{method:'POST',body:JSON.stringify({id:au.id,username,display_name:displayName||username,role})},true);
+    await sb('/rest/v1/user_profiles',{method:'POST',body:JSON.stringify({id:au.id,username,display_name:displayName||username,role})},false);
     closeSheet('sh-adduser');document.getElementById('nu-user').value='';document.getElementById('nu-name').value='';document.getElementById('nu-pass').value='';
     toast('使用者建立成功');await loadAllUsers();loadUsers();
   }catch(e){toast('建立失敗: '+e.message,'err');}
@@ -1317,7 +1317,7 @@ async function delUser(id){
 
 // EXPENSE CATEGORIES
 async function loadExpCats(){
-  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},true);
+  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},false);
   const el=document.getElementById('exp-cat-list');
   if(!cats.length){el.innerHTML='<div class="empty"><p>尚無類別，新增你的消費分類</p></div>';return;}
   const typeLabel={expense:'支出',income:'收入',both:'兩者'};
@@ -1332,13 +1332,13 @@ async function saveExpCat(){
   const body={user_id:prof.id,name:document.getElementById('ec-name').value.trim(),type:document.getElementById('ec-type').value};
   if(!body.name){toast('請填寫名稱','err');return;}
   try{
-    if(id)await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)},true);
-    else await sb('/rest/v1/expense_categories',{method:'POST',body:JSON.stringify(body)},true);
+    if(id)await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)},false);
+    else await sb('/rest/v1/expense_categories',{method:'POST',body:JSON.stringify(body)},false);
     closeSheet('sh-addcat');document.getElementById('ec-name').value='';document.getElementById('ec-id').value='';
     toast('儲存成功');loadExpCats();
   }catch(e){toast('儲存失敗','err');}
 }
-async function delExpCat(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'DELETE'},true);toast('已刪除');loadExpCats();}catch(e){}}
+async function delExpCat(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'DELETE'},false);toast('已刪除');loadExpCats();}catch(e){}}
 
 // AI CHAT
 function autoH(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,90)+'px';}
@@ -1357,10 +1357,10 @@ async function sendChat(){
     const today=new Date().toISOString().slice(0,10);
     const mStart=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-01`;
     const [todos,events,txns,accounts]=await Promise.all([
-      sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false&limit=15`,{},true),
-      sb(`/rest/v1/events?user_id=eq.${prof.id}&start_date=gte.${today}&limit=10`,{},true),
-      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${mStart}&order=date.desc&limit=30`,{},true),
-      sb(`/rest/v1/accounts?user_id=eq.${prof.id}`,{},true)
+      sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false&limit=15`,{},false),
+      sb(`/rest/v1/events?user_id=eq.${prof.id}&start_date=gte.${today}&limit=10`,{},false),
+      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${mStart}&order=date.desc&limit=30`,{},false),
+      sb(`/rest/v1/accounts?user_id=eq.${prof.id}`,{},false)
     ]);
     let inc=0,exp=0;txns.forEach(t=>{if(t.type==='income')inc+=Number(t.amount);else exp+=Number(t.amount);});
     const totalAssets=accounts.reduce((s,a)=>s+Number(a.balance),0);
