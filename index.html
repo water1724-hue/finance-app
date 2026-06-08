@@ -747,7 +747,8 @@ async function doLogin(){
   err.textContent='';
   if(!u||!p){err.textContent='請輸入帳號和密碼';return;}
   try{
-    const profiles=await sb(`/rest/v1/user_profiles?username=eq.${encodeURIComponent(u)}&select=id,username,display_name,role,email`,{},true);
+    // Use publishable key to find user profile
+    const profiles=await sb(`/rest/v1/user_profiles?username=eq.${encodeURIComponent(u)}&select=id,username,display_name,role,email`,{},false);
     if(!profiles.length){err.textContent='帳號不存在';return;}
     prof=profiles[0];
     const email=prof.email||`${u}@lifeos.internal`;
@@ -763,7 +764,6 @@ async function restoreSession(){
   if(!s)return false;
   try{
     const sess=JSON.parse(s);
-    // Refresh token
     const d=await sbAuth('/auth/v1/token?grant_type=refresh_token',{refresh_token:sess.refresh});
     me=d.user;me.token=d.access_token;prof=sess.prof;
     localStorage.setItem('lifeos_session',JSON.stringify({prof,token:d.access_token,refresh:d.refresh_token}));
