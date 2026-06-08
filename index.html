@@ -1201,8 +1201,13 @@ function openSheet_event(){setEvType(false);document.getElementById('ev-date').v
 async function saveEvent(){
   const body={user_id:prof.id,title:document.getElementById('ev-title').value.trim(),start_date:document.getElementById('ev-date').value,start_time:document.getElementById('ev-start').value||null,end_time:document.getElementById('ev-end').value||null,description:document.getElementById('ev-desc').value.trim(),is_shared:evIsShared,color:evIsShared?'#6B9EF0':'#D4AA6A'};
   if(!body.title||!body.start_date){toast('請填寫標題和日期','err');return;}
-  try{await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(body)},false);closeSheet('sh-event');toast('行程已新增');renderCal();}
-  catch(e){toast('儲存失敗','err');}
+  try{
+    await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(body)},false);
+    closeSheet('sh-event');
+    toast('行程已新增');
+    await renderCal();
+    if(document.getElementById('pg-home').classList.contains('on'))loadHome();
+  }catch(e){toast('儲存失敗','err');}
 }
 async function delEvent(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/events?id=eq.${id}`,{method:'DELETE'},false);toast('已刪除');renderCal();}catch(e){}}
 
