@@ -346,8 +346,8 @@ select.inp option{background:var(--bg2);}
           </div>
         </div>
         <div class="cal-dow">
-          <div class="cal-dh">日</div><div class="cal-dh">一</div><div class="cal-dh">二</div>
-          <div class="cal-dh">三</div><div class="cal-dh">四</div><div class="cal-dh">五</div><div class="cal-dh">六</div>
+          <div class="cal-dh" style="color:var(--red);">日</div><div class="cal-dh">一</div><div class="cal-dh">二</div>
+          <div class="cal-dh">三</div><div class="cal-dh">四</div><div class="cal-dh">五</div><div class="cal-dh" style="color:var(--blue);">六</div>
         </div>
         <div class="cal-days" id="cal-grid"></div>
       </div>
@@ -1162,7 +1162,12 @@ async function renderCal(){
   const prev=new Date(calY,calM,0).getDate(),today=new Date().toISOString().slice(0,10);
   let html='';
   for(let i=0;i<first;i++)html+=`<div class="cal-d other">${prev-first+i+1}</div>`;
-  for(let d=1;d<=days;d++){const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;html+=`<div class="cal-d${ds===today?' today':''}${ds===calSel&&ds!==today?' sel':''}" onclick="selDay('${ds}')" id="cd-${ds}">${d}</div>`;}
+  for(let d=1;d<=days;d++){
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=new Date(ds).getDay();
+    const wkColor=dow===0?'color:var(--red);':dow===6?'color:var(--blue);':'';
+    html+=`<div class="cal-d${ds===today?' today':''}${ds===calSel&&ds!==today?' sel':''}" style="${wkColor}" onclick="selDay('${ds}')" id="cd-${ds}">${d}</div>`;
+  }
   const rem=42-first-days;for(let i=1;i<=rem;i++)html+=`<div class="cal-d other">${i}</div>`;
   document.getElementById('cal-grid').innerHTML=html;
   const ms=`${calY}-${String(calM+1).padStart(2,'0')}`;
