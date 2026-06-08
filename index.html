@@ -1106,6 +1106,7 @@ function setTxnType(t){
   document.getElementById('txn-type-inc').className=t==='income'?'btn btn-gold':'btn btn-ghost';
   document.getElementById('txn-type-exp').style.opacity=t==='expense'?'1':'.4';
   document.getElementById('txn-type-inc').style.opacity=t==='income'?'1':'.4';
+  loadExpCatOptions();
 }
 async function loadExpCatOptions(){
   const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},false);
