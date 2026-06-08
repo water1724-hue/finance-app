@@ -731,7 +731,7 @@ async function sb(path,opt={},secret=false){
   const t=await r.text();return t?JSON.parse(t):[];
 }
 async function sbAuth(path,body){
-  const r=await fetch(SB+path,{method:'POST',headers:{'Content-Type':'application/json','apikey':SEC,'Authorization':`Bearer ${SEC}`},body:JSON.stringify(body)});
+  const r=await fetch(SB+path,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUB,'Authorization':`Bearer ${PUB}`},body:JSON.stringify(body)});
   const d=await r.json();if(!r.ok)throw new Error(d.error_description||d.message||'Failed');return d;
 }
 async function sbAdmin(path,method='GET',body=null){
