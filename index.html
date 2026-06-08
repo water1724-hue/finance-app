@@ -1110,7 +1110,20 @@ function setTxnType(t){
 async function loadExpCatOptions(){
   const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},false);
   const filtered=cats.filter(c=>c.type===txnType||c.type==='both');
-  document.getElementById('txn-cat').innerHTML='<option value="">選擇類別</option>'+filtered.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const parents=filtered.filter(c=>!c.parent_id);
+  const children=filtered.filter(c=>c.parent_id);
+  let opts='<option value="">選擇類別</option>';
+  parents.forEach(p=>{
+    const subs=children.filter(c=>c.parent_id===p.id);
+    if(subs.length){
+      opts+=`<optgroup label="${p.name}">`;
+      subs.forEach(s=>{opts+=`<option value="${s.id}">${s.name}</option>`;});
+      opts+=`</optgroup>`;
+    } else {
+      opts+=`<option value="${p.id}">${p.name}</option>`;
+    }
+  });
+  document.getElementById('txn-cat').innerHTML=opts;
 }
 async function openSheet(id){
   document.getElementById(id).classList.add('on');
@@ -1318,29 +1331,60 @@ async function delUser(id){
 }
 
 // EXPENSE CATEGORIES
+let currentParentCat=null;
 async function loadExpCats(){
   const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},false);
   const el=document.getElementById('exp-cat-list');
-  if(!cats.length){el.innerHTML='<div class="empty"><p>尚無類別，新增你的消費分類</p></div>';return;}
+  if(!cats.length){el.innerHTML='<div class="empty"><p>尚無類別，點上方新增</p></div>';return;}
   const typeLabel={expense:'支出',income:'收入',both:'兩者'};
-  el.innerHTML=cats.map(c=>`
-    <div class="list-row">
-      <div class="list-info"><div class="list-title">${c.name}</div><div class="list-sub">${typeLabel[c.type]}</div></div>
-      <button class="icon-btn" onclick="delExpCat('${c.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
-    </div>`).join('');
+  const parents=cats.filter(c=>!c.parent_id);
+  const children=cats.filter(c=>c.parent_id);
+  el.innerHTML=parents.map(p=>{
+    const subs=children.filter(c=>c.parent_id===p.id);
+    return`<div style="border-bottom:0.5px solid var(--border);padding:10px 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;">${p.name}</div>
+          <div style="font-size:11px;color:var(--text3);">${typeLabel[p.type]}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="openAddSubCat('${p.id}','${p.name}')">＋ 細項</button>
+          <button class="icon-btn" onclick="delExpCat('${p.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      ${subs.length?subs.map(s=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0 6px 16px;border-top:0.5px solid var(--border);">
+          <div style="font-size:12px;color:var(--text2);">└ ${s.name}</div>
+          <button class="icon-btn" onclick="delExpCat('${s.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        </div>`).join(''):''}
+    </div>`;
+  }).join('');
+}
+function openAddSubCat(parentId,parentName){
+  currentParentCat=parentId;
+  document.getElementById('ec-id').value='';
+  document.getElementById('ec-name').value='';
+  document.getElementById('sh-addcat').querySelector('h3').textContent=`新增細項（${parentName}）`;
+  document.getElementById('ec-type').closest('.field').style.display='none';
+  openSheet('sh-addcat');
 }
 async function saveExpCat(){
   const id=document.getElementById('ec-id').value;
-  const body={user_id:prof.id,name:document.getElementById('ec-name').value.trim(),type:document.getElementById('ec-type').value};
+  const body={user_id:prof.id,name:document.getElementById('ec-name').value.trim(),type:document.getElementById('ec-type').value,parent_id:currentParentCat||null};
   if(!body.name){toast('請填寫名稱','err');return;}
   try{
     if(id)await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)},false);
     else await sb('/rest/v1/expense_categories',{method:'POST',body:JSON.stringify(body)},false);
-    closeSheet('sh-addcat');document.getElementById('ec-name').value='';document.getElementById('ec-id').value='';
+    closeSheet('sh-addcat');
+    document.getElementById('ec-name').value='';
+    document.getElementById('ec-id').value='';
+    document.getElementById('sh-addcat').querySelector('h3').textContent='新增消費類別';
+    document.getElementById('ec-type').closest('.field').style.display='block';
+    currentParentCat=null;
     toast('儲存成功');loadExpCats();
   }catch(e){toast('儲存失敗','err');}
 }
-async function delExpCat(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'DELETE'},false);toast('已刪除');loadExpCats();}catch(e){}}
+async function delExpCat(id){if(!confirm('確定刪除？此類別下的細項也會一併刪除。'))return;try{await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'DELETE'},false);toast('已刪除');loadExpCats();}catch(e){}}
 
 // AI CHAT
 function autoH(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,90)+'px';}
