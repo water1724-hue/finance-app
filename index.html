@@ -735,7 +735,7 @@ async function sbAuth(path,body){
   const d=await r.json();if(!r.ok)throw new Error(d.error_description||d.message||'Failed');return d;
 }
 async function sbAdmin(path,method='GET',body=null){
-  const r=await fetch(SB+path,{method,headers:{'apikey':SEC,'Authorization':`Bearer ${SEC}`,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+  const r=await fetch(SB+path,{method,headers:{'apikey':SEC,'Authorization':`Bearer ${SEC}`,'Content-Type':'application/json','x-client-info':'lifeos/1.0'},...(body?{body:JSON.stringify(body)}:{})});
   return r.json();
 }
 
@@ -747,14 +747,12 @@ async function doLogin(){
   err.textContent='';
   if(!u||!p){err.textContent='請輸入帳號和密碼';return;}
   try{
-    const profiles=await sb(`/rest/v1/user_profiles?username=eq.${encodeURIComponent(u)}&select=id,username,display_name,role`,{},true);
+    const profiles=await sb(`/rest/v1/user_profiles?username=eq.${encodeURIComponent(u)}&select=id,username,display_name,role,email`,{},true);
     if(!profiles.length){err.textContent='帳號不存在';return;}
     prof=profiles[0];
-    const au=await sbAdmin(`/auth/v1/admin/users/${prof.id}`);
-    if(!au.email){err.textContent='帳號資料錯誤';return;}
-    const d=await sbAuth('/auth/v1/token?grant_type=password',{email:au.email,password:p});
+    const email=prof.email||`${u}@lifeos.internal`;
+    const d=await sbAuth('/auth/v1/token?grant_type=password',{email,password:p});
     me=d.user;me.token=d.access_token;
-    // Save session
     localStorage.setItem('lifeos_session',JSON.stringify({prof,token:d.access_token,refresh:d.refresh_token}));
     initApp();
   }catch(e){err.textContent=e.message.includes('Invalid')?'密碼錯誤':e.message;}
