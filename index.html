@@ -726,7 +726,9 @@ let allUsers=[];
 // API
 async function sb(path,opt={},secret=false){
   const k=secret?SEC:PUB;
-  const r=await fetch(SB+path,{...opt,headers:{'Content-Type':'application/json','apikey':k,'Authorization':`Bearer ${k}`,'Prefer':'return=representation',...(opt.headers||{})}});
+  // Use user JWT token if available, otherwise use API key
+  const authToken=me?.token||k;
+  const r=await fetch(SB+path,{...opt,headers:{'Content-Type':'application/json','apikey':PUB,'Authorization':`Bearer ${authToken}`,'Prefer':'return=representation',...(opt.headers||{})}});
   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||'Error');}
   const t=await r.text();return t?JSON.parse(t):[];
 }
