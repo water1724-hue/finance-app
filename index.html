@@ -1172,7 +1172,8 @@ async function renderCal(){
   document.getElementById('cal-grid').innerHTML=html;
   const ms=`${calY}-${String(calM+1).padStart(2,'0')}`;
   try{
-    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-31&user_id=eq.${prof.id}&order=start_time.asc`,{},false);
+    const lastDay=new Date(calY,calM+1,0).getDate();
+    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-${String(lastDay).padStart(2,'0')}&user_id=eq.${prof.id}&order=start_time.asc`,{},false);
     console.log('Events loaded:', calEvents.length, calEvents);
     calEvents.forEach(e=>{const el=document.getElementById(`cd-${e.start_date}`);if(el&&!el.querySelector('.evdot'))el.insertAdjacentHTML('beforeend',`<span class="evdot" style="background:${e.is_shared?'var(--blue)':'var(--gold)'}"></span>`);});
     showCalDay();
