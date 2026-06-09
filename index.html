@@ -322,7 +322,7 @@ select.inp option{background:var(--bg2);}
       <!-- 帳戶列表 -->
       <div class="row-between" style="margin-bottom:10px;">
         <div class="sec-label" style="margin:0">帳戶</div>
-        <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-account')"><i class="ti ti-plus" aria-hidden="true"></i> 新增帳戶</button>
+        <span style="font-size:11px;color:var(--text3);">帳戶管理請至「更多」</span>
       </div>
       <div class="card"><div id="account-list"></div></div>
 
@@ -452,6 +452,11 @@ select.inp option{background:var(--bg2);}
 
       <div class="menu-sec-lbl">帳號</div>
       <div class="card" style="padding:4px 16px;">
+        <div class="menu-item" onclick="showDet('det-acc-manage')">
+          <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-wallet" style="color:var(--gold)" aria-hidden="true"></i></div>
+          <div class="mi-info"><div class="mi-title">帳戶管理</div><div class="mi-sub">新增、刪除銀行、信用卡、證券帳戶</div></div>
+          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
         <div class="menu-item" onclick="showDet('det-exp-cats')">
           <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-tag" style="color:var(--green)" aria-hidden="true"></i></div>
           <div class="mi-info"><div class="mi-title">消費類別</div><div class="mi-sub">管理我的收支分類</div></div>
@@ -507,6 +512,13 @@ select.inp option{background:var(--bg2);}
   <div style="font-size:18px;font-weight:700;margin-bottom:16px;">使用者管理</div>
   <button class="btn btn-gold" style="width:100%;margin-bottom:14px;" onclick="openSheet('sh-adduser')"><i class="ti ti-plus" aria-hidden="true"></i> 新增使用者</button>
   <div class="card"><div id="user-list"></div></div>
+</div>
+
+<div class="det" id="det-acc-manage">
+  <div class="det-back" onclick="hideDet('det-acc-manage')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px;">帳戶管理</div>
+  <button class="btn btn-gold" style="width:100%;margin-bottom:14px;" onclick="openSheet('sh-account')"><i class="ti ti-plus" aria-hidden="true"></i> 新增帳戶</button>
+  <div class="card"><div id="acc-manage-list"></div></div>
 </div>
 
 <div class="det" id="det-exp-cats">
@@ -844,6 +856,7 @@ function showDet(id){
   document.getElementById(id).classList.add('on');
   if(id==='det-users')loadUsers();
   if(id==='det-exp-cats')loadExpCats();
+  if(id==='det-acc-manage')loadAccManage();
 }
 function hideDet(id){document.getElementById(id).classList.remove('on');}
 function openSheet(id){document.getElementById(id).classList.add('on');}
@@ -970,7 +983,7 @@ function renderAccounts(accounts,cats){
   el.innerHTML=filtered.map(a=>{
     const cat=cats.find(c=>c.id===a.category_id);
     const isNeg=cat?.type==='credit';
-    return`<div class="list-row" onclick="openAccDetail('${a.id}')">
+    return`<div class="list-row" onclick="openAccDetail('${a.id}')" style="cursor:pointer;">
       <div class="list-icon" style="background:${isNeg?'rgba(232,112,112,.1)':'rgba(212,170,106,.1)'}"><i class="ti ${cat?.icon||'ti-wallet'}" style="color:${isNeg?'var(--red)':'var(--gold)'}" aria-hidden="true"></i></div>
       <div class="list-info"><div class="list-title">${a.name}</div><div class="list-sub">${cat?.name||''}</div></div>
       <div class="list-right"><div class="list-amt ${isNeg?'amt-neg':'amt-gold'}">NT$${Number(a.balance).toLocaleString()}</div></div>
@@ -992,6 +1005,44 @@ function renderFinTxns(txns,accounts){
       <div class="list-right"><div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div></div>
     </div>`;
   }).join('');
+}
+
+async function loadAccManage(){
+  try{
+    const [cats,accounts]=await Promise.all([
+      sb('/rest/v1/account_categories?order=sort_order.asc',{},false),
+      sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false)
+    ]);
+    accCats=cats;
+    const el=document.getElementById('acc-manage-list');
+    if(!accounts.length){el.innerHTML='<div class="empty"><i class="ti ti-wallet" aria-hidden="true"></i><p>尚無帳戶，點上方新增</p></div>';return;}
+    el.innerHTML=accounts.map(a=>{
+      const cat=cats.find(c=>c.id===a.category_id);
+      const isNeg=cat?.type==='credit';
+      return`<div class="list-row">
+        <div class="list-icon" style="background:${isNeg?'rgba(232,112,112,.1)':'rgba(212,170,106,.1)'}">
+          <i class="ti ${cat?.icon||'ti-wallet'}" style="color:${isNeg?'var(--red)':'var(--gold)'}" aria-hidden="true"></i>
+        </div>
+        <div class="list-info">
+          <div class="list-title">${a.name}</div>
+          <div class="list-sub">${cat?.name||''} · NT$${Number(a.balance).toLocaleString()}</div>
+        </div>
+        <button class="icon-btn" onclick="delAccount('${a.id}')" style="padding:4px 8px;">
+          <i class="ti ti-trash" aria-hidden="true"></i>
+        </button>
+      </div>`;
+    }).join('');
+  }catch(e){toast('載入失敗','err');}
+}
+
+async function delAccount(id){
+  if(!confirm('確定刪除此帳戶？帳戶內的交易記錄也會一併刪除。'))return;
+  try{
+    await sb(`/rest/v1/accounts?id=eq.${id}`,{method:'DELETE'},false);
+    toast('帳戶已刪除');
+    loadAccManage();
+    if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
+  }catch(e){toast('刪除失敗','err');}
 }
 
 async function loadAllTxns(){
@@ -1634,7 +1685,26 @@ const _origOpen=window.openSheet;
 window.openSheet=async function(id){
   if(id==='sh-event'){setEvType(false);document.getElementById('ev-date').value=calSel;document.getElementById('ev-title').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-desc').value='';document.getElementById('ev-id').value='';}
   if(id==='sh-todo'){document.getElementById('sh-todo-title').textContent='新增待辦';document.getElementById('todo-id').value='';document.getElementById('todo-title').value='';document.getElementById('todo-note').value='';document.getElementById('todo-due').value='';document.getElementById('todo-pri').value='normal';document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');}
-  if(id==='sh-txn'){setTxnType('expense');document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);document.getElementById('txn-amt').value='';document.getElementById('txn-note').value='';document.getElementById('txn-id').value='';await loadExpCatOptions();}
+  if(id==='sh-txn'){
+    setTxnType('expense');
+    document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('txn-amt').value='';
+    document.getElementById('txn-note').value='';
+    document.getElementById('txn-id').value='';
+    // Load accounts if not already loaded
+    const accSel=document.getElementById('txn-account');
+    if(!accSel.options.length||accSel.options.length===0){
+      const [cats,accounts]=await Promise.all([
+        sb('/rest/v1/account_categories?order=sort_order.asc',{},false),
+        sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false)
+      ]);
+      accCats=cats;
+      accSel.innerHTML=accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+      const bankAccs=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c&&['bank','cash'].includes(c.type);});
+      document.getElementById('inv-bank').innerHTML=bankAccs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+    }
+    await loadExpCatOptions();
+  }
   document.getElementById(id).classList.add('on');
 };
 
