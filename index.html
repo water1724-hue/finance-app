@@ -97,7 +97,7 @@ select.inp option{background:var(--bg2);}
 #toast.err{border-color:rgba(232,112,112,.35);color:var(--red);}
 
 /* LIST ROWS */
-.list-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:0.5px solid var(--border);cursor:pointer;}
+.list-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:0.5px solid var(--border);cursor:default;}
 .list-row:last-child{border-bottom:none;}
 .list-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .list-icon i{font-size:17px;}
@@ -1255,14 +1255,17 @@ async function loadTodos(){
     const el=document.getElementById('todo-list');
     if(!todos.length){el.innerHTML='<div class="empty"><i class="ti ti-checklist" aria-hidden="true"></i><p>沒有待辦事項</p></div>';return;}
     const priLabel={high:'高',normal:'一般',low:'低'};
-    el.innerHTML=todos.map(t=>{
+    // Store todos for click handlers
+    window._todos = todos;
+    window._todoUsers = allUsers;
+    el.innerHTML=todos.map((t,i)=>{
       const assignee=allUsers.find(u=>u.id===t.assigned_to);
       const owner=allUsers.find(u=>u.id===t.user_id);
       return`<div class="list-row" style="cursor:default;">
-        <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${t.completed?'var(--green)':'var(--text3)'};flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:${t.completed?'var(--green)':'transparent'};" onclick="event.stopPropagation();toggleTodo('${t.id}',${t.completed})">
+        <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${t.completed?'var(--green)':'var(--text3)'};flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:${t.completed?'var(--green)':'transparent'};" onclick="toggleTodo('${t.id}',${t.completed})">
           ${t.completed?'<i class="ti ti-check" style="font-size:12px;color:#fff" aria-hidden="true"></i>':''}
         </div>
-        <div class="list-info">
+        <div class="list-info" style="pointer-events:none;">
           <div class="list-title" style="${t.completed?'text-decoration:line-through;color:var(--text3);':''}">${t.title}</div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;">
             <span class="tag tag-${t.priority}">${priLabel[t.priority]}</span>
@@ -1272,12 +1275,24 @@ async function loadTodos(){
           </div>
         </div>
         <div style="display:flex;gap:4px;">
-          <button class="icon-btn" onclick="editTodo('${t.id}','${t.title}','${t.note||''}','${t.due_date||''}','${t.priority}','${t.assigned_to||''}')"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+          <button class="icon-btn" data-todo-idx="${i}" onclick="editTodoByIdx(this.dataset.todoIdx)"><i class="ti ti-pencil" aria-hidden="true"></i></button>
           <button class="icon-btn" onclick="delTodo('${t.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
         </div>
       </div>`;
     }).join('');
   }catch(e){toast('載入失敗','err');}
+}
+function editTodoByIdx(idx){
+  const t=window._todos[parseInt(idx)];
+  if(!t)return;
+  document.getElementById('sh-todo-title').textContent='編輯待辦';
+  document.getElementById('todo-id').value=t.id;
+  document.getElementById('todo-title').value=t.title;
+  document.getElementById('todo-due').value=t.due_date||'';
+  document.getElementById('todo-note').value=t.note||'';
+  document.getElementById('todo-pri').value=t.priority;
+  document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}" ${u.id===t.assigned_to?'selected':''}>${u.display_name||u.username}</option>`).join('');
+  openSheet('sh-todo');
 }
 function setTodoFilter(f,btn){todoFilter=f;document.querySelectorAll('#pg-todo .ftab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');loadTodos();}
 function editTodo(id,title,note,due,pri,assignedTo){
