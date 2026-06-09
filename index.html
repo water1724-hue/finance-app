@@ -1350,7 +1350,7 @@ function setTxnType(t){
 }
 async function loadExpCatOptions(){
   const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},false);
-  const filtered=cats.filter(c=>c.type===txnType||c.type==='both');
+  const filtered=cats.filter(c=>(c.type===txnType||c.type==='both')&&c.is_active!==false);
   const parents=filtered.filter(c=>!c.parent_id);
   const children=filtered.filter(c=>c.parent_id);
   let opts='<option value="">選擇類別</option>';
@@ -1610,25 +1610,50 @@ async function loadExpCats(){
   const children=cats.filter(c=>c.parent_id);
   el.innerHTML=parents.map(p=>{
     const subs=children.filter(c=>c.parent_id===p.id);
-    return`<div style="border-bottom:0.5px solid var(--border);padding:10px 0;">
+    const isActive=p.is_active!==false;
+    return`<div style="border-bottom:0.5px solid var(--border);padding:10px 0;opacity:${isActive?'1':'0.5'};">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <div>
-          <div style="font-size:13px;font-weight:600;">${p.name} ${p.is_default?'<span class="tag tag-gold" style="font-size:10px;">預設</span>':''}</div>
+          <div style="font-size:13px;font-weight:600;">${p.name} ${p.is_default?'<span class="tag tag-gold" style="font-size:10px;">預設</span>':''} ${!isActive?'<span class="tag" style="background:rgba(136,136,136,.15);color:var(--text3);font-size:10px;">已停用</span>':''}</div>
           <div style="font-size:11px;color:var(--text3);">${typeLabel[p.type]}</div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          ${prof.role==='admin'?`<button class="btn btn-ghost btn-sm" onclick="toggleDefault('${p.id}',${p.is_default})" title="設為預設">${p.is_default?'取消預設':'設預設'}</button>`:''}
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+          ${prof.role==='admin'?`<button class="btn btn-ghost btn-sm" onclick="toggleDefault('${p.id}',${p.is_default})">${p.is_default?'取消預設':'設預設'}</button>`:''}
+          <button class="btn btn-ghost btn-sm" onclick="editExpCat('${p.id}','${p.name}','${p.type}',${isActive})">編輯</button>
           <button class="btn btn-ghost btn-sm" onclick="openAddSubCat('${p.id}','${p.name}')">＋ 細項</button>
-          <button class="icon-btn" onclick="delExpCat('${p.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          <button class="btn btn-ghost btn-sm" style="color:${isActive?'var(--red)':'var(--green)'};" onclick="toggleExpCatActive('${p.id}',${isActive})">${isActive?'停用':'啟用'}</button>
         </div>
       </div>
-      ${subs.length?subs.map(s=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0 6px 16px;border-top:0.5px solid var(--border);">
-          <div style="font-size:12px;color:var(--text2);">└ ${s.name}</div>
-          <button class="icon-btn" onclick="delExpCat('${s.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
-        </div>`).join(''):''}
+      ${subs.length?subs.map(s=>{
+        const sActive=s.is_active!==false;
+        return`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0 6px 16px;border-top:0.5px solid var(--border);opacity:${sActive?'1':'0.5'};">
+          <div style="font-size:12px;color:var(--text2);">└ ${s.name} ${!sActive?'<span style="font-size:10px;color:var(--text3);">(停用)</span>':''}</div>
+          <div style="display:flex;gap:4px;">
+            <button class="icon-btn" onclick="editExpCat('${s.id}','${s.name}','${s.type}',${sActive})" style="font-size:13px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" style="color:${sActive?'var(--red)':'var(--green)'};" onclick="toggleExpCatActive('${s.id}',${sActive})"><i class="ti ti-${sActive?'eye-off':'eye'}" aria-hidden="true"></i></button>
+          </div>
+        </div>`;
+      }).join(''):''}
     </div>`;
   }).join('');
+}
+
+function editExpCat(id, name, type, isActive){
+  document.getElementById('ec-id').value=id;
+  document.getElementById('ec-name').value=name;
+  document.getElementById('ec-type').value=type;
+  document.getElementById('sh-addcat').querySelector('h3').textContent='編輯類別';
+  document.getElementById('ec-type').closest('.field').style.display='block';
+  currentParentCat=null;
+  openSheet('sh-addcat');
+}
+
+async function toggleExpCatActive(id, current){
+  try{
+    await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_active:!current})},false);
+    toast(!current?'已啟用':'已停用');
+    loadExpCats();
+  }catch(e){toast('操作失敗','err');}
 }
 
 async function toggleDefault(id, current){
