@@ -155,7 +155,7 @@ select.inp option{background:var(--bg2);}
 .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
 .cal-dh{text-align:center;font-size:12px;color:var(--text3);font-weight:600;padding:4px 0;}
 .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-.cal-d{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;color:var(--text2);cursor:pointer;position:relative;transition:background .15s;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:manipulation;}
+.cal-d{height:40px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;color:var(--text2);cursor:pointer;position:relative;transition:background .15s;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:manipulation;}
 .cal-d:hover{background:var(--bg4);}
 .cal-d.today{background:#1e1a12;color:var(--gold);font-weight:700;border:0.5px solid var(--gold-border);}
 .cal-d.sel:not(.today){background:var(--bg4);color:var(--text);font-weight:600;}
@@ -834,7 +834,7 @@ async function loadHome(){
   try{
     const [todos,events,announces]=await Promise.all([
       sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false`,{},false),
-      sb(`/rest/v1/events?start_date=eq.${today}&or=(user_id.eq.${prof.id},is_shared.eq.true)&order=start_time.asc`,{},false),
+      sb(`/rest/v1/events?start_date=eq.${today}&user_id=eq.${prof.id}&order=start_time.asc`,{},false),
       sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{},false)
     ]);
     document.getElementById('h-todo-count').textContent=todos.length;
@@ -1172,7 +1172,7 @@ async function renderCal(){
   document.getElementById('cal-grid').innerHTML=html;
   const ms=`${calY}-${String(calM+1).padStart(2,'0')}`;
   try{
-    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-31&or=(user_id.eq.${prof.id},is_shared.eq.true)&order=start_time.asc`,{},false);
+    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-31&user_id=eq.${prof.id}&order=start_time.asc`,{},false);
     calEvents.forEach(e=>{const el=document.getElementById(`cd-${e.start_date}`);if(el&&!el.querySelector('.evdot'))el.insertAdjacentHTML('beforeend',`<span class="evdot" style="background:${e.is_shared?'var(--blue)':'var(--gold)'}"></span>`);});
     showCalDay();
   }catch(er){}
