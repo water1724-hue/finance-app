@@ -489,7 +489,16 @@ select.inp option{background:var(--bg2);}
   </div>
   <div class="sec-label" id="det-acc-type-label"></div>
   <div class="card"><div id="det-acc-content"></div></div>
-  <div class="sec-label" style="margin-top:14px;">交易記錄</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+    <div class="sec-label" style="margin:0;">交易記錄</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <input type="date" id="txn-filter-from" class="inp" style="padding:6px 10px;font-size:12px;width:130px;">
+      <span style="color:var(--text3);font-size:12px;">至</span>
+      <input type="date" id="txn-filter-to" class="inp" style="padding:6px 10px;font-size:12px;width:130px;">
+      <button class="btn btn-ghost btn-sm" onclick="filterAccTxns()">查詢</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearAccTxnFilter()">全部</button>
+    </div>
+  </div>
   <div class="card"><div id="det-acc-txns"></div></div>
 </div>
 
@@ -1083,8 +1092,81 @@ async function openAccDetail(id){
           <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
         </div>`).join('');}
     }
+    initAccTxnFilter();
     showDet('det-account');
   }catch(e){toast('載入失敗','err');}
+}
+
+// Initialize date filter with 1 year range
+function initAccTxnFilter(){
+  const to=new Date();
+  const from=new Date();
+  from.setFullYear(from.getFullYear()-1);
+  document.getElementById('txn-filter-from').value=from.toISOString().slice(0,10);
+  document.getElementById('txn-filter-to').value=to.toISOString().slice(0,10);
+}
+
+async function filterAccTxns(){
+  const from=document.getElementById('txn-filter-from').value;
+  const to=document.getElementById('txn-filter-to').value;
+  const id=currentHoldingAccId;
+  const accCat2=accCats.find(c=>c.id===currentAcc.category_id);
+  const isInv=['securities','fund','forex'].includes(accCat2?.type);
+  const txEl=document.getElementById('det-acc-txns');
+  
+  if(isInv){
+    const holdings=await sb(`/rest/v1/holdings?account_id=eq.${id}`,{},false);
+    const holdingIds=holdings.map(h=>h.id);
+    if(!holdingIds.length){txEl.innerHTML='<div class="empty"><p>尚無交易記錄</p></div>';return;}
+    let url=`/rest/v1/investment_txns?holding_id=in.(${holdingIds.join(',')})&order=date.desc&limit=200`;
+    if(from)url+=`&date=gte.${from}`;
+    if(to)url+=`&date=lte.${to}`;
+    const txns=await sb(url,{},false);
+    renderInvTxns(txns,holdings,txEl);
+  } else {
+    let url=`/rest/v1/transactions?account_id=eq.${id}&order=date.desc&limit=200`;
+    if(from)url+=`&date=gte.${from}`;
+    if(to)url+=`&date=lte.${to}`;
+    const txns=await sb(url,{},false);
+    renderRegTxns(txns,txEl);
+  }
+}
+
+async function clearAccTxnFilter(){
+  document.getElementById('txn-filter-from').value='';
+  document.getElementById('txn-filter-to').value='';
+  filterAccTxns();
+}
+
+function renderInvTxns(allInvTxns,holdings,txEl){
+  if(!allInvTxns.length){txEl.innerHTML='<div class="empty"><p>尚無交易記錄</p></div>';return;}
+  txEl.innerHTML=allInvTxns.map(t=>{
+    const h=holdings.find(x=>x.id===t.holding_id);
+    return`<div class="list-row">
+      <div class="list-icon" style="background:${t.type==='buy'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
+        <i class="ti ${t.type==='buy'?'ti-trending-up':'ti-trending-down'}" style="color:${t.type==='buy'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
+      </div>
+      <div class="list-info">
+        <div class="list-title">${t.type==='buy'?'買入':'賣出'} ${h?h.symbol+' '+h.name:''}</div>
+        <div class="list-sub">${t.quantity}股 × $${Number(t.price).toLocaleString()} · 費$${Number(t.fee).toLocaleString()} · ${t.date}</div>
+      </div>
+      <div class="list-right">
+        <div class="list-amt ${t.type==='buy'?'amt-neg':'amt-pos'}">${t.type==='buy'?'-':'+'}NT$${Number(t.total).toLocaleString()}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRegTxns(txns,txEl){
+  if(!txns.length){txEl.innerHTML='<div class="empty"><p>尚無交易記錄</p></div>';return;}
+  txEl.innerHTML=txns.map(t=>`
+    <div class="list-row">
+      <div class="list-icon" style="background:${t.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
+        <i class="ti ${t.type==='income'?'ti-arrow-down-circle':'ti-arrow-up-circle'}" style="color:${t.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
+      </div>
+      <div class="list-info"><div class="list-title">${t.note||'記帳'}</div><div class="list-sub">${t.date}</div></div>
+      <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
+    </div>`).join('');
 }
 
 function showAddHolding(){
