@@ -865,7 +865,7 @@ async function loadHome(){
   const today=now.toISOString().slice(0,10);
   try{
     const [todos,events,announces]=await Promise.all([
-      sb(`/rest/v1/todos?or=(user_id.eq.${prof.id},assigned_to.eq.${prof.id})&completed=eq.false`,{},false),
+      (async()=>{const t1=await sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false`,{},false);const t2=await sb(`/rest/v1/todos?assigned_to=eq.${prof.id}&completed=eq.false`,{},false);const seen=new Set(t1.map(t=>t.id));return [...t1,...t2.filter(t=>!seen.has(t.id))];})(),
       sb(`/rest/v1/events?start_date=eq.${today}&user_id=eq.${prof.id}&order=start_time.asc`,{},false),
       sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{},false)
     ]);
