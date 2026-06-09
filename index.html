@@ -155,7 +155,7 @@ select.inp option{background:var(--bg2);}
 .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
 .cal-dh{text-align:center;font-size:12px;color:var(--text3);font-weight:600;padding:4px 0;}
 .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-.cal-d{height:40px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;color:var(--text2);cursor:pointer;position:relative;transition:background .15s;-webkit-tap-highlight-color:rgba(0,0,0,0);touch-action:manipulation;}
+.cal-d{height:44px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;color:var(--text2);cursor:pointer;position:relative;transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;}
 .cal-d:hover{background:var(--bg4);}
 .cal-d.today{background:#1e1a12;color:var(--gold);font-weight:700;border:0.5px solid var(--gold-border);}
 .cal-d.sel:not(.today){background:var(--bg4);color:var(--text);font-weight:600;}
@@ -716,7 +716,7 @@ const CLAUDE_KEY=''; // 填入後 AI秘書啟用
 // STATE
 let me=null,prof=null;
 let calY=new Date().getFullYear(),calM=new Date().getMonth();
-let calSel=new Date().toISOString().slice(0,10);
+const _initNow=new Date();let calSel=`${_initNow.getFullYear()}-${String(_initNow.getMonth()+1).padStart(2,'0')}-${String(_initNow.getDate()).padStart(2,'0')}`;
 let evFilter='all',todoFilter='all',finCatFilter='all';
 let currentAcc=null,currentHoldingAccId=null;
 let invType='buy',txnType='expense',evIsShared=false;
@@ -1159,7 +1159,7 @@ async function renderCal(){
   const mn=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   document.getElementById('cal-title').textContent=`${calY}年 ${mn[calM]}`;
   const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();
-  const prev=new Date(calY,calM,0).getDate(),today=new Date().toISOString().slice(0,10);
+  const prev=new Date(calY,calM,0).getDate(),_tn=new Date(),today=`${_tn.getFullYear()}-${String(_tn.getMonth()+1).padStart(2,'0')}-${String(_tn.getDate()).padStart(2,'0')}`;
   let html='';
   for(let i=0;i<first;i++)html+=`<div class="cal-d other">${prev-first+i+1}</div>`;
   for(let d=1;d<=days;d++){
@@ -1173,15 +1173,16 @@ async function renderCal(){
   const ms=`${calY}-${String(calM+1).padStart(2,'0')}`;
   try{
     calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-31&user_id=eq.${prof.id}&order=start_time.asc`,{},false);
+    console.log('Events loaded:', calEvents.length, calEvents);
     calEvents.forEach(e=>{const el=document.getElementById(`cd-${e.start_date}`);if(el&&!el.querySelector('.evdot'))el.insertAdjacentHTML('beforeend',`<span class="evdot" style="background:${e.is_shared?'var(--blue)':'var(--gold)'}"></span>`);});
     showCalDay();
-  }catch(er){}
+  }catch(er){console.error('Calendar error:', er);}
 }
 function selDay(d){calSel=d;renderCal();}
 function calNav(dir){calM+=dir;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
 function showCalDay(){
-  const d=new Date(calSel+'T00:00:00');
-  document.getElementById('cal-sel-lbl').textContent=`${d.getMonth()+1}月${d.getDate()}日`;
+  const parts=calSel.split('-');
+  document.getElementById('cal-sel-lbl').textContent=`${parseInt(parts[1])}月${parseInt(parts[2])}日`;
   let evs=calEvents.filter(e=>e.start_date===calSel);
   if(evFilter==='personal')evs=evs.filter(e=>!e.is_shared);
   if(evFilter==='shared')evs=evs.filter(e=>e.is_shared);
@@ -1411,7 +1412,7 @@ async function sendChat(){
   const btn=document.getElementById('chat-send');btn.disabled=true;
   const tid='t'+Date.now();appendTyping(tid);
   try{
-    const today=new Date().toISOString().slice(0,10);
+    const _now=new Date();const today=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
     const mStart=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-01`;
     const [todos,events,txns,accounts]=await Promise.all([
       sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false&limit=15`,{},false),
