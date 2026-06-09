@@ -758,7 +758,7 @@ async function doLogin(){
     me=d.user;me.token=d.access_token;
     localStorage.setItem('lifeos_session',JSON.stringify({prof,token:d.access_token,refresh:d.refresh_token}));
     initApp();
-    setTimeout(()=>copyDefaultCats(),1000);
+    setTimeout(()=>copyDefaultCats(),1500);
   }catch(e){err.textContent=e.message.includes('Invalid')?'密碼錯誤':e.message;}
 }
 
@@ -770,6 +770,7 @@ async function restoreSession(){
     const d=await sbAuth('/auth/v1/token?grant_type=refresh_token',{refresh_token:sess.refresh});
     me=d.user;me.token=d.access_token;prof=sess.prof;
     localStorage.setItem('lifeos_session',JSON.stringify({prof,token:d.access_token,refresh:d.refresh_token}));
+    setTimeout(()=>copyDefaultCats(),1500);
     return true;
   }catch(e){localStorage.removeItem('lifeos_session');return false;}
 }
