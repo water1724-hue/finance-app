@@ -874,7 +874,7 @@ function showDet(id){
   document.getElementById(id).classList.add('on');
   if(id==='det-users')loadUsers();
   if(id==='det-exp-cats')loadExpCats();
-  if(id==='det-acc-manage')loadAccManage();
+  if(id==='det-acc-manage'){loadAccManage();loadAccCatOptions();}
 }
 function hideDet(id){document.getElementById(id).classList.remove('on');}
 function openSheet(id){document.getElementById(id).classList.add('on');}
@@ -1023,6 +1023,13 @@ function renderFinTxns(txns,accounts){
       <div class="list-right"><div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div></div>
     </div>`;
   }).join('');
+}
+
+async function loadAccCatOptions(){
+  if(accCats.length===0){
+    accCats=await sb('/rest/v1/account_categories?order=sort_order.asc',{},false);
+  }
+  document.getElementById('acc-cat').innerHTML=accCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 }
 
 function editAccount(id, name, balance, catId){
