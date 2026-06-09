@@ -683,6 +683,24 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Edit Account -->
+<div class="overlay" id="sh-edit-account">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>編輯帳戶</h3>
+    <input type="hidden" id="edit-acc-id">
+    <input type="hidden" id="edit-acc-cat-id">
+    <label class="inp-label">帳戶名稱</label>
+    <input class="inp" type="text" id="edit-acc-name" placeholder="帳戶名稱">
+    <label class="inp-label">目前餘額 (NT$)</label>
+    <input class="inp" type="number" id="edit-acc-bal" placeholder="0">
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-edit-account')">取消</button>
+      <button class="btn btn-gold" onclick="saveEditAccount()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add User -->
 <div class="overlay" id="sh-adduser">
   <div class="sheet">
@@ -1007,6 +1025,28 @@ function renderFinTxns(txns,accounts){
   }).join('');
 }
 
+function editAccount(id, name, balance, catId){
+  document.getElementById('edit-acc-id').value=id;
+  document.getElementById('edit-acc-cat-id').value=catId;
+  document.getElementById('edit-acc-name').value=name;
+  document.getElementById('edit-acc-bal').value=balance;
+  openSheet('sh-edit-account');
+}
+
+async function saveEditAccount(){
+  const id=document.getElementById('edit-acc-id').value;
+  const name=document.getElementById('edit-acc-name').value.trim();
+  const balance=parseFloat(document.getElementById('edit-acc-bal').value)||0;
+  if(!name){toast('請填寫帳戶名稱','err');return;}
+  try{
+    await sb(`/rest/v1/accounts?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({name,balance})},false);
+    closeSheet('sh-edit-account');
+    toast('已更新');
+    loadAccManage();
+    if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
+  }catch(e){toast('儲存失敗','err');}
+}
+
 async function loadAccManage(){
   try{
     const [cats,accounts]=await Promise.all([
@@ -1027,9 +1067,14 @@ async function loadAccManage(){
           <div class="list-title">${a.name}</div>
           <div class="list-sub">${cat?.name||''} · NT$${Number(a.balance).toLocaleString()}</div>
         </div>
-        <button class="icon-btn" onclick="delAccount('${a.id}')" style="padding:4px 8px;">
-          <i class="ti ti-trash" aria-hidden="true"></i>
-        </button>
+        <div style="display:flex;gap:4px;">
+          <button class="icon-btn" onclick="editAccount('${a.id}','${a.name}',${a.balance},'${a.category_id}')" style="padding:4px 8px;">
+            <i class="ti ti-pencil" aria-hidden="true"></i>
+          </button>
+          <button class="icon-btn" onclick="delAccount('${a.id}')" style="padding:4px 8px;">
+            <i class="ti ti-trash" aria-hidden="true"></i>
+          </button>
+        </div>
       </div>`;
     }).join('');
   }catch(e){toast('載入失敗','err');}
