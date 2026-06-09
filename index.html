@@ -1039,18 +1039,56 @@ async function openAccDetail(id){
         ${currentAcc.statement_day?`<div class="list-row"><div class="list-info"><div class="list-sub">帳單日</div></div><div class="list-amt">每月 ${currentAcc.statement_day} 日</div></div>`:''}
         ${currentAcc.payment_day?`<div class="list-row"><div class="list-info"><div class="list-sub">繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}`;
     }
-    // Txns
-    const txns=await sb(`/rest/v1/transactions?account_id=eq.${id}&order=date.desc&limit=20`,{},false);
+    // Txns - check if investment account
+    const cat=accCats.find(c=>c.id===currentAcc.category_id);
+    const isInvAcc=['securities','fund','forex'].includes(cat?.type);
     const txEl=document.getElementById('det-acc-txns');
-    if(!txns.length){txEl.innerHTML='<div class="empty"><p>尚無記錄</p></div>';}
-    else{txEl.innerHTML=txns.map(t=>`
-      <div class="list-row">
-        <div class="list-icon" style="background:${t.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
-          <i class="ti ${t.type==='income'?'ti-arrow-down-circle':'ti-arrow-up-circle'}" style="color:${t.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
-        </div>
-        <div class="list-info"><div class="list-title">${t.note||'記帳'}</div><div class="list-sub">${t.date}</div></div>
-        <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
-      </div>`).join('');}
+    
+    if(isInvAcc){
+      // Show investment transactions
+      const invTxns=await sb(`/rest/v1/investment_txns?bank_account_id=eq.${id}&order=date.desc&limit=30`,{},false);
+      // Also get txns where holding is in this account
+      const holdings=await sb(`/rest/v1/holdings?account_id=eq.${id}`,{},false);
+      const holdingIds=holdings.map(h=>h.id);
+      let allInvTxns=invTxns;
+      if(holdingIds.length){
+        const holdingTxns=await sb(`/rest/v1/investment_txns?holding_id=in.(${holdingIds.join(',')})&order=date.desc&limit=30`,{},false);
+        // Merge and deduplicate
+        const seen=new Set(invTxns.map(t=>t.id));
+        holdingTxns.forEach(t=>{if(!seen.has(t.id)){allInvTxns.push(t);seen.add(t.id);}});
+        allInvTxns.sort((a,b)=>new Date(b.date)-new Date(a.date));
+      }
+      if(!allInvTxns.length){txEl.innerHTML='<div class="empty"><p>尚無交易記錄</p></div>';}
+      else{
+        txEl.innerHTML=allInvTxns.map(t=>{
+          const h=holdings.find(x=>x.id===t.holding_id);
+          return`<div class="list-row">
+            <div class="list-icon" style="background:${t.type==='buy'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
+              <i class="ti ${t.type==='buy'?'ti-trending-up':'ti-trending-down'}" style="color:${t.type==='buy'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
+            </div>
+            <div class="list-info">
+              <div class="list-title">${t.type==='buy'?'買入':'賣出'} ${h?h.symbol+' '+h.name:''}</div>
+              <div class="list-sub">${t.quantity}股 × $${Number(t.price).toLocaleString()} · 手續費$${Number(t.fee).toLocaleString()} · ${t.date}</div>
+            </div>
+            <div class="list-right">
+              <div class="list-amt ${t.type==='buy'?'amt-neg':'amt-pos'}">${t.type==='buy'?'-':'+'}NT$${Number(t.total).toLocaleString()}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    } else {
+      // Show regular transactions
+      const txns=await sb(`/rest/v1/transactions?account_id=eq.${id}&order=date.desc&limit=20`,{},false);
+      if(!txns.length){txEl.innerHTML='<div class="empty"><p>尚無記錄</p></div>';}
+      else{txEl.innerHTML=txns.map(t=>`
+        <div class="list-row">
+          <div class="list-icon" style="background:${t.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
+            <i class="ti ${t.type==='income'?'ti-arrow-down-circle':'ti-arrow-up-circle'}" style="color:${t.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
+          </div>
+          <div class="list-info"><div class="list-title">${t.note||'記帳'}</div><div class="list-sub">${t.date}</div></div>
+          <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
+        </div>`).join('');}
+    }
     showDet('det-account');
   }catch(e){toast('載入失敗','err');}
 }
