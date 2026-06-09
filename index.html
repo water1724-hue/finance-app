@@ -322,7 +322,9 @@ select.inp option{background:var(--bg2);}
       <!-- 帳戶列表 -->
       <div class="row-between" style="margin-bottom:10px;">
         <div class="sec-label" style="margin:0">帳戶</div>
-        <span style="font-size:11px;color:var(--text3);">帳戶管理請至「更多」</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-transfer')"><i class="ti ti-transfer" aria-hidden="true"></i> 轉帳</button>
+        </div>
       </div>
       <div class="card"><div id="account-list"></div></div>
 
@@ -683,6 +685,24 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Transfer -->
+<div class="overlay" id="sh-transfer">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>帳戶間轉帳</h3>
+    <div class="field"><label>從</label><select class="inp" id="tr-from"></select></div>
+    <div class="field"><label>到</label><select class="inp" id="tr-to"></select></div>
+    <div class="field"><label>金額 (NT$)</label><input class="inp" type="number" id="tr-amt" placeholder="0"></div>
+    <div class="field"><label>手續費 (NT$)</label><input class="inp" type="number" id="tr-fee" placeholder="0"></div>
+    <div class="field"><label>日期</label><input class="inp" type="date" id="tr-date"></div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="tr-note" placeholder="選填"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-transfer')">取消</button>
+      <button class="btn btn-gold" onclick="saveTransfer()">確認轉帳</button>
+    </div>
+  </div>
+</div>
+
 <!-- Edit Account -->
 <div class="overlay" id="sh-edit-account">
   <div class="sheet">
@@ -1013,14 +1033,19 @@ function renderAccounts(accounts,cats){
 function renderFinTxns(txns,accounts){
   const el=document.getElementById('fin-txns');
   if(!txns.length){el.innerHTML='<div class="empty"><p>尚無交易記錄</p></div>';return;}
-  el.innerHTML=txns.map(t=>{
+  window._finTxns=txns;window._finAccounts=accounts;
+  el.innerHTML=txns.map((t,i)=>{
     const acc=accounts?.find(a=>a.id===t.account_id);
     return`<div class="list-row">
       <div class="list-icon" style="background:${t.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
         <i class="ti ${t.type==='income'?'ti-arrow-down-circle':'ti-arrow-up-circle'}" style="color:${t.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
       </div>
       <div class="list-info"><div class="list-title">${t.note||'記帳'}</div><div class="list-sub">${acc?.name||''} · ${t.date}</div></div>
-      <div class="list-right"><div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
+        <button class="icon-btn" data-fi="${i}" onclick="editFinTxnByIdx(this.dataset.fi)" style="padding:3px 6px;font-size:13px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+        <button class="icon-btn" onclick="delTxnFromAcc('${t.id}',${t.amount},'${t.type}','${t.account_id}')" style="padding:3px 6px;font-size:13px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1097,6 +1122,93 @@ async function delAccount(id){
   }catch(e){toast('刪除失敗','err');}
 }
 
+// Edit transaction by index (from account detail)
+function editTxnByIdx(idx){
+  const t=window._regTxns?.[parseInt(idx)];
+  if(!t)return;
+  document.getElementById('sh-txn-title').textContent='編輯記帳';
+  document.getElementById('txn-id').value=t.id;
+  document.getElementById('txn-account').value=t.account_id;
+  setTxnType(t.type);
+  document.getElementById('txn-amt').value=t.amount;
+  document.getElementById('txn-note').value=t.note||'';
+  document.getElementById('txn-date').value=t.date;
+  openSheet('sh-txn');
+}
+
+// Edit transaction by index (from finance page)
+function editFinTxnByIdx(idx){
+  const t=window._finTxns?.[parseInt(idx)];
+  if(!t)return;
+  document.getElementById('sh-txn-title').textContent='編輯記帳';
+  document.getElementById('txn-id').value=t.id;
+  document.getElementById('txn-account').value=t.account_id;
+  setTxnType(t.type);
+  document.getElementById('txn-amt').value=t.amount;
+  document.getElementById('txn-note').value=t.note||'';
+  document.getElementById('txn-date').value=t.date;
+  openSheet('sh-txn');
+}
+
+// Delete transaction and reverse account balance
+async function delTxnFromAcc(id, amount, type, accountId){
+  if(!confirm('確定刪除此交易記錄？'))return;
+  try{
+    await sb(`/rest/v1/transactions?id=eq.${id}`,{method:'DELETE'},false);
+    // Reverse the balance effect
+    const accs=await sb(`/rest/v1/accounts?id=eq.${accountId}`,{},false);
+    if(accs.length){
+      const delta=type==='income'?-amount:amount;
+      await sb(`/rest/v1/accounts?id=eq.${accountId}`,{method:'PATCH',body:JSON.stringify({balance:Number(accs[0].balance)+delta})},false);
+    }
+    toast('已刪除');
+    if(document.getElementById('det-account').classList.contains('on'))openAccDetail(accountId);
+    if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
+  }catch(e){toast('刪除失敗','err');}
+}
+
+// Update saveTxn to handle edit
+// Transfer between accounts
+async function initTransferSheet(){
+  const accounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{},false);
+  const opts=accounts.map(a=>`<option value="${a.id}">${a.name} (NT$${Number(a.balance).toLocaleString()})</option>`).join('');
+  document.getElementById('tr-from').innerHTML=opts;
+  document.getElementById('tr-to').innerHTML=opts;
+  document.getElementById('tr-amt').value='';
+  document.getElementById('tr-fee').value='0';
+  document.getElementById('tr-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('tr-note').value='';
+}
+
+async function saveTransfer(){
+  const fromId=document.getElementById('tr-from').value;
+  const toId=document.getElementById('tr-to').value;
+  const amt=parseFloat(document.getElementById('tr-amt').value);
+  const fee=parseFloat(document.getElementById('tr-fee').value)||0;
+  const date=document.getElementById('tr-date').value;
+  const note=document.getElementById('tr-note').value.trim();
+  if(!fromId||!toId||!amt){toast('請填寫完整資料','err');return;}
+  if(fromId===toId){toast('轉出和轉入帳戶不能相同','err');return;}
+  try{
+    const [fromAcc,toAcc]=await Promise.all([
+      sb(`/rest/v1/accounts?id=eq.${fromId}`,{},false),
+      sb(`/rest/v1/accounts?id=eq.${toId}`,{},false)
+    ]);
+    if(!fromAcc.length||!toAcc.length){toast('帳戶不存在','err');return;}
+    if(Number(fromAcc[0].balance)<amt+fee){toast('餘額不足','err');return;}
+    // Save transfer record
+    await sb('/rest/v1/transfers',{method:'POST',body:JSON.stringify({user_id:prof.id,from_account_id:fromId,to_account_id:toId,amount:amt,fee,note,date})},false);
+    // Update balances
+    await Promise.all([
+      sb(`/rest/v1/accounts?id=eq.${fromId}`,{method:'PATCH',body:JSON.stringify({balance:Number(fromAcc[0].balance)-amt-fee})},false),
+      sb(`/rest/v1/accounts?id=eq.${toId}`,{method:'PATCH',body:JSON.stringify({balance:Number(toAcc[0].balance)+amt})},false)
+    ]);
+    closeSheet('sh-transfer');
+    toast('轉帳成功');
+    loadFinance();
+  }catch(e){toast('轉帳失敗','err');}
+}
+
 async function loadAllTxns(){
   try{
     const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&order=date.desc,created_at.desc`,{},false);
@@ -1131,19 +1243,24 @@ async function openAccDetail(id){
     if(isInv){
       const holdings=await sb(`/rest/v1/holdings?account_id=eq.${id}&order=created_at.desc`,{},false);
       if(!holdings.length){contEl.innerHTML='<div class="empty"><p>尚無持倉</p></div>';}
-      else{contEl.innerHTML=holdings.map(h=>`
-        <div class="holding-row">
+      else{contEl.innerHTML=holdings.map(h=>{
+        const cost=Number(h.quantity)*Number(h.avg_cost);
+        const currentVal=Number(h.quantity)*(Number(h.current_price)||Number(h.avg_cost));
+        const unrealized=currentVal-cost;
+        const pct=cost>0?(unrealized/cost*100).toFixed(1):0;
+        return`<div class="holding-row">
           <div>
             <div class="holding-sym">${h.symbol}</div>
             <div class="holding-name">${h.name}</div>
-            <div class="holding-qty">持有 ${Number(h.quantity).toLocaleString()} 股／單位</div>
+            <div class="holding-qty">持有 ${Number(h.quantity).toLocaleString()} 股 · 均價 $${Number(h.avg_cost).toLocaleString()}</div>
           </div>
           <div style="text-align:right;">
-            <div class="holding-amt">NT$${(Number(h.quantity)*Number(h.avg_cost)).toLocaleString()}</div>
-            <div class="holding-qty">均價 ${Number(h.avg_cost).toLocaleString()}</div>
+            <div class="holding-amt">NT$${Math.round(cost).toLocaleString()}</div>
+            <div class="holding-pnl" style="color:${unrealized>=0?'var(--green)':'var(--red)'};">${unrealized>=0?'+':''}NT$${Math.round(unrealized).toLocaleString()} (${pct}%)</div>
             <button class="btn btn-gold btn-sm" style="margin-top:4px;" onclick="openInvTxn('${h.id}')">交易</button>
           </div>
-        </div>`).join('');}
+        </div>`;
+      }).join('');}
     }else{
       contEl.innerHTML=`
         <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">NT$${Number(currentAcc.balance).toLocaleString()}</div></div>
@@ -1245,6 +1362,14 @@ function renderInvTxns(allInvTxns,holdings,txEl){
   if(!allInvTxns.length){txEl.innerHTML='<div class="empty"><p>尚無交易記錄</p></div>';return;}
   txEl.innerHTML=allInvTxns.map(t=>{
     const h=holdings.find(x=>x.id===t.holding_id);
+    // Calculate P&L for sell transactions
+    let pnl='';
+    if(t.type==='sell'&&h){
+      const cost=Number(h.avg_cost)*Number(t.quantity);
+      const revenue=Number(t.total);
+      const profit=revenue-cost;
+      pnl=`<div class="list-sub" style="color:${profit>=0?'var(--green)':'var(--red)'};">${profit>=0?'獲利':'虧損'} NT$${Math.abs(Math.round(profit)).toLocaleString()}</div>`;
+    }
     return`<div class="list-row">
       <div class="list-icon" style="background:${t.type==='buy'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
         <i class="ti ${t.type==='buy'?'ti-trending-up':'ti-trending-down'}" style="color:${t.type==='buy'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
@@ -1252,6 +1377,7 @@ function renderInvTxns(allInvTxns,holdings,txEl){
       <div class="list-info">
         <div class="list-title">${t.type==='buy'?'買入':'賣出'} ${h?h.symbol+' '+h.name:''}</div>
         <div class="list-sub">${t.quantity}股 × $${Number(t.price).toLocaleString()} · 費$${Number(t.fee).toLocaleString()} · ${t.date}</div>
+        ${pnl}
       </div>
       <div class="list-right">
         <div class="list-amt ${t.type==='buy'?'amt-neg':'amt-pos'}">${t.type==='buy'?'-':'+'}NT$${Number(t.total).toLocaleString()}</div>
@@ -1262,13 +1388,18 @@ function renderInvTxns(allInvTxns,holdings,txEl){
 
 function renderRegTxns(txns,txEl){
   if(!txns.length){txEl.innerHTML='<div class="empty"><p>尚無交易記錄</p></div>';return;}
-  txEl.innerHTML=txns.map(t=>`
+  window._regTxns=txns;
+  txEl.innerHTML=txns.map((t,i)=>`
     <div class="list-row">
       <div class="list-icon" style="background:${t.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
         <i class="ti ${t.type==='income'?'ti-arrow-down-circle':'ti-arrow-up-circle'}" style="color:${t.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
       </div>
       <div class="list-info"><div class="list-title">${t.note||'記帳'}</div><div class="list-sub">${t.date}</div></div>
-      <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
+        <button class="icon-btn" data-txn-idx="${i}" onclick="editTxnByIdx(this.dataset.txnIdx)" style="padding:3px 6px;font-size:13px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+        <button class="icon-btn" onclick="delTxnFromAcc('${t.id}',${t.amount},'${t.type}','${t.account_id}')" style="padding:3px 6px;font-size:13px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>
     </div>`).join('');
 }
 
@@ -1368,25 +1499,46 @@ async function loadExpCatOptions(){
 }
 async function openSheet(id){
   document.getElementById(id).classList.add('on');
+  if(id==='sh-transfer'){await initTransferSheet();document.getElementById(id).classList.add('on');return;}
   if(id==='sh-txn'){setTxnType('expense');document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);document.getElementById('txn-amt').value='';document.getElementById('txn-note').value='';await loadExpCatOptions();}
   if(id==='sh-todo'){document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');}
 }
 async function saveTxn(){
+  const id=document.getElementById('txn-id').value;
   const accId=document.getElementById('txn-account').value;
   const amt=parseFloat(document.getElementById('txn-amt').value);
   if(!accId||!amt){toast('請填寫帳戶和金額','err');return;}
   const body={user_id:prof.id,account_id:accId,type:txnType,amount:amt,category_id:document.getElementById('txn-cat').value||null,note:document.getElementById('txn-note').value.trim(),date:document.getElementById('txn-date').value};
   try{
-    await sb('/rest/v1/transactions',{method:'POST',body:JSON.stringify(body)},false);
-    // Update account balance
+    if(id){
+      // Edit: get old txn to reverse balance
+      const oldTxns=await sb(`/rest/v1/transactions?id=eq.${id}`,{},false);
+      if(oldTxns.length){
+        const old=oldTxns[0];
+        // Reverse old effect
+        const oldAccs=await sb(`/rest/v1/accounts?id=eq.${old.account_id}`,{},false);
+        if(oldAccs.length){
+          const reversal=old.type==='income'?-Number(old.amount):Number(old.amount);
+          await sb(`/rest/v1/accounts?id=eq.${old.account_id}`,{method:'PATCH',body:JSON.stringify({balance:Number(oldAccs[0].balance)+reversal})},false);
+        }
+      }
+      await sb(`/rest/v1/transactions?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)},false);
+    } else {
+      await sb('/rest/v1/transactions',{method:'POST',body:JSON.stringify(body)},false);
+    }
+    // Apply new balance effect
     const accs=await sb(`/rest/v1/accounts?id=eq.${accId}`,{},false);
     if(accs.length){
       const delta=txnType==='income'?amt:-amt;
       await sb(`/rest/v1/accounts?id=eq.${accId}`,{method:'PATCH',body:JSON.stringify({balance:Number(accs[0].balance)+delta})},false);
     }
-    closeSheet('sh-txn');toast('記帳成功');
+    closeSheet('sh-txn');
+    document.getElementById('txn-id').value='';
+    document.getElementById('sh-txn-title').textContent='新增記帳';
+    toast(id?'已更新':'記帳成功');
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
+    if(document.getElementById('det-account').classList.contains('on'))openAccDetail(accId);
   }catch(e){toast('儲存失敗','err');}
 }
 
@@ -1439,19 +1591,47 @@ function showCalDay(){
         ${e.end_time?`<div class="tl-desc">結束 ${e.end_time.slice(0,5)}</div>`:''}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
           ${e.is_shared?'<span class="tag tag-blue">共用</span>':'<span class="tag tag-gold">個人</span>'}
-          <button class="icon-btn" onclick="delEvent('${e.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          <div style="display:flex;gap:4px;">
+            <button class="icon-btn" data-ev-id="${e.id}" data-ev-title="${e.title.replace(/'/g,\'\')}" data-ev-desc="${(e.description||'').replace(/'/g,\'\')}" data-ev-date="${e.start_date}" data-ev-start="${e.start_time||''}" data-ev-end="${e.end_time||''}" data-ev-shared="${e.is_shared}" onclick="editEventFromBtn(this)"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" onclick="delEvent('${e.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          </div>
         </div>
       </div>
     </div>`).join('')+'</div>';
 }
+function editEventFromBtn(btn){
+  const id=btn.dataset.evId;
+  const title=btn.dataset.evTitle;
+  const desc=btn.dataset.evDesc;
+  const date=btn.dataset.evDate;
+  const start=btn.dataset.evStart;
+  const end=btn.dataset.evEnd;
+  const shared=btn.dataset.evShared==='true';
+  document.getElementById('sh-ev-title').textContent='編輯行程';
+  document.getElementById('ev-id').value=id;
+  document.getElementById('ev-title').value=title;
+  document.getElementById('ev-desc').value=desc;
+  document.getElementById('ev-date').value=date;
+  document.getElementById('ev-start').value=start;
+  document.getElementById('ev-end').value=end;
+  setEvType(shared);
+  openSheet('sh-event');
+}
+
 function openSheet_event(){setEvType(false);document.getElementById('ev-date').value=calSel;document.getElementById('ev-title').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-desc').value='';openSheet('sh-event');}
 async function saveEvent(){
+  const id=document.getElementById('ev-id').value;
   const body={user_id:prof.id,title:document.getElementById('ev-title').value.trim(),start_date:document.getElementById('ev-date').value,start_time:document.getElementById('ev-start').value||null,end_time:document.getElementById('ev-end').value||null,description:document.getElementById('ev-desc').value.trim(),is_shared:evIsShared,color:evIsShared?'#6B9EF0':'#D4AA6A'};
   if(!body.title||!body.start_date){toast('請填寫標題和日期','err');return;}
   try{
-    await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(body)},false);
+    if(id){
+      await sb(`/rest/v1/events?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)},false);
+      toast('行程已更新');
+    } else {
+      await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(body)},false);
+      toast('行程已新增');
+    }
     closeSheet('sh-event');
-    toast('行程已新增');
     await renderCal();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
   }catch(e){toast('儲存失敗','err');}
