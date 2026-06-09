@@ -883,8 +883,8 @@ async function loadHome(){
     if(!show.length){tdEl.innerHTML='<div class="empty"><p>沒有未完成待辦</p></div>';}
     else{
       tdEl.innerHTML=show.map(t=>`
-        <div class="list-row" onclick="quickDone('${t.id}')">
-          <div style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--text3);flex-shrink:0;display:flex;align-items:center;justify-content:center;"></div>
+        <div class="list-row">
+          <div style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--text3);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="quickDone('${t.id}')"></div>
           <div class="list-info"><div class="list-title">${t.title}</div>${t.due_date?`<div class="list-sub">截止 ${t.due_date}</div>`:''}</div>
           <span class="tag tag-${t.priority}">${{high:'高',normal:'一般',low:'低'}[t.priority]}</span>
         </div>`).join('');
@@ -1248,8 +1248,8 @@ async function loadTodos(){
     if(todoFilter==='mine')url+=`&user_id=eq.${prof.id}&assigned_to=is.null`;
     else if(todoFilter==='assigned_to_me')url+=`&assigned_to=eq.${prof.id}`;
     else if(todoFilter==='i_assigned')url+=`&user_id=eq.${prof.id}&assigned_to=not.is.null`;
-    else if(todoFilter==='done')url+=`&completed=eq.true&or=(user_id.eq.${prof.id},assigned_to.eq.${prof.id})`;
-    else url+=`&or=(user_id.eq.${prof.id},assigned_to.eq.${prof.id})`;
+    else if(todoFilter==='done')url+=`&completed=eq.true&user_id=eq.${prof.id}`;
+    else url+=`&user_id=eq.${prof.id}`;
     if(todoFilter!=='done')url+='&completed=eq.false';
     const todos=await sb(url,{},false);
     const el=document.getElementById('todo-list');
