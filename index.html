@@ -883,8 +883,8 @@ async function loadHome(){
     if(!show.length){tdEl.innerHTML='<div class="empty"><p>沒有未完成待辦</p></div>';}
     else{
       tdEl.innerHTML=show.map(t=>`
-        <div class="list-row">
-          <div style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--text3);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="quickDone('${t.id}')"></div>
+        <div class="list-row" style="cursor:default;">
+          <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid var(--text3);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="event.stopPropagation();quickDone('${t.id}')"></div>
           <div class="list-info"><div class="list-title">${t.title}</div>${t.due_date?`<div class="list-sub">截止 ${t.due_date}</div>`:''}</div>
           <span class="tag tag-${t.priority}">${{high:'高',normal:'一般',low:'低'}[t.priority]}</span>
         </div>`).join('');
@@ -1258,16 +1258,16 @@ async function loadTodos(){
     el.innerHTML=todos.map(t=>{
       const assignee=allUsers.find(u=>u.id===t.assigned_to);
       const owner=allUsers.find(u=>u.id===t.user_id);
-      return`<div class="list-row">
-        <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid ${t.completed?'var(--green)':'var(--text3)'};flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:${t.completed?'var(--green)':'transparent'};" onclick="toggleTodo('${t.id}',${t.completed})">
+      return`<div class="list-row" style="cursor:default;">
+        <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${t.completed?'var(--green)':'var(--text3)'};flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:${t.completed?'var(--green)':'transparent'};" onclick="event.stopPropagation();toggleTodo('${t.id}',${t.completed})">
           ${t.completed?'<i class="ti ti-check" style="font-size:12px;color:#fff" aria-hidden="true"></i>':''}
         </div>
         <div class="list-info">
-          <div class="list-title${t.completed?' ':''}" style="${t.completed?'text-decoration:line-through;color:var(--text3);':''}">${t.title}</div>
+          <div class="list-title" style="${t.completed?'text-decoration:line-through;color:var(--text3);':''}">${t.title}</div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;">
             <span class="tag tag-${t.priority}">${priLabel[t.priority]}</span>
             ${t.due_date?`<span style="font-size:10px;color:var(--text3);">截止 ${t.due_date}</span>`:''}
-            ${assignee?`<span class="tag tag-gold">→ ${assignee.display_name||assignee.username}</span>`:''}
+            ${t.assigned_to&&assignee?`<span class="tag tag-gold">→ ${assignee.display_name||assignee.username}</span>`:t.assigned_to?`<span class="tag tag-gold">→ 已指派</span>`:''}
             ${t.user_id!==prof.id&&owner?`<span class="tag tag-blue">來自 ${owner.display_name||owner.username}</span>`:''}
           </div>
         </div>
