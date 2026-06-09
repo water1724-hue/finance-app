@@ -1040,8 +1040,8 @@ async function openAccDetail(id){
         ${currentAcc.payment_day?`<div class="list-row"><div class="list-info"><div class="list-sub">繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}`;
     }
     // Txns - check if investment account
-    const cat=accCats.find(c=>c.id===currentAcc.category_id);
-    const isInvAcc=['securities','fund','forex'].includes(cat?.type);
+    const accCat=accCats.find(c=>c.id===currentAcc.category_id);
+    const isInvAcc=['securities','fund','forex'].includes(accCat?.type);
     const txEl=document.getElementById('det-acc-txns');
     
     if(isInvAcc){
