@@ -1045,18 +1045,12 @@ async function openAccDetail(id){
     const txEl=document.getElementById('det-acc-txns');
     
     if(isInvAcc){
-      // Show investment transactions
-      const invTxns=await sb(`/rest/v1/investment_txns?bank_account_id=eq.${id}&order=date.desc&limit=30`,{},false);
-      // Also get txns where holding is in this account
+      // Show investment transactions - get holdings first, then their txns
       const holdings=await sb(`/rest/v1/holdings?account_id=eq.${id}`,{},false);
       const holdingIds=holdings.map(h=>h.id);
-      let allInvTxns=invTxns;
+      let allInvTxns=[];
       if(holdingIds.length){
-        const holdingTxns=await sb(`/rest/v1/investment_txns?holding_id=in.(${holdingIds.join(',')})&order=date.desc&limit=30`,{},false);
-        // Merge and deduplicate
-        const seen=new Set(invTxns.map(t=>t.id));
-        holdingTxns.forEach(t=>{if(!seen.has(t.id)){allInvTxns.push(t);seen.add(t.id);}});
-        allInvTxns.sort((a,b)=>new Date(b.date)-new Date(a.date));
+        allInvTxns=await sb(`/rest/v1/investment_txns?holding_id=in.(${holdingIds.join(',')})&order=date.desc&limit=50`,{},false);
       }
       if(!allInvTxns.length){txEl.innerHTML='<div class="empty"><p>尚無交易記錄</p></div>';}
       else{
