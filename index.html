@@ -1592,13 +1592,27 @@ function showCalDay(){
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
           ${e.is_shared?'<span class="tag tag-blue">共用</span>':'<span class="tag tag-gold">個人</span>'}
           <div style="display:flex;gap:4px;">
-            <button class="icon-btn" data-ev-id="${e.id}" data-ev-title="${e.title.replace(/'/g,\'\')}" data-ev-desc="${(e.description||'').replace(/'/g,\'\')}" data-ev-date="${e.start_date}" data-ev-start="${e.start_time||''}" data-ev-end="${e.end_time||''}" data-ev-shared="${e.is_shared}" onclick="editEventFromBtn(this)"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" data-idx="${i}" onclick="editCalEvent(parseInt(this.dataset.idx))"><i class="ti ti-pencil" aria-hidden="true"></i></button>
             <button class="icon-btn" onclick="delEvent('${e.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
           </div>
         </div>
       </div>
     </div>`).join('')+'</div>';
 }
+function editCalEvent(idx){
+  const e=window._calEvents?.[idx];
+  if(!e)return;
+  document.getElementById('sh-ev-title').textContent='編輯行程';
+  document.getElementById('ev-id').value=e.id;
+  document.getElementById('ev-title').value=e.title;
+  document.getElementById('ev-desc').value=e.description||'';
+  document.getElementById('ev-date').value=e.start_date;
+  document.getElementById('ev-start').value=e.start_time||'';
+  document.getElementById('ev-end').value=e.end_time||'';
+  setEvType(e.is_shared);
+  openSheet('sh-event');
+}
+
 function editEventFromBtn(btn){
   const id=btn.dataset.evId;
   const title=btn.dataset.evTitle;
