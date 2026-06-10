@@ -1591,9 +1591,9 @@ function showCalDay(){
         ${e.end_time?`<div class="tl-desc">結束 ${e.end_time.slice(0,5)}</div>`:''}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
           ${e.is_shared?'<span class="tag tag-blue">共用</span>':'<span class="tag tag-gold">個人</span>'}
-          <div style="display:flex;gap:4px;">
-            <button class="icon-btn" data-idx="${i}" onclick="editCalEvent(parseInt(this.dataset.idx))"><i class="ti ti-pencil" aria-hidden="true"></i></button>
-            <button class="icon-btn" onclick="delEvent('${e.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          <div style="display:flex;gap:4px;position:relative;z-index:10;">
+            <button class="icon-btn" data-idx="${i}" onclick="editCalEvent(parseInt(this.dataset.idx))" style="pointer-events:auto;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" onclick="delEvent('${e.id}')" style="pointer-events:auto;"><i class="ti ti-trash" aria-hidden="true"></i></button>
           </div>
         </div>
       </div>
