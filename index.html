@@ -1581,7 +1581,7 @@ function showCalDay(){
   if(evFilter==='shared')evs=evs.filter(e=>e.is_shared);
   const el=document.getElementById('cal-ev-list');
   if(!evs.length){el.innerHTML='<div class="empty"><p>這天沒有行程</p></div>';return;}
-  el.innerHTML='<div class="tl-wrap"><div class="tl-vline"></div>'+evs.map(e=>`
+  el.innerHTML='<div class="tl-wrap"><div class="tl-vline"></div>'+evs.map((e,i)=>`
     <div class="tl-item">
       <div class="tl-dot" style="background:${e.color||'var(--gold)'}"></div>
       <div class="tl-time">${e.start_time?e.start_time.slice(0,5):'全天'}</div>
