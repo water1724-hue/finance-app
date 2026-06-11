@@ -275,15 +275,6 @@ select.inp option{background:var(--bg2);}
         </div>
       </div>
 
-      <!-- 預算警示 -->
-      <div class="card" id="h-budget-alert-card" style="display:none;border-color:rgba(232,112,112,.3);">
-        <div class="row-between" style="margin-bottom:10px;">
-          <div class="sec-label" style="margin:0;color:var(--red);">⚠ 預算警示</div>
-          <span style="font-size:11px;color:var(--gold);cursor:pointer;" onclick="goPage('finance')">查看財務 →</span>
-        </div>
-        <div id="h-budget-alerts"></div>
-      </div>
-
       <!-- 今日行程 -->
       <div class="card">
         <div class="row-between" style="margin-bottom:12px;">
@@ -328,9 +319,6 @@ select.inp option{background:var(--bg2);}
 
       <!-- 大項 tabs -->
       <div class="ftabs" id="cat-tabs"></div>
-
-      <!-- 預算警示橫幅 -->
-      <div id="fin-budget-banner" style="display:none;margin-bottom:12px;"></div>
 
       <!-- 帳戶列表 -->
       <div class="row-between" style="margin-bottom:10px;">
@@ -469,6 +457,32 @@ select.inp option{background:var(--bg2);}
       </div>
     </div>
 
+    <!-- DOCS -->
+    <div class="page" id="pg-docs">
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">文件中心</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddDoc()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+      </div>
+      <!-- 類別篩選 -->
+      <div class="ftabs" id="doc-cat-tabs">
+        <button class="ftab on" onclick="setDocCat('all',this)">全部</button>
+        <button class="ftab" onclick="setDocCat('合約',this)">合約</button>
+        <button class="ftab" onclick="setDocCat('保險',this)">保險</button>
+        <button class="ftab" onclick="setDocCat('證件',this)">證件</button>
+        <button class="ftab" onclick="setDocCat('醫療',this)">醫療</button>
+        <button class="ftab" onclick="setDocCat('其他',this)">其他</button>
+      </div>
+      <!-- 即將到期提醒 -->
+      <div id="doc-expiry-banner" style="display:none;margin-bottom:12px;">
+        <div style="background:rgba(232,137,74,.1);border:0.5px solid rgba(232,137,74,.35);border-radius:14px;padding:10px 14px;">
+          <div style="font-size:11px;color:var(--orange);font-weight:600;margin-bottom:4px;"><i class="ti ti-clock-exclamation"></i> 即將到期</div>
+          <div id="doc-expiry-list" style="font-size:12px;color:var(--text2);"></div>
+        </div>
+      </div>
+      <!-- 文件列表 -->
+      <div class="card"><div id="doc-list"></div></div>
+    </div>
+
     <!-- MORE -->
     <div class="page" id="pg-more">
       <div class="pg-title">更多</div>
@@ -485,6 +499,11 @@ select.inp option{background:var(--bg2);}
         <div class="menu-item" onclick="goPage('report')">
           <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-chart-bar" style="color:var(--blue)" aria-hidden="true"></i></div>
           <div class="mi-info"><div class="mi-title">月報表</div><div class="mi-sub">收支統計與趨勢分析</div></div>
+          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
+        <div class="menu-item" onclick="goPage('docs')">
+          <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-folder" style="color:var(--green)" aria-hidden="true"></i></div>
+          <div class="mi-info"><div class="mi-title">文件中心</div><div class="mi-sub">合約、保險、證件、醫療記錄</div></div>
           <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
         </div>
         <div class="menu-item" onclick="goPage('ai')">
@@ -561,6 +580,23 @@ select.inp option{background:var(--bg2);}
 </div>
 
 <!-- DETAIL PAGES -->
+
+<!-- 文件詳情 -->
+<div class="det" id="det-doc">
+  <div class="det-back" onclick="hideDet('det-doc')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
+  <div class="row-between" style="margin-bottom:4px;">
+    <div style="font-size:18px;font-weight:700;flex:1;margin-right:8px;" id="det-doc-title"></div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-ghost btn-sm" id="det-doc-edit-btn" onclick="editCurrentDoc()"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+      <button class="btn btn-danger btn-sm" id="det-doc-del-btn" onclick="delCurrentDoc()"><i class="ti ti-trash" aria-hidden="true"></i></button>
+    </div>
+  </div>
+  <div id="det-doc-cat-tag" style="margin-bottom:16px;"></div>
+  <div class="card" style="margin-bottom:12px;"><div id="det-doc-info"></div></div>
+  <div id="det-doc-file-wrap"></div>
+  <div id="det-doc-note-wrap"></div>
+</div>
+
 <div class="det" id="det-account">
   <div class="det-back" onclick="hideDet('det-account')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
   <div class="row-between" style="margin-bottom:16px;">
@@ -980,6 +1016,53 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- 新增/編輯文件 -->
+<div class="overlay" id="sh-doc">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-doc-title">新增文件</h3>
+    <input type="hidden" id="doc-id">
+    <div class="field"><label>文件名稱 *</label><input class="inp" type="text" id="doc-title" placeholder="例如：玉山銀行開戶合約"></div>
+    <div class="field"><label>類別</label>
+      <select class="inp" id="doc-category">
+        <option value="合約">合約／法律文件</option>
+        <option value="保險">保險單</option>
+        <option value="證件">重要證件</option>
+        <option value="醫療">醫療記錄</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div id="doc-custom-cat-field" style="display:none;">
+      <div class="field"><label>自訂類別名稱</label><input class="inp" type="text" id="doc-custom-cat" placeholder="輸入類別名稱"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div class="field" style="flex:1;"><label>發行機構</label><input class="inp" type="text" id="doc-issuer" placeholder="例如：玉山銀行"></div>
+      <div class="field" style="flex:1;"><label>文件編號</label><input class="inp" type="text" id="doc-number" placeholder="選填"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div class="field" style="flex:1;"><label>發行日期</label><input class="inp" type="date" id="doc-issue-date"></div>
+      <div class="field" style="flex:1;"><label>到期日期</label><input class="inp" type="date" id="doc-expiry-date"></div>
+    </div>
+    <div class="field"><label>附件上傳</label>
+      <div id="doc-file-area" style="border:0.5px dashed var(--border2);border-radius:12px;padding:14px;text-align:center;cursor:pointer;background:var(--bg2);" onclick="document.getElementById('doc-file-input').click()">
+        <i class="ti ti-upload" style="font-size:22px;color:var(--text3);" aria-hidden="true"></i>
+        <div style="font-size:12px;color:var(--text3);margin-top:6px;" id="doc-file-label">點擊選擇檔案（PDF、圖片等，最大 10MB）</div>
+      </div>
+      <input type="file" id="doc-file-input" style="display:none;" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="onDocFileChange(this)">
+    </div>
+    <div class="field"><label>備註</label><textarea class="inp" id="doc-note" rows="3" placeholder="選填" style="resize:none;"></textarea></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2);">
+        <input type="checkbox" id="doc-shared" style="width:16px;height:16px;"> 共用（所有使用者可見）
+      </label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-doc')">取消</button>
+      <button class="btn btn-gold" onclick="saveDoc()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -1106,6 +1189,7 @@ function goPage(p){
   if(p==='todo')loadTodos();
   if(p==='announce')loadAnnouncements();
   if(p==='report')initReport();
+  if(p==='docs')loadDocs();
 }
 function showDet(id){
   if(id==='det-users'&&prof.role!=='admin'){toast('無權限','err');return;}
@@ -1214,8 +1298,6 @@ async function loadHome(){
         });
       }
     }catch(e){}
-    // 預算警示
-    loadBudgetAlerts();
   }catch(e){console.error(e);}
 }
 
@@ -1224,135 +1306,7 @@ async function quickDone(id){
   catch(e){}
 }
 
-// BUDGET ALERTS
-async function loadBudgetAlerts(){
-  try{
-    const now=new Date();
-    const year=now.getFullYear();
-    const month=now.getMonth()+1;
-    const mStart=`${year}-${String(month).padStart(2,'0')}-01`;
-    const mEnd=`${year}-${String(month).padStart(2,'0')}-${String(new Date(year,month,0).getDate()).padStart(2,'0')}`;
-
-    const [budgets,cats,txns]=await Promise.all([
-      sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{},false),
-      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&parent_id=is.null&is_active=neq.false`,{},false),
-      sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&type=eq.expense&date=gte.${mStart}&date=lte.${mEnd}`,{},false)
-    ]);
-
-    if(!budgets.length){
-      // 沒有設定任何預算，隱藏
-      document.getElementById('h-budget-alert-card').style.display='none';
-      const banner=document.getElementById('fin-budget-banner');
-      if(banner)banner.style.display='none';
-      return;
-    }
-
-    // 算各父類別本月支出（子類別要對應到父類別）
-    const allCats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{},false);
-    const spentMap={};
-    txns.forEach(t=>{
-      if(!t.category_id)return;
-      // 找父類別
-      const thisCat=allCats.find(c=>c.id===t.category_id);
-      const parentId=thisCat?.parent_id||thisCat?.id;
-      if(parentId){spentMap[parentId]=(spentMap[parentId]||0)+Number(t.amount);}
-    });
-
-    // 比對預算，找出警示
-    const warnings=[]; // {name, spent, budget, pct, level:'warning'|'danger'}
-    budgets.forEach(b=>{
-      const cat=cats.find(c=>c.id===b.category_id);
-      if(!cat)return;
-      const bgtAmt=Number(b.amount);
-      if(!bgtAmt)return;
-      const spent=spentMap[b.category_id]||0;
-      const pct=spent/bgtAmt*100;
-      if(pct>=80){
-        warnings.push({
-          name:cat.name,
-          spent,
-          budget:bgtAmt,
-          pct:Math.round(pct),
-          level:pct>=100?'danger':'warning'
-        });
-      }
-    });
-
-    // 排序：超標的先，再依比例降序
-    warnings.sort((a,b)=>{
-      if(a.level!==b.level)return a.level==='danger'?-1:1;
-      return b.pct-a.pct;
-    });
-
-    // 首頁警示卡
-    const homeCard=document.getElementById('h-budget-alert-card');
-    const homeList=document.getElementById('h-budget-alerts');
-    if(warnings.length){
-      homeCard.style.display='block';
-      homeList.innerHTML=warnings.map(w=>{
-        const isDanger=w.level==='danger';
-        const color=isDanger?'var(--red)':'var(--orange)';
-        const barColor=isDanger?'var(--red)':'#E8894A';
-        const barPct=Math.min(w.pct,100);
-        return`<div style="padding:8px 0;border-bottom:0.5px solid var(--border);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:13px;color:${color};">${isDanger?'🔴':'🟡'}</span>
-              <span style="font-size:13px;font-weight:600;">${w.name}</span>
-            </div>
-            <div style="text-align:right;">
-              <span style="font-size:12px;font-weight:700;color:${color};">${w.pct}%</span>
-              <span style="font-size:11px;color:var(--text3);margin-left:4px;">NT$${w.spent.toLocaleString()} / ${w.budget.toLocaleString()}</span>
-            </div>
-          </div>
-          <div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;">
-            <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:2px;transition:width .4s;"></div>
-          </div>
-          ${isDanger?`<div style="font-size:11px;color:var(--red);margin-top:3px;">超支 NT$${(w.spent-w.budget).toLocaleString()}</div>`:''}
-        </div>`;
-      }).join('');
-    } else {
-      homeCard.style.display='none';
-    }
-
-    // 財務頁橫幅
-    const banner=document.getElementById('fin-budget-banner');
-    if(!banner)return;
-    if(warnings.length){
-      const dangerCount=warnings.filter(w=>w.level==='danger').length;
-      const warnCount=warnings.filter(w=>w.level==='warning').length;
-      const msgs=[];
-      if(dangerCount)msgs.push(`<span style="color:var(--red);font-weight:700;">${dangerCount} 項超支</span>`);
-      if(warnCount)msgs.push(`<span style="color:var(--orange);font-weight:700;">${warnCount} 項接近上限</span>`);
-      banner.style.display='block';
-      banner.innerHTML=`<div style="background:rgba(232,112,112,0.08);border:0.5px solid rgba(232,112,112,0.3);border-radius:14px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;" aria-hidden="true"></i>
-          <span style="font-size:12px;">本月預算：${msgs.join('、')}</span>
-        </div>
-        <span style="font-size:11px;color:var(--gold);cursor:pointer;white-space:nowrap;" onclick="showDet('det-budget')">設定 →</span>
-      </div>
-      <div style="margin-top:8px;">
-        ${warnings.slice(0,3).map(w=>{
-          const isDanger=w.level==='danger';
-          const color=isDanger?'var(--red)':'var(--orange)';
-          const barPct=Math.min(w.pct,100);
-          return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border);">
-            <span style="font-size:11px;width:64px;flex-shrink:0;color:var(--text2);">${w.name}</span>
-            <div style="flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;">
-              <div style="height:100%;width:${barPct}%;background:${isDanger?'var(--red)':'#E8894A'};border-radius:3px;transition:width .4s;"></div>
-            </div>
-            <span style="font-size:11px;color:${color};font-weight:600;width:38px;text-align:right;">${w.pct}%</span>
-          </div>`;
-        }).join('')}
-        ${warnings.length>3?`<div style="font-size:11px;color:var(--text3);text-align:center;padding-top:6px;">還有 ${warnings.length-3} 項…</div>`:''}
-      </div>`;
-    } else {
-      banner.style.display='none';
-    }
-  }catch(e){console.error('Budget alerts error:',e);}
-}
-
+// FINANCE
 let accCats=[];
 async function loadFinance(){
   try{
@@ -1393,9 +1347,6 @@ async function loadFinance(){
 
     // Acc cat select
     document.getElementById('acc-cat').innerHTML=cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-
-    // 預算警示
-    loadBudgetAlerts();
   }catch(e){toast('載入失敗','err');}
 }
 
@@ -1957,7 +1908,6 @@ async function saveTxn(){
     toast(id?'已更新':'記帳成功');
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
-    else loadBudgetAlerts(); // 不在首頁也要更新警示
     if(document.getElementById('det-account').classList.contains('on'))openAccDetail(accId);
   }catch(e){toast('儲存失敗','err');}
 }
@@ -2770,8 +2720,6 @@ async function loadReport(){
       const pct=expense>0?(spent/expense*100).toFixed(1):0;
       const bgtPct=bgtAmt>0?Math.min(Math.round(spent/bgtAmt*100),100):0;
       const overBudget=bgtAmt>0&&spent>bgtAmt;
-      const nearBudget=bgtAmt>0&&!overBudget&&spent/bgtAmt>=0.8;
-      const barColor=overBudget?'var(--red)':nearBudget?'var(--orange)':'var(--green)';
       return`<div style="padding:8px 0;border-bottom:0.5px solid var(--border);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
           <div style="display:flex;align-items:center;gap:8px;">
@@ -2779,13 +2727,13 @@ async function loadReport(){
             <span style="font-size:13px;">${n}</span>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:13px;font-weight:600;color:${overBudget?'var(--red)':nearBudget?'var(--orange)':'var(--text)'};">NT$${spent.toLocaleString()}</div>
-            ${bgtAmt>0?`<div style="font-size:11px;color:var(--text3);">預算 NT$${bgtAmt.toLocaleString()} · ${Math.round(spent/bgtAmt*100)}%</div>`:`<div style="font-size:11px;color:var(--text3);">${pct}%</div>`}
+            <div style="font-size:13px;font-weight:600;color:${overBudget?'var(--red)':'var(--text)'};">NT$${spent.toLocaleString()}</div>
+            ${bgtAmt>0?`<div style="font-size:11px;color:var(--text3);">預算 NT$${bgtAmt.toLocaleString()} · ${pct}%</div>`:`<div style="font-size:11px;color:var(--text3);">${pct}%</div>`}
           </div>
         </div>
         ${bgtAmt>0?`<div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;">
-          <div style="height:100%;width:${bgtPct}%;background:${barColor};border-radius:2px;transition:width .3s;"></div>
-        </div>${overBudget?`<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ 超出預算 NT$${(spent-bgtAmt).toLocaleString()}</div>`:nearBudget?`<div style="font-size:11px;color:var(--orange);margin-top:3px;">⚡ 已達 ${Math.round(spent/bgtAmt*100)}%，接近上限</div>`:''}`:''}
+          <div style="height:100%;width:${bgtPct}%;background:${overBudget?'var(--red)':'var(--green)'};border-radius:2px;transition:width .3s;"></div>
+        </div>${overBudget?`<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ 超出預算 NT$${(spent-bgtAmt).toLocaleString()}</div>`:''}`:''}
       </div>`;
     }).join('');
 
@@ -3030,6 +2978,304 @@ function appendTyping(id){
   el.appendChild(d);el.scrollTop=el.scrollHeight;
 }
 function removeTyping(id){document.getElementById(id)?.remove();}
+
+// ─── DOCUMENT CENTER ───────────────────────────────────────────
+let docCatFilter='all';
+let currentDoc=null;
+let docPendingFile=null; // 待上傳的 File 物件
+
+// 類別設定
+const DOC_CATS={
+  '合約': {icon:'ti-file-text',   color:'rgba(107,158,240,.1)', fg:'var(--blue)'},
+  '保險': {icon:'ti-shield',      color:'rgba(93,189,138,.1)',  fg:'var(--green)'},
+  '證件': {icon:'ti-id-badge',    color:'var(--gold-dim)',      fg:'var(--gold)'},
+  '醫療': {icon:'ti-heart-rate',  color:'rgba(232,112,112,.1)', fg:'var(--red)'},
+  '其他': {icon:'ti-folder',      color:'rgba(136,136,136,.1)', fg:'var(--text3)'},
+};
+function docCatStyle(cat){return DOC_CATS[cat]||{icon:'ti-folder',color:'rgba(136,136,136,.1)',fg:'var(--text3)'};}
+
+function setDocCat(cat,btn){
+  docCatFilter=cat;
+  document.querySelectorAll('#doc-cat-tabs .ftab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  loadDocs();
+}
+
+async function loadDocs(){
+  const el=document.getElementById('doc-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    let url=`/rest/v1/documents?order=expiry_date.asc.nullslast,created_at.desc`;
+    // 共用或自己的
+    const docs=await sb(url,{headers:{'Accept':'application/json'}},false);
+    // 過濾自己和共用
+    const myDocs=docs.filter(d=>d.user_id===getViewAsId()||d.is_shared);
+    const filtered=docCatFilter==='all'?myDocs:myDocs.filter(d=>d.category===docCatFilter);
+
+    // 到期提醒（30天內）
+    const today=new Date();
+    const soon=myDocs.filter(d=>{
+      if(!d.expiry_date)return false;
+      const exp=new Date(d.expiry_date);
+      const diff=Math.ceil((exp-today)/86400000);
+      return diff>=0&&diff<=30;
+    }).sort((a,b)=>new Date(a.expiry_date)-new Date(b.expiry_date));
+
+    const banner=document.getElementById('doc-expiry-banner');
+    const bannerList=document.getElementById('doc-expiry-list');
+    if(soon.length){
+      banner.style.display='block';
+      bannerList.innerHTML=soon.map(d=>{
+        const diff=Math.ceil((new Date(d.expiry_date)-today)/86400000);
+        return`<span style="margin-right:10px;">📄 ${d.title} <b style="color:var(--orange);">${diff===0?'今天到期':'剩'+diff+'天'}</b></span>`;
+      }).join('');
+    } else {
+      banner.style.display='none';
+    }
+
+    if(!filtered.length){
+      el.innerHTML='<div class="empty"><i class="ti ti-folder-open" aria-hidden="true"></i><p>尚無文件</p></div>';
+      return;
+    }
+
+    el.innerHTML=filtered.map(d=>{
+      const cs=docCatStyle(d.category);
+      const today2=new Date();
+      const exp=d.expiry_date?new Date(d.expiry_date):null;
+      const diff=exp?Math.ceil((exp-today2)/86400000):null;
+      const isExpired=diff!==null&&diff<0;
+      const isSoon=diff!==null&&diff>=0&&diff<=30;
+      let badge='';
+      if(isExpired) badge=`<span class="tag tag-high" style="margin-left:6px;">已到期</span>`;
+      else if(isSoon) badge=`<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(232,137,74,.12);color:var(--orange);margin-left:6px;">剩${diff}天</span>`;
+      return`<div class="list-row" onclick="openDocDetail('${d.id}')" style="cursor:pointer;">
+        <div class="list-icon" style="background:${cs.color}"><i class="ti ${cs.icon}" style="color:${cs.fg}" aria-hidden="true"></i></div>
+        <div class="list-info">
+          <div class="list-title">${d.title}${badge}</div>
+          <div class="list-sub">${d.category}${d.issuer?' · '+d.issuer:''}${d.expiry_date?' · 到期 '+d.expiry_date:''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          ${d.file_url?`<i class="ti ti-paperclip" style="color:var(--text3);font-size:14px;" aria-hidden="true"></i>`:''}
+          <i class="ti ti-chevron-right arr" aria-hidden="true"></i>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+
+function openDocDetail(id){
+  // 從已載入的列表找，或重新抓
+  sb(`/rest/v1/documents?id=eq.${id}`,{},false).then(docs=>{
+    if(!docs.length)return;
+    currentDoc=docs[0];
+    const d=currentDoc;
+    const cs=docCatStyle(d.category);
+    document.getElementById('det-doc-title').textContent=d.title;
+    document.getElementById('det-doc-cat-tag').innerHTML=
+      `<span class="tag" style="background:${cs.color};color:${cs.fg};">${d.category}</span>`+
+      (d.is_shared?` <span class="tag tag-blue">共用</span>`:'');
+
+    // 資訊列表
+    const rows=[];
+    if(d.issuer) rows.push(['發行機構',d.issuer]);
+    if(d.doc_number) rows.push(['文件編號',d.doc_number]);
+    if(d.issue_date) rows.push(['發行日期',d.issue_date]);
+    if(d.expiry_date){
+      const diff=Math.ceil((new Date(d.expiry_date)-new Date())/86400000);
+      const diffStr=diff<0?`<span style="color:var(--red);">已到期 ${Math.abs(diff)} 天</span>`:
+        diff<=30?`<span style="color:var(--orange);">剩 ${diff} 天</span>`:
+        `<span style="color:var(--text2);">${diff} 天後到期</span>`;
+      rows.push(['到期日期',`${d.expiry_date}　${diffStr}`]);
+    }
+    rows.push(['建立時間', new Date(d.created_at).toLocaleDateString('zh-TW')]);
+    document.getElementById('det-doc-info').innerHTML=rows.map(([k,v])=>
+      `<div class="list-row" style="cursor:default;">
+        <div class="list-sub" style="flex:0 0 72px;font-size:12px;">${k}</div>
+        <div style="font-size:13px;color:var(--text);">${v}</div>
+      </div>`).join('');
+
+    // 附件
+    const fw=document.getElementById('det-doc-file-wrap');
+    if(d.file_url){
+      fw.innerHTML=`<div class="sec-label" style="margin-top:4px;">附件</div>
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <i class="ti ti-paperclip" style="font-size:18px;color:var(--gold);" aria-hidden="true"></i>
+            <div>
+              <div style="font-size:13px;font-weight:500;">${d.file_name||'附件'}</div>
+              ${d.file_size?`<div style="font-size:11px;color:var(--text3);">${(d.file_size/1024/1024).toFixed(2)} MB</div>`:''}
+            </div>
+          </div>
+          <a href="${d.file_url}" target="_blank" class="btn btn-ghost btn-sm"><i class="ti ti-external-link" aria-hidden="true"></i> 開啟</a>
+        </div>`;
+    } else {
+      fw.innerHTML='';
+    }
+
+    // 備註
+    const nw=document.getElementById('det-doc-note-wrap');
+    if(d.note){
+      nw.innerHTML=`<div class="sec-label" style="margin-top:4px;">備註</div>
+        <div class="card" style="font-size:13px;color:var(--text2);line-height:1.7;">${d.note.replace(/\n/g,'<br>')}</div>`;
+    } else {
+      nw.innerHTML='';
+    }
+
+    showDet('det-doc');
+  }).catch(()=>toast('載入失敗','err'));
+}
+
+function openAddDoc(){
+  document.getElementById('doc-id').value='';
+  document.getElementById('doc-title').value='';
+  document.getElementById('doc-category').value='合約';
+  document.getElementById('doc-custom-cat').value='';
+  document.getElementById('doc-custom-cat-field').style.display='none';
+  document.getElementById('doc-issuer').value='';
+  document.getElementById('doc-number').value='';
+  document.getElementById('doc-issue-date').value='';
+  document.getElementById('doc-expiry-date').value='';
+  document.getElementById('doc-note').value='';
+  document.getElementById('doc-shared').checked=false;
+  document.getElementById('doc-file-label').textContent='點擊選擇檔案（PDF、圖片等，最大 10MB）';
+  document.getElementById('sh-doc-title').textContent='新增文件';
+  docPendingFile=null;
+  openSheet('sh-doc');
+}
+
+function editCurrentDoc(){
+  if(!currentDoc)return;
+  const d=currentDoc;
+  document.getElementById('doc-id').value=d.id;
+  document.getElementById('sh-doc-title').textContent='編輯文件';
+  document.getElementById('doc-title').value=d.title;
+  // 若 category 不在預設清單，顯示自訂欄
+  const defaultCats=['合約','保險','證件','醫療','其他'];
+  if(defaultCats.includes(d.category)){
+    document.getElementById('doc-category').value=d.category;
+    document.getElementById('doc-custom-cat-field').style.display='none';
+  } else {
+    document.getElementById('doc-category').value='其他';
+    document.getElementById('doc-custom-cat').value=d.category;
+    document.getElementById('doc-custom-cat-field').style.display='block';
+  }
+  document.getElementById('doc-issuer').value=d.issuer||'';
+  document.getElementById('doc-number').value=d.doc_number||'';
+  document.getElementById('doc-issue-date').value=d.issue_date||'';
+  document.getElementById('doc-expiry-date').value=d.expiry_date||'';
+  document.getElementById('doc-note').value=d.note||'';
+  document.getElementById('doc-shared').checked=!!d.is_shared;
+  document.getElementById('doc-file-label').textContent=d.file_name?`已有附件：${d.file_name}`:'點擊選擇檔案（可替換）';
+  docPendingFile=null;
+  hideDet('det-doc');
+  openSheet('sh-doc');
+}
+
+function onDocFileChange(input){
+  const file=input.files[0];
+  if(!file)return;
+  if(file.size>10*1024*1024){toast('檔案超過 10MB','err');input.value='';return;}
+  docPendingFile=file;
+  document.getElementById('doc-file-label').textContent=`已選擇：${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
+}
+
+// 類別切換顯示自訂欄
+document.getElementById('doc-category').addEventListener('change',function(){
+  document.getElementById('doc-custom-cat-field').style.display=
+    this.value==='其他'?'block':'none';
+});
+
+async function uploadDocFile(file, userId){
+  const ext=file.name.split('.').pop();
+  const path=`${userId}/${Date.now()}.${ext}`;
+  const r=await fetch(`${SB}/storage/v1/object/documents/${path}`,{
+    method:'POST',
+    headers:{
+      'apikey':PUB,
+      'Authorization':`Bearer ${me.token}`,
+      'Content-Type':file.type||'application/octet-stream',
+      'x-upsert':'true'
+    },
+    body:file
+  });
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||'上傳失敗');}
+  // 取得公開/簽署 URL（private bucket 用 signed URL）
+  const sr=await fetch(`${SB}/storage/v1/object/sign/documents/${path}?expiresIn=315360000`,{
+    method:'POST',
+    headers:{
+      'apikey':PUB,
+      'Authorization':`Bearer ${me.token}`,
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify({expiresIn:315360000})
+  });
+  const sd=await sr.json();
+  const signedUrl=sd.signedURL?`${SB}/storage/v1${sd.signedURL}`:null;
+  return{url:signedUrl||`${SB}/storage/v1/object/documents/${path}`,path,name:file.name,size:file.size};
+}
+
+async function saveDoc(){
+  const title=document.getElementById('doc-title').value.trim();
+  if(!title){toast('請填寫文件名稱','err');return;}
+  const id=document.getElementById('doc-id').value;
+  let category=document.getElementById('doc-category').value;
+  if(category==='其他'){
+    const custom=document.getElementById('doc-custom-cat').value.trim();
+    if(custom) category=custom;
+  }
+  const body={
+    user_id:prof.id,
+    title,
+    category,
+    issuer:document.getElementById('doc-issuer').value.trim()||null,
+    doc_number:document.getElementById('doc-number').value.trim()||null,
+    issue_date:document.getElementById('doc-issue-date').value||null,
+    expiry_date:document.getElementById('doc-expiry-date').value||null,
+    note:document.getElementById('doc-note').value.trim()||null,
+    is_shared:document.getElementById('doc-shared').checked,
+  };
+  // 上傳附件
+  if(docPendingFile){
+    try{
+      toast('上傳中…');
+      const finfo=await uploadDocFile(docPendingFile,prof.id);
+      body.file_url=finfo.url;
+      body.file_name=finfo.name;
+      body.file_size=finfo.size;
+    }catch(e){toast('附件上傳失敗：'+e.message,'err');return;}
+  }
+  try{
+    if(id){
+      await sb(`/rest/v1/documents?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({...body,updated_at:new Date().toISOString()})},false);
+      toast('已更新');
+    } else {
+      await sb('/rest/v1/documents',{method:'POST',body:JSON.stringify(body)},false);
+      toast('文件已儲存');
+    }
+    closeSheet('sh-doc');
+    docPendingFile=null;
+    loadDocs();
+    if(id&&currentDoc){
+      // 更新詳情頁
+      currentDoc={...currentDoc,...body};
+      hideDet('det-doc');
+    }
+  }catch(e){toast('儲存失敗','err');}
+}
+
+async function delCurrentDoc(){
+  if(!currentDoc)return;
+  if(!confirm(`確定刪除「${currentDoc.title}」？`))return;
+  try{
+    await sb(`/rest/v1/documents?id=eq.${currentDoc.id}`,{method:'DELETE'},false);
+    toast('已刪除');
+    hideDet('det-doc');
+    currentDoc=null;
+    loadDocs();
+  }catch(e){toast('刪除失敗','err');}
+}
+
+// ─── END DOCUMENT CENTER ────────────────────────────────────────
 
 // UTIL
 function timeAgo(iso){
