@@ -2057,7 +2057,7 @@ function initBudget(){
   const yearSel=document.getElementById('bgt-year');
   if(!yearSel.options.length){
     const y=now.getFullYear();
-    for(let i=y+1;i>=y-1;i--)yearSel.innerHTML+=`<option value="${i}">${i}年</option>`;
+    for(let i=y+3;i>=y-3;i--)yearSel.innerHTML+=`<option value="${i}">${i}年</option>`;
   }
   document.getElementById('bgt-year').value=now.getFullYear();
   document.getElementById('bgt-month').value=now.getMonth()+1;
@@ -2198,7 +2198,7 @@ function initReport(){
   const yearSel=document.getElementById('rpt-year');
   if(!yearSel.options.length){
     const currentYear=now.getFullYear();
-    for(let y=currentYear;y>=currentYear-2;y--){
+    for(let y=currentYear+3;y>=currentYear-3;y--){
       yearSel.innerHTML+=`<option value="${y}">${y}年</option>`;
     }
   }
