@@ -1502,7 +1502,7 @@ async function loadExpCatOptions(){
 }
 async function openSheet(id){
   document.getElementById(id).classList.add('on');
-  if(id==='sh-transfer'){await initTransferSheet();document.getElementById(id).classList.add('on');return;}
+  if(id==='sh-transfer'){document.getElementById(id).classList.add('on');initTransferSheet();return;}
   if(id==='sh-txn'){setTxnType('expense');document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);document.getElementById('txn-amt').value='';document.getElementById('txn-note').value='';await loadExpCatOptions();}
   if(id==='sh-todo'){document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');}
 }
