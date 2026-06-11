@@ -2837,14 +2837,9 @@ async function loadReport(){
 // EXPENSE CATEGORIES
 let currentParentCat=null;
 async function loadExpCats(){
-  // 取自己的類別 + 管理員的預設類別（供比對）
-  const [cats, defaultCats]=await Promise.all([
-    sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&order=sort_order.asc`,{},false),
-    sb(`/rest/v1/expense_categories?is_default=eq.true&order=sort_order.asc`,{},false)
-  ]);
-  // 預設類別名稱集合（用於比對）
-  const defaultNames=new Set(defaultCats.map(d=>d.name));
-
+  const isAdmin=prof.role==='admin';
+  // 管理員看自己的（含預設）；一般使用者看自己的類別
+  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&order=sort_order.asc`,{},false);
   const el=document.getElementById('exp-cat-list');
   if(!cats.length){el.innerHTML='<div class="empty"><p>尚無類別，點上方新增</p></div>';return;}
   const typeLabel={expense:'支出',income:'收入',both:'兩者'};
@@ -2853,8 +2848,9 @@ async function loadExpCats(){
   el.innerHTML=parents.map(p=>{
     const subs=children.filter(c=>c.parent_id===p.id);
     const isActive=p.is_active!==false;
-    // 判斷是否為預設類別（名稱對應到預設）
-    const isDefault=p.is_default||defaultNames.has(p.name);
+    const isDefault=!!p.is_default;
+    // 是否可操作：管理員全可，一般使用者不能動預設
+    const canEdit=isAdmin||!isDefault;
     return`<div style="border-bottom:0.5px solid var(--border);padding:12px 0;opacity:${isActive?'1':'0.6'};">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:6px;">
         <div style="flex:1;min-width:0;">
@@ -2866,30 +2862,33 @@ async function loadExpCats(){
           <div style="font-size:12px;color:var(--text3);margin-top:2px;">${typeLabel[p.type]||''}</div>
         </div>
         <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;">
-          ${prof.role==='admin'?`<button class="btn btn-ghost btn-sm" onclick="toggleDefault('${p.id}',${!!p.is_default})">${p.is_default?'取消預設':'設預設'}</button>`:''}
-          <button class="btn btn-ghost btn-sm" onclick="editExpCat('${p.id}','${p.name}','${p.type}',${isActive})">編輯</button>
+          ${isAdmin?`<button class="btn btn-ghost btn-sm" onclick="toggleDefault('${p.id}',${isDefault})">${isDefault?'取消預設':'設預設'}</button>`:''}
+          ${canEdit?`<button class="btn btn-ghost btn-sm" onclick="editExpCat('${p.id}','${p.name}','${p.type}',${isActive})">編輯</button>`:''}
           <button class="btn btn-ghost btn-sm" onclick="openAddSubCat('${p.id}','${p.name}')">＋ 細項</button>
-          ${isDefault
-            ? `<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:not-allowed;opacity:0.4;" disabled title="預設類別不可刪除">${isActive?'停用':'啟用'}</button>`
-            : `<button class="btn btn-ghost btn-sm" style="color:${isActive?'var(--red)':'var(--green)'};" onclick="toggleExpCatActive('${p.id}',${isActive})">${isActive?'停用':'啟用'}</button>`
+          ${canEdit
+            ? `<button class="btn btn-ghost btn-sm" style="color:${isActive?'var(--red)':'var(--green)'};" onclick="toggleExpCatActive('${p.id}',${isActive})">${isActive?'停用':'啟用'}</button>`
+            : `<span style="font-size:11px;color:var(--text4);padding:6px 8px;">🔒</span>`
           }
+          ${isAdmin?`<button class="icon-btn" onclick="delExpCat('${p.id}')" style="color:var(--red);font-size:15px;"><i class="ti ti-trash" aria-hidden="true"></i></button>`:''}
         </div>
       </div>
       ${subs.length?`<div style="margin-top:4px;">`+subs.map(s=>{
         const sActive=s.is_active!==false;
-        const sDefault=s.is_default||defaultNames.has(s.name);
+        const sDefault=!!s.is_default;
+        const sCanEdit=isAdmin||!sDefault;
         return`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0 7px 16px;border-top:0.5px solid var(--border);opacity:${sActive?'1':'0.6'};">
           <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;">
             <span style="color:var(--text4);">└</span> ${s.name}
             ${!sActive?'<span style="font-size:10px;color:var(--text3);">(停用)</span>':''}
             ${sDefault?'<span class="tag tag-gold" style="font-size:9px;">預設</span>':''}
           </div>
-          <div style="display:flex;gap:4px;">
-            <button class="icon-btn" onclick="editExpCat('${s.id}','${s.name}','${s.type}',${sActive})" style="font-size:14px;" title="編輯"><i class="ti ti-pencil" aria-hidden="true"></i></button>
-            ${sDefault
-              ? `<button class="icon-btn" style="opacity:0.3;cursor:not-allowed;" disabled title="預設細項不可停用/刪除"><i class="ti ti-lock" aria-hidden="true"></i></button>`
-              : `<button class="icon-btn" style="color:${sActive?'var(--red)':'var(--green)'};" onclick="toggleExpCatActive('${s.id}',${sActive})" title="${sActive?'停用':'啟用'}"><i class="ti ti-${sActive?'eye-off':'eye'}" aria-hidden="true"></i></button>`
+          <div style="display:flex;gap:4px;align-items:center;">
+            ${sCanEdit?`<button class="icon-btn" onclick="editExpCat('${s.id}','${s.name}','${s.type}',${sActive})" style="font-size:14px;" title="編輯"><i class="ti ti-pencil" aria-hidden="true"></i></button>`:''}
+            ${sCanEdit
+              ? `<button class="icon-btn" style="color:${sActive?'var(--red)':'var(--green)'};" onclick="toggleExpCatActive('${s.id}',${sActive})" title="${sActive?'停用':'啟用'}"><i class="ti ti-${sActive?'eye-off':'eye'}" aria-hidden="true"></i></button>`
+              : `<span style="font-size:11px;color:var(--text4);padding:4px;">🔒</span>`
             }
+            ${isAdmin?`<button class="icon-btn" onclick="delExpCat('${s.id}')" style="color:var(--red);font-size:14px;" title="刪除"><i class="ti ti-trash" aria-hidden="true"></i></button>`:''}
           </div>
         </div>`;
       }).join('')+'</div>':''}
@@ -2951,12 +2950,12 @@ async function saveExpCat(){
 }
 
 async function delExpCat(id){
-  // 先檢查是否為預設
-  const cat=await sb(`/rest/v1/expense_categories?id=eq.${id}`,{},false);
-  if(cat.length&&cat[0].is_default){toast('預設類別不可刪除','err');return;}
+  if(prof.role!=='admin'){toast('此功能僅限管理員','err');return;}
   if(!confirm('確定刪除？此類別下的細項也會一併刪除。'))return;
-  try{await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'DELETE'},false);toast('已刪除');loadExpCats();}
-  catch(e){toast('刪除失敗','err');}
+  try{
+    await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'DELETE'},false);
+    toast('已刪除');loadExpCats();
+  }catch(e){toast('刪除失敗','err');}
 }
 
 // AI CHAT
