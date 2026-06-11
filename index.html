@@ -1346,24 +1346,31 @@ async function openAccDetail(id){
     if(isInv){
       const holdings=await sb(`/rest/v1/holdings?account_id=eq.${id}&order=created_at.desc`,{},false);
       if(!holdings.length){contEl.innerHTML='<div class="empty"><p>尚無持倉</p></div>';}
-      else{contEl.innerHTML=holdings.map(h=>{
-        const cost=Number(h.quantity)*Number(h.avg_cost);
-        const currentVal=Number(h.quantity)*(Number(h.current_price)||Number(h.avg_cost));
-        const unrealized=currentVal-cost;
-        const pct=cost>0?(unrealized/cost*100).toFixed(1):0;
-        return`<div class="holding-row">
-          <div>
-            <div class="holding-sym">${h.symbol}</div>
-            <div class="holding-name">${h.name}</div>
-            <div class="holding-qty">持有 ${Number(h.quantity).toLocaleString()} 股 · 均價 $${Number(h.avg_cost).toLocaleString()}</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="holding-amt">NT$${Math.round(cost).toLocaleString()}</div>
-            <div class="holding-pnl" style="color:${unrealized>=0?'var(--green)':'var(--red)'};">${unrealized>=0?'+':''}NT$${Math.round(unrealized).toLocaleString()} (${pct}%)</div>
-            <button class="btn btn-gold btn-sm" style="margin-top:4px;" onclick="openInvTxn('${h.id}')">交易</button>
-          </div>
-        </div>`;
-      }).join('');}
+      else{
+        // Add update prices button
+        contEl.innerHTML=`<div style="text-align:right;margin-bottom:10px;">
+          <button class="btn btn-ghost btn-sm" onclick="updateHoldingPrices('${id}')"><i class="ti ti-refresh" aria-hidden="true"></i> 更新報價</button>
+        </div>`+holdings.map(h=>{
+          const cost=Number(h.quantity)*Number(h.avg_cost);
+          const curPrice=Number(h.current_price)||Number(h.avg_cost);
+          const currentVal=Number(h.quantity)*curPrice;
+          const unrealized=currentVal-cost;
+          const pct=cost>0?(unrealized/cost*100).toFixed(1):0;
+          const hasCurPrice=Number(h.current_price)>0;
+          return`<div class="holding-row">
+            <div>
+              <div class="holding-sym">${h.symbol}</div>
+              <div class="holding-name">${h.name}</div>
+              <div class="holding-qty">持有 ${Number(h.quantity).toLocaleString()} 股 · 均價 $${Number(h.avg_cost).toLocaleString()}</div>
+              ${hasCurPrice?`<div class="holding-qty" style="color:var(--gold);">現價 $${Number(h.current_price).toLocaleString()}</div>`:''}
+            </div>
+            <div style="text-align:right;">
+              <div class="holding-amt">NT$${Math.round(hasCurPrice?currentVal:cost).toLocaleString()}</div>
+              ${hasCurPrice?`<div class="holding-pnl" style="color:${unrealized>=0?'var(--green)':'var(--red)'};">${unrealized>=0?'+':''}NT$${Math.round(unrealized).toLocaleString()} (${pct}%)</div>`:''}
+              <button class="btn btn-gold btn-sm" style="margin-top:4px;" onclick="openInvTxn('${h.id}')">交易</button>
+            </div>
+          </div>`;
+        }).join('');}
     }else{
       contEl.innerHTML=`
         <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">NT$${Number(currentAcc.balance).toLocaleString()}</div></div>
@@ -1927,6 +1934,71 @@ async function delUser(id){
   if(!confirm('確定刪除此使用者？'))return;
   try{await sbAdmin(`/auth/v1/admin/users/${id}`,'DELETE');toast('已刪除');await loadAllUsers();loadUsers();}
   catch(e){toast('刪除失敗','err');}
+}
+
+// STOCK & EXCHANGE RATE
+async function fetchTwStockPrice(symbol){
+  try{
+    // Use Yahoo Finance API via proxy
+    const res=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.TW?interval=1d&range=1d`);
+    const data=await res.json();
+    const price=data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+    return price||null;
+  }catch(e){
+    // Fallback: try TWSE API
+    try{
+      const res2=await fetch(`https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_${symbol}.tw&json=1&delay=0`);
+      const data2=await res2.json();
+      const price2=parseFloat(data2?.msgArray?.[0]?.z||data2?.msgArray?.[0]?.y);
+      return isNaN(price2)?null:price2;
+    }catch(e2){return null;}
+  }
+}
+
+async function fetchUsStockPrice(symbol){
+  try{
+    const res=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`);
+    const data=await res.json();
+    return data?.chart?.result?.[0]?.meta?.regularMarketPrice||null;
+  }catch(e){return null;}
+}
+
+async function fetchExchangeRate(currency){
+  try{
+    // Taiwan Bank exchange rate
+    const res=await fetch('https://tw.rter.info/capi.php');
+    const data=await res.json();
+    // data is like {"USDTWD": {ask: 32.5, bid: 32.1}, ...}
+    const key=currency+'TWD';
+    return data?.[key]?.Exrate||null;
+  }catch(e){
+    try{
+      // Fallback: exchangerate-api
+      const res2=await fetch(`https://api.exchangerate-api.com/v4/latest/${currency}`);
+      const data2=await res2.json();
+      return data2?.rates?.TWD||null;
+    }catch(e2){return null;}
+  }
+}
+
+async function updateHoldingPrices(accountId){
+  try{
+    const holdings=await sb(`/rest/v1/holdings?account_id=eq.${accountId}`,{},false);
+    if(!holdings.length)return;
+    let updated=0;
+    for(const h of holdings){
+      let price=null;
+      if(h.type==='tw_stock')price=await fetchTwStockPrice(h.symbol);
+      else if(h.type==='us_stock')price=await fetchUsStockPrice(h.symbol);
+      else if(h.type==='forex')price=await fetchExchangeRate(h.symbol);
+      if(price){
+        await sb(`/rest/v1/holdings?id=eq.${h.id}`,{method:'PATCH',body:JSON.stringify({current_price:price})},false);
+        updated++;
+      }
+    }
+    toast(`已更新 ${updated} 筆報價`);
+    openAccDetail(accountId);
+  }catch(e){toast('更新失敗','err');}
 }
 
 // REPORT
