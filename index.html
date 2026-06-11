@@ -791,6 +791,26 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Edit User -->
+<div class="overlay" id="sh-edituser">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>編輯使用者</h3>
+    <input type="hidden" id="edit-user-id">
+    <div class="field"><label>顯示名稱</label><input class="inp" type="text" id="edit-user-name" placeholder="顯示名稱"></div>
+    <div class="field"><label>角色</label>
+      <select class="inp" id="edit-user-role">
+        <option value="user">一般使用者</option>
+        <option value="admin">管理員</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-edituser')">取消</button>
+      <button class="btn btn-gold" onclick="saveEditUser()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add User -->
 <div class="overlay" id="sh-adduser">
   <div class="sheet">
@@ -1930,6 +1950,39 @@ async function delAnnounce(id){if(!confirm('確定刪除公告？'))return;try{a
 
 // USERS
 async function loadAllUsers(){try{allUsers=await sb('/rest/v1/user_profiles?order=created_at.asc',{},false);}catch(e){}}
+function editUser(userId, displayName, role){
+  document.getElementById('edit-user-id').value=userId;
+  document.getElementById('edit-user-name').value=displayName;
+  document.getElementById('edit-user-role').value=role;
+  openSheet('sh-edituser');
+}
+
+async function saveEditUser(){
+  const userId=document.getElementById('edit-user-id').value;
+  const displayName=document.getElementById('edit-user-name').value.trim();
+  const role=document.getElementById('edit-user-role').value;
+  if(!displayName){toast('請填寫顯示名稱','err');return;}
+  try{
+    const token=JSON.parse(localStorage.getItem('lifeos_session')||'{}').token||'';
+    const res=await fetch('https://twejdabdhuohfyylsprn.supabase.co/functions/v1/manage-users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({action:'updateProfile',userId,displayName,role})});
+    const data=await res.json();
+    if(data.error){toast('更新失敗: '+data.error,'err');return;}
+    closeSheet('sh-edituser');toast('已更新');loadUsers();
+  }catch(e){toast('更新失敗','err');}
+}
+
+async function resetUserPwd(userId, username){
+  const newPwd=prompt(`重設 ${username} 的新密碼（至少6位）：`);
+  if(!newPwd||newPwd.length<6){toast('密碼至少6位','err');return;}
+  try{
+    const token=JSON.parse(localStorage.getItem('lifeos_session')||'{}').token||'';
+    const res=await fetch('https://twejdabdhuohfyylsprn.supabase.co/functions/v1/manage-users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({action:'updatePassword',userId,password:newPwd})});
+    const data=await res.json();
+    if(data.error){toast('重設失敗: '+data.error,'err');return;}
+    toast('密碼已重設');
+  }catch(e){toast('重設失敗','err');}
+}
+
 async function loadUsers(){
   if(prof.role!=='admin'){document.getElementById('user-list').innerHTML='<div class="empty"><p>無權限</p></div>';return;}
   const el=document.getElementById('user-list');
@@ -1938,7 +1991,12 @@ async function loadUsers(){
     <div class="list-row">
       <div class="list-icon" style="background:var(--bg4)"><i class="ti ti-user" style="color:var(--text2)" aria-hidden="true"></i></div>
       <div class="list-info"><div class="list-title">${u.display_name||u.username}</div><div class="list-sub">${u.username} · ${u.role==='admin'?'管理員':'使用者'}</div></div>
-      ${u.id!==prof.id?`<button class="icon-btn" onclick="delUser('${u.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>`:'<span class="tag tag-gold">本人</span>'}
+      ${u.id!==prof.id?`
+        <div style="display:flex;gap:4px;">
+          <button class="icon-btn" onclick="editUser('${u.id}','${u.display_name||u.username}','${u.role}')"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+          <button class="icon-btn" onclick="resetUserPwd('${u.id}','${u.username}')"><i class="ti ti-key" aria-hidden="true"></i></button>
+          <button class="icon-btn" onclick="delUser('${u.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        </div>`:'<span class="tag tag-gold">本人</span>'}
     </div>`).join('');
 }
 async function createUser(){
@@ -1948,22 +2006,27 @@ async function createUser(){
   const role=document.getElementById('nu-role').value;
   if(!username||!password){toast('請填寫帳號和密碼','err');return;}
   if(password.length<6){toast('密碼至少6位','err');return;}
+  const email=`${username}@lifeos.internal`;
   try{
-    const email=`${username}.${Date.now()}@lifeos.internal`;
-    const au=await sbAdmin('/auth/v1/admin/users','POST',{email,password,email_confirm:true});
-    if(!au.id)throw new Error(au.message||'建立失敗');
-    await sb('/rest/v1/user_profiles',{method:'POST',body:JSON.stringify({id:au.id,username,display_name:displayName||username,role})},false);
-    closeSheet('sh-adduser');document.getElementById('nu-user').value='';document.getElementById('nu-name').value='';document.getElementById('nu-pass').value='';
-    toast('使用者建立成功');await loadAllUsers();loadUsers();
+    const token=JSON.parse(localStorage.getItem('lifeos_session')||'{}').token||'';
+    const res=await fetch('https://twejdabdhuohfyylsprn.supabase.co/functions/v1/manage-users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({action:'create',email,password,username,displayName:displayName||username,role})});
+    const data=await res.json();
+    if(data.error){toast('建立失敗: '+data.error,'err');return;}
+    closeSheet('sh-adduser');toast('使用者已建立');loadUsers();
   }catch(e){toast('建立失敗: '+e.message,'err');}
 }
-async function delUser(id){
-  if(!confirm('確定刪除此使用者？'))return;
-  try{await sbAdmin(`/auth/v1/admin/users/${id}`,'DELETE');toast('已刪除');await loadAllUsers();loadUsers();}
-  catch(e){toast('刪除失敗','err');}
+
+async function delUser(userId){
+  if(!confirm('確定刪除此使用者？所有資料將一併刪除。'))return;
+  try{
+    const token=JSON.parse(localStorage.getItem('lifeos_session')||'{}').token||'';
+    const res=await fetch('https://twejdabdhuohfyylsprn.supabase.co/functions/v1/manage-users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({action:'delete',userId})});
+    const data=await res.json();
+    if(data.error){toast('刪除失敗: '+data.error,'err');return;}
+    toast('已刪除');loadUsers();
+  }catch(e){toast('刪除失敗','err');}
 }
 
-// STOCK & EXCHANGE RATE
 async function fetchTwStockPrice(symbol){
   try{
     // TWSE real-time API
