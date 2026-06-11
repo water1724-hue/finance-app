@@ -2224,18 +2224,31 @@ async function searchAllTxns(){
   el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">查詢中...</div>';
 
   try{
-    let url=`/rest/v1/transactions?user_id=eq.${getViewAsId()}&order=date.desc&limit=200`;
+    let url=`/rest/v1/transactions?user_id=eq.${getViewAsId()}&order=date.desc&limit=500`;
     if(from)url+=`&date=gte.${from}`;
     if(to)url+=`&date=lte.${to}`;
     if(accId)url+=`&account_id=eq.${accId}`;
     if(type)url+=`&type=eq.${type}`;
-    if(keyword)url+=`&note=ilike.*${encodeURIComponent(keyword)}*`;
 
-    const [txns,accounts,cats]=await Promise.all([
+    const [allTxns,accounts,cats]=await Promise.all([
       sb(url,{},false),
       sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{},false),
       sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{},false)
     ]);
+
+    // Filter by keyword (note or category name)
+    let txns=allTxns;
+    if(keyword){
+      const kw=keyword.toLowerCase();
+      txns=allTxns.filter(t=>{
+        const noteMatch=(t.note||'').toLowerCase().includes(kw);
+        const cat=cats.find(c=>c.id===t.category_id);
+        const catMatch=cat&&cat.name.toLowerCase().includes(kw);
+        const acc=accounts.find(a=>a.id===t.account_id);
+        const accMatch=acc&&acc.name.toLowerCase().includes(kw);
+        return noteMatch||catMatch||accMatch;
+      });
+    }
 
     // Summary
     let totalIncome=0,totalExpense=0;
