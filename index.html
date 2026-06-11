@@ -332,7 +332,7 @@ select.inp option{background:var(--bg2);}
       <!-- 最近交易 -->
       <div class="row-between" style="margin-bottom:10px;">
         <div class="sec-label" style="margin:0">最近交易</div>
-        <span style="font-size:11px;color:var(--gold);cursor:pointer;" onclick="loadAllTxns()">全部</span>
+        <button class="btn btn-ghost btn-sm" onclick="openAllTxns()">全部 →</button>
       </div>
       <div class="card"><div id="fin-txns"></div></div>
     </div>
@@ -578,6 +578,42 @@ select.inp option{background:var(--bg2);}
   <div style="font-size:18px;font-weight:700;margin-bottom:16px;">使用者管理</div>
   <button class="btn btn-gold" style="width:100%;margin-bottom:14px;" onclick="openSheet('sh-adduser')"><i class="ti ti-plus" aria-hidden="true"></i> 新增使用者</button>
   <div class="card"><div id="user-list"></div></div>
+</div>
+
+<div class="det" id="det-all-txns">
+  <div class="det-back" onclick="hideDet('det-all-txns')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:12px;">所有交易</div>
+  <!-- Filters -->
+  <div class="card" style="margin-bottom:12px;padding:12px 16px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <input class="inp" type="date" id="atxn-from" style="flex:1;min-width:130px;padding:8px 10px;font-size:13px;">
+      <span style="color:var(--text3);align-self:center;">至</span>
+      <input class="inp" type="date" id="atxn-to" style="flex:1;min-width:130px;padding:8px 10px;font-size:13px;">
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <select class="inp" id="atxn-account" style="flex:1;padding:8px 10px;font-size:13px;">
+        <option value="">所有帳戶</option>
+      </select>
+      <select class="inp" id="atxn-type" style="flex:1;padding:8px 10px;font-size:13px;">
+        <option value="">收入+支出</option>
+        <option value="income">收入</option>
+        <option value="expense">支出</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <input class="inp" type="text" id="atxn-keyword" placeholder="搜尋備註..." style="flex:1;padding:8px 10px;font-size:13px;">
+      <button class="btn btn-gold btn-sm" onclick="searchAllTxns()">查詢</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetAllTxns()">重置</button>
+    </div>
+  </div>
+  <!-- Summary -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;">
+    <div class="stat-card" style="flex:1;"><div class="stat-val amt-pos" id="atxn-income">—</div><div class="stat-lbl">收入</div></div>
+    <div class="stat-card" style="flex:1;"><div class="stat-val amt-neg" id="atxn-expense">—</div><div class="stat-lbl">支出</div></div>
+    <div class="stat-card" style="flex:1;"><div class="stat-val" id="atxn-count">—</div><div class="stat-lbl">筆數</div></div>
+  </div>
+  <!-- List -->
+  <div class="card"><div id="atxn-list"></div></div>
 </div>
 
 <div class="det" id="det-view-as">
@@ -2159,6 +2195,119 @@ async function delUser(userId){
 }
 
 // BUDGET
+// ALL TRANSACTIONS
+async function openAllTxns(){
+  // Init date range (this month)
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=String(now.getMonth()+1).padStart(2,'0');
+  const lastDay=new Date(y,now.getMonth()+1,0).getDate();
+  document.getElementById('atxn-from').value=`${y}-${m}-01`;
+  document.getElementById('atxn-to').value=`${y}-${m}-${String(lastDay).padStart(2,'0')}`;
+  document.getElementById('atxn-keyword').value='';
+  document.getElementById('atxn-type').value='';
+  // Load accounts for filter
+  const accounts=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{},false);
+  const accSel=document.getElementById('atxn-account');
+  accSel.innerHTML='<option value="">所有帳戶</option>'+accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  showDet('det-all-txns');
+  searchAllTxns();
+}
+
+async function searchAllTxns(){
+  const from=document.getElementById('atxn-from').value;
+  const to=document.getElementById('atxn-to').value;
+  const accId=document.getElementById('atxn-account').value;
+  const type=document.getElementById('atxn-type').value;
+  const keyword=document.getElementById('atxn-keyword').value.trim();
+  const el=document.getElementById('atxn-list');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">查詢中...</div>';
+
+  try{
+    let url=`/rest/v1/transactions?user_id=eq.${getViewAsId()}&order=date.desc&limit=200`;
+    if(from)url+=`&date=gte.${from}`;
+    if(to)url+=`&date=lte.${to}`;
+    if(accId)url+=`&account_id=eq.${accId}`;
+    if(type)url+=`&type=eq.${type}`;
+    if(keyword)url+=`&note=ilike.*${encodeURIComponent(keyword)}*`;
+
+    const [txns,accounts,cats]=await Promise.all([
+      sb(url,{},false),
+      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{},false),
+      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{},false)
+    ]);
+
+    // Summary
+    let totalIncome=0,totalExpense=0;
+    txns.forEach(t=>{if(t.type==='income')totalIncome+=Number(t.amount);else totalExpense+=Number(t.amount);});
+    document.getElementById('atxn-income').textContent='NT$'+totalIncome.toLocaleString();
+    document.getElementById('atxn-expense').textContent='NT$'+totalExpense.toLocaleString();
+    document.getElementById('atxn-count').textContent=txns.length+'筆';
+
+    if(!txns.length){el.innerHTML='<div class="empty"><p>無符合的交易記錄</p></div>';return;}
+
+    el.innerHTML=txns.map((t,i)=>{
+      const acc=accounts.find(a=>a.id===t.account_id);
+      const cat=cats.find(c=>c.id===t.category_id);
+      return`<div class="list-row">
+        <div class="list-icon" style="background:${t.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
+          <i class="ti ${t.type==='income'?'ti-arrow-down-circle':'ti-arrow-up-circle'}" style="color:${t.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
+        </div>
+        <div class="list-info">
+          <div class="list-title">${t.note||'記帳'}</div>
+          <div class="list-sub">${acc?.name||''} ${cat?'· '+cat.name:''} · ${t.date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
+          <button class="icon-btn" data-fi="${i}" onclick="editFinTxnByIdx2(${i},${JSON.stringify(txns).length>0?i:0})" style="padding:3px 6px;font-size:13px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+          <button class="icon-btn" onclick="delTxnFromAccAndRefresh('${t.id}',${t.amount},'${t.type}','${t.account_id}')" style="padding:3px 6px;font-size:13px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+    window._allTxns=txns;
+  }catch(e){el.innerHTML='<div class="empty"><p>查詢失敗</p></div>';console.error(e);}
+}
+
+async function resetAllTxns(){
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=String(now.getMonth()+1).padStart(2,'0');
+  const lastDay=new Date(y,now.getMonth()+1,0).getDate();
+  document.getElementById('atxn-from').value=`${y}-${m}-01`;
+  document.getElementById('atxn-to').value=`${y}-${m}-${String(lastDay).padStart(2,'0')}`;
+  document.getElementById('atxn-keyword').value='';
+  document.getElementById('atxn-type').value='';
+  document.getElementById('atxn-account').value='';
+  searchAllTxns();
+}
+
+function editFinTxnByIdx2(idx){
+  const t=window._allTxns?.[idx];
+  if(!t)return;
+  document.getElementById('sh-txn-title').textContent='編輯記帳';
+  document.getElementById('txn-id').value=t.id;
+  document.getElementById('txn-account').value=t.account_id;
+  setTxnType(t.type);
+  document.getElementById('txn-amt').value=t.amount;
+  document.getElementById('txn-note').value=t.note||'';
+  document.getElementById('txn-date').value=t.date;
+  openSheet('sh-txn');
+}
+
+async function delTxnFromAccAndRefresh(id,amount,type,accountId){
+  if(!confirm('確定刪除此交易記錄？'))return;
+  try{
+    await sb(`/rest/v1/transactions?id=eq.${id}`,{method:'DELETE'},false);
+    const accs=await sb(`/rest/v1/accounts?id=eq.${accountId}`,{},false);
+    if(accs.length){
+      const delta=type==='income'?-amount:amount;
+      await sb(`/rest/v1/accounts?id=eq.${accountId}`,{method:'PATCH',body:JSON.stringify({balance:Number(accs[0].balance)+delta})},false);
+    }
+    toast('已刪除');
+    searchAllTxns();
+  }catch(e){toast('刪除失敗','err');}
+}
+
 // VIEW AS USER
 let viewAsUser=null;
 
