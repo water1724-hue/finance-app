@@ -275,6 +275,15 @@ select.inp option{background:var(--bg2);}
         </div>
       </div>
 
+      <!-- 預算警示 -->
+      <div class="card" id="h-budget-alert-card" style="display:none;border-color:rgba(232,112,112,.3);">
+        <div class="row-between" style="margin-bottom:10px;">
+          <div class="sec-label" style="margin:0;color:var(--red);">⚠ 預算警示</div>
+          <span style="font-size:11px;color:var(--gold);cursor:pointer;" onclick="goPage('finance')">查看財務 →</span>
+        </div>
+        <div id="h-budget-alerts"></div>
+      </div>
+
       <!-- 今日行程 -->
       <div class="card">
         <div class="row-between" style="margin-bottom:12px;">
@@ -312,22 +321,16 @@ select.inp option{background:var(--bg2);}
 
       <!-- 淨資產 -->
       <div class="card card-gold" style="margin-bottom:12px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;">淨資產（台幣）</div>
-          <button onclick="refreshFxRates()" id="fx-refresh-btn" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 4px;" title="更新匯率"><i class="ti ti-refresh" aria-hidden="true"></i></button>
-        </div>
+        <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">淨資產</div>
         <div style="font-size:30px;font-weight:700;color:var(--gold);" id="fin-net">NT$ —</div>
         <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="fin-sub">計算中...</div>
-        <!-- 外幣摘要 -->
-        <div id="fx-summary" style="display:none;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--gold-border);">
-          <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">外幣資產</div>
-          <div id="fx-rows"></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:6px;" id="fx-rate-time"></div>
-        </div>
       </div>
 
       <!-- 大項 tabs -->
       <div class="ftabs" id="cat-tabs"></div>
+
+      <!-- 預算警示橫幅 -->
+      <div id="fin-budget-banner" style="display:none;margin-bottom:12px;"></div>
 
       <!-- 帳戶列表 -->
       <div class="row-between" style="margin-bottom:10px;">
@@ -855,23 +858,9 @@ select.inp option{background:var(--bg2);}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <h3>帳戶間轉帳</h3>
-    <div class="field"><label>從</label><select class="inp" id="tr-from" onchange="onTransferAccChange()"></select></div>
-    <div class="field"><label>到</label><select class="inp" id="tr-to" onchange="onTransferAccChange()"></select></div>
-    <!-- 跨幣別提示 -->
-    <div id="tr-fx-info" style="display:none;background:#1a1a2e;border:0.5px solid var(--blue);border-radius:12px;padding:10px 14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:6px;"><i class="ti ti-currency-exchange"></i> 跨幣別兌換</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <div style="flex:1;min-width:100px;">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">匯率（1外幣 = ? TWD）</div>
-          <input class="inp" type="number" id="tr-fx-rate" placeholder="自動帶入" step="0.001" oninput="calcTransferResult()" style="padding:8px 10px;font-size:13px;">
-        </div>
-        <div style="flex:1;min-width:100px;">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">到帳金額</div>
-          <div style="font-size:14px;font-weight:700;color:var(--gold);padding:10px 0;" id="tr-result-amt">—</div>
-        </div>
-      </div>
-    </div>
-    <div class="field"><label id="tr-amt-label">金額</label><input class="inp" type="number" id="tr-amt" placeholder="0" oninput="calcTransferResult()"></div>
+    <div class="field"><label>從</label><select class="inp" id="tr-from"></select></div>
+    <div class="field"><label>到</label><select class="inp" id="tr-to"></select></div>
+    <div class="field"><label>金額 (NT$)</label><input class="inp" type="number" id="tr-amt" placeholder="0"></div>
     <div class="field"><label>手續費 (NT$)</label><input class="inp" type="number" id="tr-fee" placeholder="0"></div>
     <div class="field"><label>日期</label><input class="inp" type="date" id="tr-date"></div>
     <div class="field"><label>備註</label><input class="inp" type="text" id="tr-note" placeholder="選填"></div>
@@ -1225,6 +1214,8 @@ async function loadHome(){
         });
       }
     }catch(e){}
+    // 預算警示
+    loadBudgetAlerts();
   }catch(e){console.error(e);}
 }
 
@@ -1233,46 +1224,136 @@ async function quickDone(id){
   catch(e){}
 }
 
-// FINANCE
-let accCats=[];
-let fxRates={}; // { USD: 32.5, JPY: 0.21, ... } TWD per 1 foreign unit
-let fxRateTime=null;
-
-async function fetchFxRates(currencies){
-  if(!currencies.length)return;
+// BUDGET ALERTS
+async function loadBudgetAlerts(){
   try{
-    // frankfurter.app: free, no key, TWD base
-    const syms=currencies.join(',');
-    const r=await fetch(`https://api.frankfurter.app/latest?from=TWD&to=${syms}`);
-    const d=await r.json();
-    // d.rates = { USD: 0.0308, JPY: 4.67 } meaning 1 TWD = X foreign
-    // We want 1 foreign = Y TWD, so invert
-    currencies.forEach(c=>{
-      if(d.rates&&d.rates[c]) fxRates[c]=1/d.rates[c];
+    const now=new Date();
+    const year=now.getFullYear();
+    const month=now.getMonth()+1;
+    const mStart=`${year}-${String(month).padStart(2,'0')}-01`;
+    const mEnd=`${year}-${String(month).padStart(2,'0')}-${String(new Date(year,month,0).getDate()).padStart(2,'0')}`;
+
+    const [budgets,cats,txns]=await Promise.all([
+      sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{},false),
+      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&parent_id=is.null&is_active=neq.false`,{},false),
+      sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&type=eq.expense&date=gte.${mStart}&date=lte.${mEnd}`,{},false)
+    ]);
+
+    if(!budgets.length){
+      // 沒有設定任何預算，隱藏
+      document.getElementById('h-budget-alert-card').style.display='none';
+      const banner=document.getElementById('fin-budget-banner');
+      if(banner)banner.style.display='none';
+      return;
+    }
+
+    // 算各父類別本月支出（子類別要對應到父類別）
+    const allCats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{},false);
+    const spentMap={};
+    txns.forEach(t=>{
+      if(!t.category_id)return;
+      // 找父類別
+      const thisCat=allCats.find(c=>c.id===t.category_id);
+      const parentId=thisCat?.parent_id||thisCat?.id;
+      if(parentId){spentMap[parentId]=(spentMap[parentId]||0)+Number(t.amount);}
     });
-    fxRateTime=new Date();
-  }catch(e){
-    // fallback: try exchangerate-api
-    try{
-      const r2=await fetch(`https://open.er-api.com/v6/latest/TWD`);
-      const d2=await r2.json();
-      currencies.forEach(c=>{
-        if(d2.rates&&d2.rates[c]) fxRates[c]=1/d2.rates[c];
-      });
-      fxRateTime=new Date();
-    }catch(e2){console.warn('匯率取得失敗',e2);}
-  }
+
+    // 比對預算，找出警示
+    const warnings=[]; // {name, spent, budget, pct, level:'warning'|'danger'}
+    budgets.forEach(b=>{
+      const cat=cats.find(c=>c.id===b.category_id);
+      if(!cat)return;
+      const bgtAmt=Number(b.amount);
+      if(!bgtAmt)return;
+      const spent=spentMap[b.category_id]||0;
+      const pct=spent/bgtAmt*100;
+      if(pct>=80){
+        warnings.push({
+          name:cat.name,
+          spent,
+          budget:bgtAmt,
+          pct:Math.round(pct),
+          level:pct>=100?'danger':'warning'
+        });
+      }
+    });
+
+    // 排序：超標的先，再依比例降序
+    warnings.sort((a,b)=>{
+      if(a.level!==b.level)return a.level==='danger'?-1:1;
+      return b.pct-a.pct;
+    });
+
+    // 首頁警示卡
+    const homeCard=document.getElementById('h-budget-alert-card');
+    const homeList=document.getElementById('h-budget-alerts');
+    if(warnings.length){
+      homeCard.style.display='block';
+      homeList.innerHTML=warnings.map(w=>{
+        const isDanger=w.level==='danger';
+        const color=isDanger?'var(--red)':'var(--orange)';
+        const barColor=isDanger?'var(--red)':'#E8894A';
+        const barPct=Math.min(w.pct,100);
+        return`<div style="padding:8px 0;border-bottom:0.5px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:13px;color:${color};">${isDanger?'🔴':'🟡'}</span>
+              <span style="font-size:13px;font-weight:600;">${w.name}</span>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:12px;font-weight:700;color:${color};">${w.pct}%</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:4px;">NT$${w.spent.toLocaleString()} / ${w.budget.toLocaleString()}</span>
+            </div>
+          </div>
+          <div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:2px;transition:width .4s;"></div>
+          </div>
+          ${isDanger?`<div style="font-size:11px;color:var(--red);margin-top:3px;">超支 NT$${(w.spent-w.budget).toLocaleString()}</div>`:''}
+        </div>`;
+      }).join('');
+    } else {
+      homeCard.style.display='none';
+    }
+
+    // 財務頁橫幅
+    const banner=document.getElementById('fin-budget-banner');
+    if(!banner)return;
+    if(warnings.length){
+      const dangerCount=warnings.filter(w=>w.level==='danger').length;
+      const warnCount=warnings.filter(w=>w.level==='warning').length;
+      const msgs=[];
+      if(dangerCount)msgs.push(`<span style="color:var(--red);font-weight:700;">${dangerCount} 項超支</span>`);
+      if(warnCount)msgs.push(`<span style="color:var(--orange);font-weight:700;">${warnCount} 項接近上限</span>`);
+      banner.style.display='block';
+      banner.innerHTML=`<div style="background:rgba(232,112,112,0.08);border:0.5px solid rgba(232,112,112,0.3);border-radius:14px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;" aria-hidden="true"></i>
+          <span style="font-size:12px;">本月預算：${msgs.join('、')}</span>
+        </div>
+        <span style="font-size:11px;color:var(--gold);cursor:pointer;white-space:nowrap;" onclick="showDet('det-budget')">設定 →</span>
+      </div>
+      <div style="margin-top:8px;">
+        ${warnings.slice(0,3).map(w=>{
+          const isDanger=w.level==='danger';
+          const color=isDanger?'var(--red)':'var(--orange)';
+          const barPct=Math.min(w.pct,100);
+          return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border);">
+            <span style="font-size:11px;width:64px;flex-shrink:0;color:var(--text2);">${w.name}</span>
+            <div style="flex:1;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${barPct}%;background:${isDanger?'var(--red)':'#E8894A'};border-radius:3px;transition:width .4s;"></div>
+            </div>
+            <span style="font-size:11px;color:${color};font-weight:600;width:38px;text-align:right;">${w.pct}%</span>
+          </div>`;
+        }).join('')}
+        ${warnings.length>3?`<div style="font-size:11px;color:var(--text3);text-align:center;padding-top:6px;">還有 ${warnings.length-3} 項…</div>`:''}
+      </div>`;
+    } else {
+      banner.style.display='none';
+    }
+  }catch(e){console.error('Budget alerts error:',e);}
 }
 
-async function refreshFxRates(){
-  const btn=document.getElementById('fx-refresh-btn');
-  if(btn)btn.style.opacity='0.4';
-  fxRates={};
-  await loadFinance();
-  if(btn)btn.style.opacity='1';
-  toast('匯率已更新');
-}
-
+let accCats=[];
 async function loadFinance(){
   try{
     const [cats,accounts,txns]=await Promise.all([
@@ -1282,70 +1363,15 @@ async function loadFinance(){
     ]);
     accCats=cats;
 
-    // 找出有哪些外幣
-    const fxCurrencies=[...new Set(accounts
-      .map(a=>(a.currency||'TWD').toUpperCase())
-      .filter(c=>c!=='TWD')
-    )];
-    // 如果還沒抓過匯率或明確需要，就去抓
-    if(fxCurrencies.length&&!fxCurrencies.every(c=>fxRates[c])){
-      await fetchFxRates(fxCurrencies);
-    }
-
-    // Net worth — 台幣與外幣分開
-    let totalTWD=0,totalDebt=0;
-    const fxMap={}; // { USD: { balance, twdVal } }
+    // Net worth
+    let totalPos=0,totalNeg=0;
     accounts.forEach(a=>{
       const cat=cats.find(c=>c.id===a.category_id);
-      const cur=(a.currency||'TWD').toUpperCase();
-      if(cat?.type==='credit'){
-        totalDebt+=Number(a.balance);
-      } else if(cur==='TWD'){
-        totalTWD+=Number(a.balance);
-      } else {
-        if(!fxMap[cur])fxMap[cur]={balance:0,twdVal:0};
-        fxMap[cur].balance+=Number(a.balance);
-        const rate=fxRates[cur]||0;
-        fxMap[cur].twdVal+=Number(a.balance)*rate;
-      }
+      if(cat?.type==='credit')totalNeg+=Number(a.balance);
+      else totalPos+=Number(a.balance);
     });
-
-    // 外幣折合台幣加入總資產
-    const fxTWDTotal=Object.values(fxMap).reduce((s,v)=>s+v.twdVal,0);
-    const grandTotal=totalTWD+fxTWDTotal;
-    const netWorth=grandTotal-totalDebt;
-
-    document.getElementById('fin-net').textContent='NT$ '+Math.round(netWorth).toLocaleString();
-    document.getElementById('fin-sub').textContent=`台幣 NT$${Math.round(totalTWD).toLocaleString()}${fxTWDTotal>0?` ＋ 外幣折合 NT$${Math.round(fxTWDTotal).toLocaleString()}`:''}　負債 NT$${Math.round(totalDebt).toLocaleString()}　淨值 NT$${Math.round(netWorth).toLocaleString()}`;
-
-    // 外幣摘要區塊
-    const fxKeys=Object.keys(fxMap);
-    const fxSummaryEl=document.getElementById('fx-summary');
-    const fxRowsEl=document.getElementById('fx-rows');
-    const fxTimeEl=document.getElementById('fx-rate-time');
-    if(fxKeys.length){
-      fxSummaryEl.style.display='block';
-      fxRowsEl.innerHTML=fxKeys.map(cur=>{
-        const {balance,twdVal}=fxMap[cur];
-        const rate=fxRates[cur];
-        const rateStr=rate?`1 ${cur} = NT$${rate.toFixed(2)}`:'匯率未知';
-        const twdStr=rate?`≈ NT$${Math.round(twdVal).toLocaleString()}`:'';
-        return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--gold-border);">
-          <div>
-            <span style="font-size:13px;font-weight:600;color:var(--text);">${cur} ${balance.toLocaleString()}</span>
-            <span style="font-size:10px;color:var(--text3);margin-left:6px;">${rateStr}</span>
-          </div>
-          <span style="font-size:12px;color:var(--gold);font-weight:600;">${twdStr}</span>
-        </div>`;
-      }).join('');
-      if(fxRateTime){
-        const h=fxRateTime.getHours().toString().padStart(2,'0');
-        const m=fxRateTime.getMinutes().toString().padStart(2,'0');
-        fxTimeEl.textContent=`匯率更新於 ${h}:${m}，來源：Frankfurter / ECB`;
-      }
-    } else {
-      fxSummaryEl.style.display='none';
-    }
+    document.getElementById('fin-net').textContent='NT$ '+totalPos.toLocaleString();
+    document.getElementById('fin-sub').textContent=`正資產 NT$${totalPos.toLocaleString()} ／ 負債 NT$${totalNeg.toLocaleString()} ／ 淨值 NT$${(totalPos-totalNeg).toLocaleString()}`;
 
     // Cat tabs
     const usedTypes=[...new Set(accounts.map(a=>cats.find(c=>c.id===a.category_id)?.type).filter(Boolean))];
@@ -1367,6 +1393,9 @@ async function loadFinance(){
 
     // Acc cat select
     document.getElementById('acc-cat').innerHTML=cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+
+    // 預算警示
+    loadBudgetAlerts();
   }catch(e){toast('載入失敗','err');}
 }
 
@@ -1377,22 +1406,10 @@ function renderAccounts(accounts,cats){
   el.innerHTML=filtered.map(a=>{
     const cat=cats.find(c=>c.id===a.category_id);
     const isNeg=cat?.type==='credit';
-    const cur=(a.currency||'TWD').toUpperCase();
-    const isFx=cur!=='TWD';
-    const bal=Number(a.balance);
-    const amtStr=isFx?`${cur} ${bal.toLocaleString()}`:`NT$${bal.toLocaleString()}`;
-    const rate=isFx?fxRates[cur]:null;
-    const twdEquiv=rate?`<div style="font-size:10px;color:var(--text3);margin-top:1px;">≈ NT$${Math.round(bal*rate).toLocaleString()} (${rate.toFixed(2)})</div>`:'';
     return`<div class="list-row" onclick="openAccDetail('${a.id}')" style="cursor:pointer;">
       <div class="list-icon" style="background:${isNeg?'rgba(232,112,112,.1)':'rgba(212,170,106,.1)'}"><i class="ti ${cat?.icon||'ti-wallet'}" style="color:${isNeg?'var(--red)':'var(--gold)'}" aria-hidden="true"></i></div>
-      <div class="list-info">
-        <div class="list-title">${a.name}</div>
-        <div class="list-sub">${cat?.name||''}${isFx?` · <span style="color:var(--blue);font-size:10px;font-weight:600;">${cur}</span>`:''}</div>
-      </div>
-      <div class="list-right">
-        <div class="list-amt ${isNeg?'amt-neg':'amt-gold'}">${amtStr}</div>
-        ${twdEquiv}
-      </div>
+      <div class="list-info"><div class="list-title">${a.name}</div><div class="list-sub">${cat?.name||''}</div></div>
+      <div class="list-right"><div class="list-amt ${isNeg?'amt-neg':'amt-gold'}">NT$${Number(a.balance).toLocaleString()}</div></div>
       <i class="ti ti-chevron-right arr" aria-hidden="true"></i>
     </div>`;
   }).join('');
@@ -1537,17 +1554,15 @@ async function delTxnFromAcc(id, amount, type, accountId){
 
 // Update saveTxn to handle edit
 // Transfer between accounts
-let _trAccounts=[]; // 轉帳用帳戶快取
-
 async function openTransfer(){
   const sheet=document.getElementById('sh-transfer');
   sheet.classList.add('on');
   try{
     const allAccounts=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{},false);
     const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{},false);
+    // Exclude credit card accounts from transfer
     const accounts=allAccounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='credit';});
-    _trAccounts=accounts;
-    const opts=accounts.map(a=>{const cur=(a.currency||'TWD').toUpperCase();const balDisp=cur==='TWD'?`NT$${Number(a.balance).toLocaleString()}`:`${cur} ${Number(a.balance).toLocaleString()}`;return`<option value="${a.id}" data-cur="${cur}">${a.name} (${balDisp})</option>`;}).join('');
+    const opts=accounts.map(a=>`<option value="${a.id}">${a.name} (NT$${Number(a.balance).toLocaleString()})</option>`).join('');
     document.getElementById('tr-from').innerHTML=opts;
     document.getElementById('tr-to').innerHTML=opts;
     document.getElementById('tr-amt').value='';
@@ -1555,59 +1570,24 @@ async function openTransfer(){
     const n=new Date();
     document.getElementById('tr-date').value=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
     document.getElementById('tr-note').value='';
-    document.getElementById('tr-fx-info').style.display='none';
-    onTransferAccChange();
   }catch(e){console.error('Transfer error:',e);}
 }
 
 async function initTransferSheet(){
-  // alias
-  return openTransfer();
-}
-
-function onTransferAccChange(){
-  const fromSel=document.getElementById('tr-from');
-  const toSel=document.getElementById('tr-to');
-  const fromOpt=fromSel.options[fromSel.selectedIndex];
-  const toOpt=toSel.options[toSel.selectedIndex];
-  const fromCur=(fromOpt?.dataset?.cur||'TWD').toUpperCase();
-  const toCur=(toOpt?.dataset?.cur||'TWD').toUpperCase();
-  const fxInfo=document.getElementById('tr-fx-info');
-  const amtLabel=document.getElementById('tr-amt-label');
-  if(fromCur!==toCur){
-    fxInfo.style.display='block';
-    amtLabel.textContent=`轉出金額 (${fromCur})`;
-    // 帶入已知匯率
-    const rateInput=document.getElementById('tr-fx-rate');
-    // 情況A: 外幣→TWD  rate = fxRates[fromCur]
-    // 情況B: TWD→外幣  rate = 1/fxRates[toCur]
-    // 情況C: 外幣A→外幣B  rate = fxRates[fromCur]/fxRates[toCur]
-    let autoRate=null;
-    if(toCur==='TWD'&&fxRates[fromCur]) autoRate=fxRates[fromCur];
-    else if(fromCur==='TWD'&&fxRates[toCur]) autoRate=+(1/fxRates[toCur]).toFixed(6);
-    else if(fxRates[fromCur]&&fxRates[toCur]) autoRate=+(fxRates[fromCur]/fxRates[toCur]).toFixed(6);
-    if(autoRate) rateInput.value=autoRate.toFixed(4);
-    calcTransferResult();
-  } else {
-    fxInfo.style.display='none';
-    amtLabel.textContent='金額';
-    document.getElementById('tr-result-amt').textContent='—';
-  }
-}
-
-function calcTransferResult(){
-  const fromSel=document.getElementById('tr-from');
-  const toSel=document.getElementById('tr-to');
-  const fromOpt=fromSel.options[fromSel.selectedIndex];
-  const toOpt=toSel.options[toSel.selectedIndex];
-  const fromCur=(fromOpt?.dataset?.cur||'TWD').toUpperCase();
-  const toCur=(toOpt?.dataset?.cur||'TWD').toUpperCase();
-  if(fromCur===toCur){document.getElementById('tr-result-amt').textContent='—';return;}
-  const amt=parseFloat(document.getElementById('tr-amt').value)||0;
-  const rate=parseFloat(document.getElementById('tr-fx-rate').value)||0;
-  const result=amt*rate;
-  document.getElementById('tr-result-amt').textContent=
-    result>0?`${toCur} ${result.toLocaleString(undefined,{maximumFractionDigits:2})}`:'—';
+  try{
+    const allAccounts=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{},false);
+    const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{},false);
+    // Exclude credit card accounts from transfer
+    const accounts=allAccounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='credit';});
+    const opts=accounts.map(a=>`<option value="${a.id}">${a.name} (NT$${Number(a.balance).toLocaleString()})</option>`).join('');
+    document.getElementById('tr-from').innerHTML=opts;
+    document.getElementById('tr-to').innerHTML=opts;
+    document.getElementById('tr-amt').value='';
+    document.getElementById('tr-fee').value='0';
+    const _trNow=new Date();
+    document.getElementById('tr-date').value=`${_trNow.getFullYear()}-${String(_trNow.getMonth()+1).padStart(2,'0')}-${String(_trNow.getDate()).padStart(2,'0')}`;
+    document.getElementById('tr-note').value='';
+  }catch(e){console.error('Transfer init error:',e);}
 }
 
 async function saveTransfer(){
@@ -1625,24 +1605,13 @@ async function saveTransfer(){
       sb(`/rest/v1/accounts?id=eq.${toId}`,{},false)
     ]);
     if(!fromAcc.length||!toAcc.length){toast('帳戶不存在','err');return;}
-    const fromCur=(fromAcc[0].currency||'TWD').toUpperCase();
-    const toCur=(toAcc[0].currency||'TWD').toUpperCase();
-    const isCrossCur=fromCur!==toCur;
-
-    // 跨幣別：計算到帳金額
-    let toAmt=amt;
-    if(isCrossCur){
-      const rate=parseFloat(document.getElementById('tr-fx-rate').value);
-      if(!rate){toast('請填寫匯率','err');return;}
-      toAmt=amt*rate;
-    }
-
+    if(Number(fromAcc[0].balance)<amt+fee){toast('餘額不足','err');return;}
     // Save transfer record
     await sb('/rest/v1/transfers',{method:'POST',body:JSON.stringify({user_id:prof.id,from_account_id:fromId,to_account_id:toId,amount:amt,fee,note,date})},false);
-    // Update balances: from減原幣金額, to加換算後金額
+    // Update balances
     await Promise.all([
       sb(`/rest/v1/accounts?id=eq.${fromId}`,{method:'PATCH',body:JSON.stringify({balance:Number(fromAcc[0].balance)-amt-fee})},false),
-      sb(`/rest/v1/accounts?id=eq.${toId}`,{method:'PATCH',body:JSON.stringify({balance:Number(toAcc[0].balance)+toAmt})},false)
+      sb(`/rest/v1/accounts?id=eq.${toId}`,{method:'PATCH',body:JSON.stringify({balance:Number(toAcc[0].balance)+amt})},false)
     ]);
     closeSheet('sh-transfer');
     toast('轉帳成功');
@@ -1675,14 +1644,8 @@ async function openAccDetail(id){
     currentAcc=acc[0];
     currentHoldingAccId=id;
     const cat=cats.find(c=>c.id===currentAcc.category_id);
-    const accCur=(currentAcc.currency||'TWD').toUpperCase();
-    const isAccFx=accCur!=='TWD';
-    const accBal=Number(currentAcc.balance);
-    const accBalStr=isAccFx?`${accCur} ${accBal.toLocaleString()}`:`NT$${accBal.toLocaleString()}`;
-    const accRate=isAccFx?fxRates[accCur]:null;
-    const accTwdStr=accRate?` ≈ NT$${Math.round(accBal*accRate).toLocaleString()}`:'';
     document.getElementById('det-acc-name').textContent=currentAcc.name;
-    document.getElementById('det-acc-bal').textContent=accBalStr+(isAccFx?accTwdStr:'');
+    document.getElementById('det-acc-bal').textContent='NT$'+Number(currentAcc.balance).toLocaleString();
     const isInv=['securities','fund','forex'].includes(cat?.type);
     document.getElementById('det-acc-type-label').textContent=isInv?'持倉明細':'帳戶資訊';
     // Holdings or info
@@ -1717,7 +1680,7 @@ async function openAccDetail(id){
         }).join('');}
     }else{
       contEl.innerHTML=`
-        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">${accBalStr}${isAccFx&&accRate?`<div style="font-size:10px;color:var(--text3);font-weight:400;">≈ NT$${Math.round(accBal*accRate).toLocaleString()} (1 ${accCur} = ${accRate.toFixed(2)})</div>`:''}</div></div>
+        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">NT$${Number(currentAcc.balance).toLocaleString()}</div></div>
         ${currentAcc.credit_limit?`<div class="list-row"><div class="list-info"><div class="list-sub">信用額度</div></div><div class="list-amt">NT$${Number(currentAcc.credit_limit).toLocaleString()}</div></div>`:''}
         ${currentAcc.statement_day?`<div class="list-row"><div class="list-info"><div class="list-sub">帳單日</div></div><div class="list-amt">每月 ${currentAcc.statement_day} 日</div></div>`:''}
         ${currentAcc.payment_day?`<div class="list-row"><div class="list-info"><div class="list-sub">繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}`;
@@ -1994,6 +1957,7 @@ async function saveTxn(){
     toast(id?'已更新':'記帳成功');
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
+    else loadBudgetAlerts(); // 不在首頁也要更新警示
     if(document.getElementById('det-account').classList.contains('on'))openAccDetail(accId);
   }catch(e){toast('儲存失敗','err');}
 }
@@ -2806,6 +2770,8 @@ async function loadReport(){
       const pct=expense>0?(spent/expense*100).toFixed(1):0;
       const bgtPct=bgtAmt>0?Math.min(Math.round(spent/bgtAmt*100),100):0;
       const overBudget=bgtAmt>0&&spent>bgtAmt;
+      const nearBudget=bgtAmt>0&&!overBudget&&spent/bgtAmt>=0.8;
+      const barColor=overBudget?'var(--red)':nearBudget?'var(--orange)':'var(--green)';
       return`<div style="padding:8px 0;border-bottom:0.5px solid var(--border);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
           <div style="display:flex;align-items:center;gap:8px;">
@@ -2813,13 +2779,13 @@ async function loadReport(){
             <span style="font-size:13px;">${n}</span>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:13px;font-weight:600;color:${overBudget?'var(--red)':'var(--text)'};">NT$${spent.toLocaleString()}</div>
-            ${bgtAmt>0?`<div style="font-size:11px;color:var(--text3);">預算 NT$${bgtAmt.toLocaleString()} · ${pct}%</div>`:`<div style="font-size:11px;color:var(--text3);">${pct}%</div>`}
+            <div style="font-size:13px;font-weight:600;color:${overBudget?'var(--red)':nearBudget?'var(--orange)':'var(--text)'};">NT$${spent.toLocaleString()}</div>
+            ${bgtAmt>0?`<div style="font-size:11px;color:var(--text3);">預算 NT$${bgtAmt.toLocaleString()} · ${Math.round(spent/bgtAmt*100)}%</div>`:`<div style="font-size:11px;color:var(--text3);">${pct}%</div>`}
           </div>
         </div>
         ${bgtAmt>0?`<div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;">
-          <div style="height:100%;width:${bgtPct}%;background:${overBudget?'var(--red)':'var(--green)'};border-radius:2px;transition:width .3s;"></div>
-        </div>${overBudget?`<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ 超出預算 NT$${(spent-bgtAmt).toLocaleString()}</div>`:''}`:''}
+          <div style="height:100%;width:${bgtPct}%;background:${barColor};border-radius:2px;transition:width .3s;"></div>
+        </div>${overBudget?`<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ 超出預算 NT$${(spent-bgtAmt).toLocaleString()}</div>`:nearBudget?`<div style="font-size:11px;color:var(--orange);margin-top:3px;">⚡ 已達 ${Math.round(spent/bgtAmt*100)}%，接近上限</div>`:''}`:''}
       </div>`;
     }).join('');
 
