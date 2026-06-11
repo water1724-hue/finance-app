@@ -489,6 +489,11 @@ select.inp option{background:var(--bg2);}
           <div class="mi-info"><div class="mi-title">使用者管理</div><div class="mi-sub">新增、刪除帳號</div></div>
           <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
         </div>
+        <div class="menu-item" onclick="showDet('det-view-as')">
+          <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-eye" style="color:#9C6BFF" aria-hidden="true"></i></div>
+          <div class="mi-info"><div class="mi-title">檢視使用者資料</div><div class="mi-sub">以使用者視角查看帳務</div></div>
+          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
         <div class="menu-item" onclick="showDet('det-exp-cats')">
           <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-tag" style="color:var(--gold)" aria-hidden="true"></i></div>
           <div class="mi-info"><div class="mi-title">消費類別管理</div><div class="mi-sub">新增、編輯分類</div></div>
@@ -568,6 +573,20 @@ select.inp option{background:var(--bg2);}
   <div style="font-size:18px;font-weight:700;margin-bottom:16px;">使用者管理</div>
   <button class="btn btn-gold" style="width:100%;margin-bottom:14px;" onclick="openSheet('sh-adduser')"><i class="ti ti-plus" aria-hidden="true"></i> 新增使用者</button>
   <div class="card"><div id="user-list"></div></div>
+</div>
+
+<div class="det" id="det-view-as">
+  <div class="det-back" onclick="hideDet('det-view-as');stopViewAs()"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px;">檢視使用者資料</div>
+  <div id="view-as-active" style="display:none;margin-bottom:12px;">
+    <div class="card" style="background:rgba(155,107,255,.1);border:0.5px solid rgba(155,107,255,.3);padding:12px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;color:#9C6BFF;">👁 目前檢視：<span id="view-as-name" style="font-weight:600;"></span></div>
+        <button class="btn btn-ghost btn-sm" onclick="stopViewAs()" style="color:var(--red);">結束檢視</button>
+      </div>
+    </div>
+  </div>
+  <div class="card"><div id="view-as-list"></div></div>
 </div>
 
 <div class="det" id="det-budget">
@@ -1042,6 +1061,7 @@ function showDet(id){
   if(id==='det-exp-cats')loadExpCats();
   if(id==='det-acc-manage'){loadAccManage();loadAccCatOptions();}
   if(id==='det-budget')initBudget();
+  if(id==='det-view-as')loadViewAsList();
 }
 function hideDet(id){document.getElementById(id).classList.remove('on');}
 function openSheet(id){
@@ -1155,7 +1175,7 @@ async function loadFinance(){
   try{
     const [cats,accounts,txns]=await Promise.all([
       sb('/rest/v1/account_categories?order=sort_order.asc',{},false),
-      sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false),
+      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{},false),
       sb(`/rest/v1/transactions?user_id=eq.${prof.id}&order=date.desc,created_at.desc&limit=20`,{},false)
     ]);
     accCats=cats;
@@ -2042,12 +2062,12 @@ async function saveMyProfile(){
     localStorage.setItem('lifeos_session',JSON.stringify(session));
     // Update display
     document.getElementById('more-display').textContent=displayName;
-    // Update password if needed
+    // Update password if needed - use Supabase Auth directly
     if(newPwd){
       const token=session.token||'';
-      const res=await fetch('https://twejdabdhuohfyylsprn.supabase.co/functions/v1/manage-users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({action:'updatePassword',userId:prof.id,password:newPwd})});
+      const res=await fetch(`${SUPA}/auth/v1/user`,{method:'PUT',headers:{'apikey':PUB,'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({password:newPwd})});
       const data=await res.json();
-      if(data.error){toast('密碼更新失敗: '+data.error,'err');return;}
+      if(data.error||data.msg){toast('密碼更新失敗: '+(data.error||data.msg),'err');return;}
     }
     closeSheet('sh-edit-profile');
     toast('已更新');
@@ -2134,6 +2154,53 @@ async function delUser(userId){
 }
 
 // BUDGET
+// VIEW AS USER
+let viewAsUser=null;
+
+async function loadViewAsList(){
+  const el=document.getElementById('view-as-list');
+  const users=await sb('/rest/v1/user_profiles?order=created_at.asc',{},false);
+  const others=users.filter(u=>u.id!==prof.id);
+  if(!others.length){el.innerHTML='<div class="empty"><p>尚無其他使用者</p></div>';return;}
+  el.innerHTML=others.map(u=>`
+    <div class="list-row">
+      <div class="list-icon" style="background:var(--bg4)"><i class="ti ti-user" style="color:var(--text2)" aria-hidden="true"></i></div>
+      <div class="list-info">
+        <div class="list-title">${u.display_name||u.username}</div>
+        <div class="list-sub">${u.username} · ${u.role==='admin'?'管理員':'使用者'}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="startViewAs('${u.id}','${u.display_name||u.username}')">檢視</button>
+    </div>`).join('');
+  // Show current view-as status
+  if(viewAsUser){
+    document.getElementById('view-as-active').style.display='block';
+    document.getElementById('view-as-name').textContent=viewAsUser.name;
+  }
+}
+
+function startViewAs(userId, userName){
+  viewAsUser={id:userId, name:userName};
+  document.getElementById('view-as-active').style.display='block';
+  document.getElementById('view-as-name').textContent=userName;
+  // Show banner on finance page
+  const banner=document.getElementById('view-as-banner');
+  if(banner){banner.style.display='flex';document.getElementById('fin-view-as-name').textContent=userName;}
+  hideDet('det-view-as');
+  goPage('finance');
+  toast(`正在檢視 ${userName} 的資料`);
+}
+
+function stopViewAs(){
+  viewAsUser=null;
+  document.getElementById('view-as-active').style.display='none';
+  toast('已結束檢視');
+  goPage('more');
+}
+
+function getViewAsId(){
+  return viewAsUser?viewAsUser.id:prof.id;
+}
+
 function initBudget(){
   const now=new Date();
   const yearSel=document.getElementById('bgt-year');
