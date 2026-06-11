@@ -1221,15 +1221,21 @@ async function loadFinance(){
     ]);
     accCats=cats;
 
-    // Net worth
+    // Net worth — 台幣與外幣分開
     let totalPos=0,totalNeg=0;
+    const fxMap={}; // { USD: balance, JPY: balance, ... }
     accounts.forEach(a=>{
       const cat=cats.find(c=>c.id===a.category_id);
-      if(cat?.type==='credit')totalNeg+=Number(a.balance);
-      else totalPos+=Number(a.balance);
+      const cur=(a.currency||'TWD').toUpperCase();
+      if(cat?.type==='credit'){totalNeg+=Number(a.balance);}
+      else if(cur==='TWD'){totalPos+=Number(a.balance);}
+      else {fxMap[cur]=(fxMap[cur]||0)+Number(a.balance);}
     });
     document.getElementById('fin-net').textContent='NT$ '+totalPos.toLocaleString();
-    document.getElementById('fin-sub').textContent=`正資產 NT$${totalPos.toLocaleString()} ／ 負債 NT$${totalNeg.toLocaleString()} ／ 淨值 NT$${(totalPos-totalNeg).toLocaleString()}`;
+    // 外幣摘要
+    const fxKeys=Object.keys(fxMap);
+    const fxSummary=fxKeys.length?'　外幣：'+fxKeys.map(k=>`${k} ${fxMap[k].toLocaleString()}`).join('、'):'';
+    document.getElementById('fin-sub').textContent=`台幣資產 NT$${totalPos.toLocaleString()} ／ 負債 NT$${totalNeg.toLocaleString()} ／ 淨值 NT$${(totalPos-totalNeg).toLocaleString()}${fxSummary}`;
 
     // Cat tabs
     const usedTypes=[...new Set(accounts.map(a=>cats.find(c=>c.id===a.category_id)?.type).filter(Boolean))];
@@ -1261,10 +1267,13 @@ function renderAccounts(accounts,cats){
   el.innerHTML=filtered.map(a=>{
     const cat=cats.find(c=>c.id===a.category_id);
     const isNeg=cat?.type==='credit';
+    const cur=(a.currency||'TWD').toUpperCase();
+    const isFx=cur!=='TWD';
+    const amtStr=isFx?`${cur} ${Number(a.balance).toLocaleString()}`:`NT$${Number(a.balance).toLocaleString()}`;
     return`<div class="list-row" onclick="openAccDetail('${a.id}')" style="cursor:pointer;">
       <div class="list-icon" style="background:${isNeg?'rgba(232,112,112,.1)':'rgba(212,170,106,.1)'}"><i class="ti ${cat?.icon||'ti-wallet'}" style="color:${isNeg?'var(--red)':'var(--gold)'}" aria-hidden="true"></i></div>
-      <div class="list-info"><div class="list-title">${a.name}</div><div class="list-sub">${cat?.name||''}</div></div>
-      <div class="list-right"><div class="list-amt ${isNeg?'amt-neg':'amt-gold'}">NT$${Number(a.balance).toLocaleString()}</div></div>
+      <div class="list-info"><div class="list-title">${a.name}</div><div class="list-sub">${cat?.name||''}${isFx?` · <span style="color:var(--blue);font-size:10px;font-weight:600;">${cur}</span>`:''}</div></div>
+      <div class="list-right"><div class="list-amt ${isNeg?'amt-neg':isFx?'amt-gold':'amt-gold'}">${amtStr}</div></div>
       <i class="ti ti-chevron-right arr" aria-hidden="true"></i>
     </div>`;
   }).join('');
@@ -1331,13 +1340,16 @@ async function loadAccManage(){
     el.innerHTML=accounts.map(a=>{
       const cat=cats.find(c=>c.id===a.category_id);
       const isNeg=cat?.type==='credit';
+      const cur2=(a.currency||'TWD').toUpperCase();
+      const isFx2=cur2!=='TWD';
+      const balStr2=isFx2?`${cur2} ${Number(a.balance).toLocaleString()}`:`NT$${Number(a.balance).toLocaleString()}`;
       return`<div class="list-row">
         <div class="list-icon" style="background:${isNeg?'rgba(232,112,112,.1)':'rgba(212,170,106,.1)'}">
           <i class="ti ${cat?.icon||'ti-wallet'}" style="color:${isNeg?'var(--red)':'var(--gold)'}" aria-hidden="true"></i>
         </div>
         <div class="list-info">
           <div class="list-title">${a.name}</div>
-          <div class="list-sub">${cat?.name||''} · NT$${Number(a.balance).toLocaleString()}</div>
+          <div class="list-sub">${cat?.name||''} · ${balStr2}</div>
         </div>
         <div style="display:flex;gap:4px;">
           <button class="icon-btn" onclick="editAccount('${a.id}','${a.name}',${a.balance},'${a.category_id}')" style="padding:4px 8px;">
@@ -1417,7 +1429,7 @@ async function openTransfer(){
     const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{},false);
     // Exclude credit card accounts from transfer
     const accounts=allAccounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='credit';});
-    const opts=accounts.map(a=>`<option value="${a.id}">${a.name} (NT$${Number(a.balance).toLocaleString()})</option>`).join('');
+    const opts=accounts.map(a=>{const cur=(a.currency||'TWD').toUpperCase();const balDisp=cur==='TWD'?`NT$${Number(a.balance).toLocaleString()}`:`${cur} ${Number(a.balance).toLocaleString()}`;return`<option value="${a.id}">${a.name} (${balDisp})</option>`;}).join('');
     document.getElementById('tr-from').innerHTML=opts;
     document.getElementById('tr-to').innerHTML=opts;
     document.getElementById('tr-amt').value='';
@@ -1434,7 +1446,7 @@ async function initTransferSheet(){
     const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{},false);
     // Exclude credit card accounts from transfer
     const accounts=allAccounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='credit';});
-    const opts=accounts.map(a=>`<option value="${a.id}">${a.name} (NT$${Number(a.balance).toLocaleString()})</option>`).join('');
+    const opts=accounts.map(a=>{const cur=(a.currency||'TWD').toUpperCase();const balDisp=cur==='TWD'?`NT$${Number(a.balance).toLocaleString()}`:`${cur} ${Number(a.balance).toLocaleString()}`;return`<option value="${a.id}">${a.name} (${balDisp})</option>`;}).join('');
     document.getElementById('tr-from').innerHTML=opts;
     document.getElementById('tr-to').innerHTML=opts;
     document.getElementById('tr-amt').value='';
@@ -1499,8 +1511,11 @@ async function openAccDetail(id){
     currentAcc=acc[0];
     currentHoldingAccId=id;
     const cat=cats.find(c=>c.id===currentAcc.category_id);
+    const cur=(currentAcc.currency||'TWD').toUpperCase();
+    const isFxAcc=cur!=='TWD';
+    const balStr=isFxAcc?`${cur} ${Number(currentAcc.balance).toLocaleString()}`:`NT$${Number(currentAcc.balance).toLocaleString()}`;
     document.getElementById('det-acc-name').textContent=currentAcc.name;
-    document.getElementById('det-acc-bal').textContent='NT$'+Number(currentAcc.balance).toLocaleString();
+    document.getElementById('det-acc-bal').textContent=balStr;
     const isInv=['securities','fund','forex'].includes(cat?.type);
     document.getElementById('det-acc-type-label').textContent=isInv?'持倉明細':'帳戶資訊';
     // Holdings or info
@@ -1535,7 +1550,7 @@ async function openAccDetail(id){
         }).join('');}
     }else{
       contEl.innerHTML=`
-        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">NT$${Number(currentAcc.balance).toLocaleString()}</div></div>
+        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">${balStr}</div></div>
         ${currentAcc.credit_limit?`<div class="list-row"><div class="list-info"><div class="list-sub">信用額度</div></div><div class="list-amt">NT$${Number(currentAcc.credit_limit).toLocaleString()}</div></div>`:''}
         ${currentAcc.statement_day?`<div class="list-row"><div class="list-info"><div class="list-sub">帳單日</div></div><div class="list-amt">每月 ${currentAcc.statement_day} 日</div></div>`:''}
         ${currentAcc.payment_day?`<div class="list-row"><div class="list-info"><div class="list-sub">繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}`;
@@ -2851,7 +2866,7 @@ async function sendChat(){
       sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}`,{},false)
     ]);
     let inc=0,exp=0;txns.forEach(t=>{if(t.type==='income')inc+=Number(t.amount);else exp+=Number(t.amount);});
-    const totalAssets=accounts.reduce((s,a)=>s+Number(a.balance),0);
+    const totalAssets=accounts.filter(a=>(a.currency||'TWD').toUpperCase()==='TWD').reduce((s,a)=>s+Number(a.balance),0);
     const ctx=`你是${prof.display_name||prof.username}的 Life OS AI 秘書，用繁體中文簡潔回答。
 今日：${today}
 待辦(${todos.length}項)：${todos.slice(0,5).map(t=>t.title).join('、')}
