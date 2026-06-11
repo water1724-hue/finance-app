@@ -446,9 +446,14 @@ select.inp option{background:var(--bg2);}
         <div id="rpt-cat-list" style="margin-top:12px;"></div>
       </div>
       <!-- Monthly trend -->
-      <div class="card">
+      <div class="card" style="margin-bottom:12px;">
         <div class="sec-label">近12個月趨勢</div>
         <canvas id="rpt-bar" height="200"></canvas>
+      </div>
+      <!-- Net worth trend -->
+      <div class="card">
+        <div class="sec-label">淨資產走勢</div>
+        <canvas id="rpt-networth" height="200"></canvas>
       </div>
     </div>
 
@@ -2350,7 +2355,7 @@ async function updateHoldingPrices(accountId){
 }
 
 // REPORT
-let rptPieChart=null, rptBarChart=null;
+let rptPieChart=null, rptBarChart=null, rptNwChart=null;
 
 function initReport(){
   const now=new Date();
@@ -2509,6 +2514,62 @@ async function loadReport(){
         scales:{
           x:{ticks:{color:'#666',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},
           y:{ticks:{color:'#666',font:{size:10},callback:v=>'$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,0.05)'}}
+        }
+      }
+    });
+
+    // Net worth trend - calculate cumulative net worth per month
+    const netWorths=[];
+    for(let i=0;i<12;i++){
+      const netIncome=incomes12[i]-expenses12[i];
+      netWorths.push(netIncome);
+    }
+    // Calculate cumulative
+    const cumNetWorths=[];
+    let cumSum=0;
+    // Get current total assets as base
+    const currentAccounts=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{},false);
+    const currentCats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{},false);
+    let totalAssets=0,totalLiab=0;
+    currentAccounts.forEach(a=>{
+      const c=currentCats.find(x=>x.id===a.category_id);
+      if(c?.type==='credit')totalLiab+=Number(a.balance);
+      else totalAssets+=Number(a.balance);
+    });
+    const currentNetWorth=totalAssets-totalLiab;
+    // Work backwards from current
+    let runningNW=currentNetWorth;
+    const nwPoints=new Array(12);
+    nwPoints[11]=currentNetWorth;
+    for(let i=10;i>=0;i--){
+      runningNW-=(incomes12[i+1]-expenses12[i+1]);
+      nwPoints[i]=runningNW;
+    }
+
+    const nwCtx=document.getElementById('rpt-networth').getContext('2d');
+    if(rptNwChart)rptNwChart.destroy();
+    rptNwChart=new Chart(nwCtx,{
+      type:'line',
+      data:{
+        labels:months12,
+        datasets:[{
+          label:'淨資產',
+          data:nwPoints,
+          borderColor:'#D4AA6A',
+          backgroundColor:'rgba(212,170,106,0.1)',
+          borderWidth:2,
+          pointBackgroundColor:'#D4AA6A',
+          pointRadius:4,
+          fill:true,
+          tension:0.3
+        }]
+      },
+      options:{
+        responsive:true,
+        plugins:{legend:{labels:{color:'#aaa',font:{size:12}}}},
+        scales:{
+          x:{ticks:{color:'#666',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},
+          y:{ticks:{color:'#666',font:{size:10},callback:v=>'NT$'+Math.round(v).toLocaleString()},grid:{color:'rgba(255,255,255,0.05)'}}
         }
       }
     });
