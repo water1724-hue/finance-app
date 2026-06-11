@@ -1009,7 +1009,7 @@ function doLogout(){
 
 async function copyDefaultCats(){
   try{
-    const existing=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&limit=1`,{},false);
+    const existing=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&limit=1`,{},false);
     if(existing.length>0)return;// already has categories
     const defaults=await sb(`/rest/v1/expense_categories?is_default=eq.true&order=sort_order.asc`,{},false);
     if(!defaults.length)return;
@@ -1093,8 +1093,8 @@ async function loadHome(){
   const today=now.toISOString().slice(0,10);
   try{
     const [todos,events,announces]=await Promise.all([
-      (async()=>{const t1=await sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false`,{},false);const t2=await sb(`/rest/v1/todos?assigned_to=eq.${prof.id}&completed=eq.false`,{},false);const seen=new Set(t1.map(t=>t.id));return [...t1,...t2.filter(t=>!seen.has(t.id))];})(),
-      sb(`/rest/v1/events?start_date=eq.${today}&user_id=eq.${prof.id}&order=start_time.asc`,{},false),
+      (async()=>{const t1=await sb(`/rest/v1/todos?user_id=eq.${getViewAsId()}&completed=eq.false`,{},false);const t2=await sb(`/rest/v1/todos?assigned_to=eq.${getViewAsId()}&completed=eq.false`,{},false);const seen=new Set(t1.map(t=>t.id));return [...t1,...t2.filter(t=>!seen.has(t.id))];})(),
+      sb(`/rest/v1/events?start_date=eq.${today}&user_id=eq.${getViewAsId()}&order=start_time.asc`,{},false),
       sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{},false)
     ]);
     document.getElementById('h-todo-count').textContent=todos.length;
@@ -1141,7 +1141,7 @@ async function loadHome(){
     }
     // Credit card reminders
     try{
-      const allAccs=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{},false);
+      const allAccs=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{},false);
       const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{},false);
       const creditAccs=allAccs.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type==='credit';});
       const todayDay=new Date().getDate();
@@ -1176,7 +1176,7 @@ async function loadFinance(){
     const [cats,accounts,txns]=await Promise.all([
       sb('/rest/v1/account_categories?order=sort_order.asc',{},false),
       sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{},false),
-      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&order=date.desc,created_at.desc&limit=20`,{},false)
+      sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&order=date.desc,created_at.desc&limit=20`,{},false)
     ]);
     accCats=cats;
 
@@ -1282,7 +1282,7 @@ async function loadAccManage(){
   try{
     const [cats,accounts]=await Promise.all([
       sb('/rest/v1/account_categories?order=sort_order.asc',{},false),
-      sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false)
+      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{},false)
     ]);
     accCats=cats;
     const el=document.getElementById('acc-manage-list');
@@ -1372,7 +1372,7 @@ async function openTransfer(){
   const sheet=document.getElementById('sh-transfer');
   sheet.classList.add('on');
   try{
-    const allAccounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false);
+    const allAccounts=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{},false);
     const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{},false);
     // Exclude credit card accounts from transfer
     const accounts=allAccounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='credit';});
@@ -1389,7 +1389,7 @@ async function openTransfer(){
 
 async function initTransferSheet(){
   try{
-    const allAccounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false);
+    const allAccounts=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{},false);
     const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{},false);
     // Exclude credit card accounts from transfer
     const accounts=allAccounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='credit';});
@@ -1435,8 +1435,8 @@ async function saveTransfer(){
 
 async function loadAllTxns(){
   try{
-    const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&order=date.desc,created_at.desc`,{},false);
-    const accounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}`,{},false);
+    const txns=await sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&order=date.desc,created_at.desc`,{},false);
+    const accounts=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}`,{},false);
     renderFinTxns(txns,accounts);
   }catch(e){}
 }
@@ -1445,7 +1445,7 @@ function setFinCat(type,btn){
   finCatFilter=type;
   document.querySelectorAll('#cat-tabs .ftab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{},false).then(accounts=>renderAccounts(accounts,accCats));
+  sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{},false).then(accounts=>renderAccounts(accounts,accCats));
 }
 
 // Account detail
@@ -1713,7 +1713,7 @@ function setTxnType(t){
   loadExpCatOptions();
 }
 async function loadExpCatOptions(){
-  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},false);
+  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&order=sort_order.asc`,{},false);
   const filtered=cats.filter(c=>(c.type===txnType||c.type==='both')&&c.is_active!==false);
   const parents=filtered.filter(c=>!c.parent_id);
   const children=filtered.filter(c=>c.parent_id);
@@ -1798,7 +1798,7 @@ async function renderCal(){
   const ms=`${calY}-${String(calM+1).padStart(2,'0')}`;
   try{
     const lastDay=new Date(calY,calM+1,0).getDate();
-    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-${String(lastDay).padStart(2,'0')}&user_id=eq.${prof.id}&order=start_time.asc`,{},false);
+    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-${String(lastDay).padStart(2,'0')}&user_id=eq.${getViewAsId()}&order=start_time.asc`,{},false);
     console.log('Events loaded:', calEvents.length, calEvents);
     calEvents.forEach(e=>{const el=document.getElementById(`cd-${e.start_date}`);if(el&&!el.querySelector('.evdot'))el.insertAdjacentHTML('beforeend',`<span class="evdot" style="background:${e.is_shared?'var(--blue)':'var(--gold)'}"></span>`);});
     showCalDay();
@@ -1922,11 +1922,11 @@ async function delEvent(id){if(!confirm('確定刪除？'))return;try{await sb(`
 async function loadTodos(){
   try{
     let url=`/rest/v1/todos?order=completed.asc,priority.desc,created_at.desc`;
-    if(todoFilter==='mine')url+=`&user_id=eq.${prof.id}&assigned_to=is.null`;
-    else if(todoFilter==='assigned_to_me')url+=`&assigned_to=eq.${prof.id}`;
-    else if(todoFilter==='i_assigned')url+=`&user_id=eq.${prof.id}&assigned_to=not.is.null`;
-    else if(todoFilter==='done')url+=`&completed=eq.true&user_id=eq.${prof.id}`;
-    else url+=`&user_id=eq.${prof.id}`;
+    if(todoFilter==='mine')url+=`&user_id=eq.${getViewAsId()}&assigned_to=is.null`;
+    else if(todoFilter==='assigned_to_me')url+=`&assigned_to=eq.${getViewAsId()}`;
+    else if(todoFilter==='i_assigned')url+=`&user_id=eq.${getViewAsId()}&assigned_to=not.is.null`;
+    else if(todoFilter==='done')url+=`&completed=eq.true&user_id=eq.${getViewAsId()}`;
+    else url+=`&user_id=eq.${getViewAsId()}`;
     if(todoFilter!=='done')url+='&completed=eq.false';
     const todos=await sb(url,{},false);
     const el=document.getElementById('todo-list');
@@ -2182,19 +2182,29 @@ function startViewAs(userId, userName){
   viewAsUser={id:userId, name:userName};
   document.getElementById('view-as-active').style.display='block';
   document.getElementById('view-as-name').textContent=userName;
-  // Show banner on finance page
-  const banner=document.getElementById('view-as-banner');
-  if(banner){banner.style.display='flex';document.getElementById('fin-view-as-name').textContent=userName;}
+  // Show all banners
+  document.querySelectorAll('[id$="-view-as-banner"]').forEach(b=>{
+    b.style.display='flex';
+    b.querySelectorAll('.view-as-label').forEach(l=>l.textContent=userName);
+  });
+  const finBanner=document.getElementById('view-as-banner');
+  if(finBanner){finBanner.style.display='flex';document.getElementById('fin-view-as-name').textContent=userName;}
   hideDet('det-view-as');
-  goPage('finance');
+  goPage('home');
+  loadHome();
   toast(`正在檢視 ${userName} 的資料`);
 }
 
 function stopViewAs(){
   viewAsUser=null;
   document.getElementById('view-as-active').style.display='none';
+  // Hide all banners
+  document.querySelectorAll('[id$="-view-as-banner"]').forEach(b=>b.style.display='none');
+  const finBanner=document.getElementById('view-as-banner');
+  if(finBanner)finBanner.style.display='none';
   toast('已結束檢視');
-  goPage('more');
+  goPage('home');
+  loadHome();
 }
 
 function getViewAsId(){
@@ -2220,8 +2230,8 @@ async function loadBudget(){
   el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
   try{
     const [cats,budgets]=await Promise.all([
-      sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{},false),
-      sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${year}&month=eq.${month}`,{},false)
+      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{},false),
+      sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{},false)
     ]);
     const expCats=cats.filter(c=>c.type==='expense'||c.type==='both');
     if(!expCats.length){el.innerHTML='<div class="empty"><p>尚無消費類別</p></div>';return;}
@@ -2394,8 +2404,8 @@ async function loadReport(){
     const dateTo=`${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
     const [txns,cats]=await Promise.all([
-      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${dateFrom}&date=lte.${dateTo}&order=date.asc`,{},false),
-      sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}`,{},false)
+      sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&date=gte.${dateFrom}&date=lte.${dateTo}&order=date.asc`,{},false),
+      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{},false)
     ]);
 
     // Summary
@@ -2434,8 +2444,8 @@ async function loadReport(){
     }
 
     // Load budgets for this month
-    const budgets=await sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${year}&month=eq.${month}`,{},false);
-    const allCats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&parent_id=is.null`,{},false);
+    const budgets=await sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{},false);
+    const allCats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&parent_id=is.null`,{},false);
 
     // Category list with budget progress
     const catListEl=document.getElementById('rpt-cat-list');
@@ -2476,7 +2486,7 @@ async function loadReport(){
       const last=new Date(y2,m2,0).getDate();
       const to=`${y2}-${String(m2).padStart(2,'0')}-${String(last).padStart(2,'0')}`;
       months12.push(`${y2}/${m2}`);
-      const mt=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${from}&date=lte.${to}`,{},false);
+      const mt=await sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&date=gte.${from}&date=lte.${to}`,{},false);
       let inc=0,exp=0;mt.forEach(t=>{if(t.type==='income')inc+=Number(t.amount);else exp+=Number(t.amount);});
       incomes12.push(inc);
       expenses12.push(exp);
@@ -2508,7 +2518,7 @@ async function loadReport(){
 // EXPENSE CATEGORIES
 let currentParentCat=null;
 async function loadExpCats(){
-  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&order=sort_order.asc`,{},false);
+  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&order=sort_order.asc`,{},false);
   const el=document.getElementById('exp-cat-list');
   if(!cats.length){el.innerHTML='<div class="empty"><p>尚無類別，點上方新增</p></div>';return;}
   const typeLabel={expense:'支出',income:'收入',both:'兩者'};
@@ -2612,10 +2622,10 @@ async function sendChat(){
     const _now=new Date();const today=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
     const mStart=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-01`;
     const [todos,events,txns,accounts]=await Promise.all([
-      sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false&limit=15`,{},false),
-      sb(`/rest/v1/events?user_id=eq.${prof.id}&start_date=gte.${today}&limit=10`,{},false),
-      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${mStart}&order=date.desc&limit=30`,{},false),
-      sb(`/rest/v1/accounts?user_id=eq.${prof.id}`,{},false)
+      sb(`/rest/v1/todos?user_id=eq.${getViewAsId()}&completed=eq.false&limit=15`,{},false),
+      sb(`/rest/v1/events?user_id=eq.${getViewAsId()}&start_date=gte.${today}&limit=10`,{},false),
+      sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&date=gte.${mStart}&order=date.desc&limit=30`,{},false),
+      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}`,{},false)
     ]);
     let inc=0,exp=0;txns.forEach(t=>{if(t.type==='income')inc+=Number(t.amount);else exp+=Number(t.amount);});
     const totalAssets=accounts.reduce((s,a)=>s+Number(a.balance),0);
@@ -2679,7 +2689,7 @@ window.openSheet=async function(id){
     if(!accSel.options.length||accSel.options.length===0){
       const [cats,accounts]=await Promise.all([
         sb('/rest/v1/account_categories?order=sort_order.asc',{},false),
-        sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false)
+        sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{},false)
       ]);
       accCats=cats;
       accSel.innerHTML=accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
