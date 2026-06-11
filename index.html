@@ -503,6 +503,11 @@ select.inp option{background:var(--bg2);}
           <div class="mi-info"><div class="mi-title">帳戶管理</div><div class="mi-sub">新增、刪除銀行、信用卡、證券帳戶</div></div>
           <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
         </div>
+        <div class="menu-item" onclick="showDet('det-budget')">
+          <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-target" style="color:var(--green)" aria-hidden="true"></i></div>
+          <div class="mi-info"><div class="mi-title">預算設定</div><div class="mi-sub">設定每月各類別支出上限</div></div>
+          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
         <div class="menu-item" onclick="showDet('det-exp-cats')">
           <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-tag" style="color:var(--green)" aria-hidden="true"></i></div>
           <div class="mi-info"><div class="mi-title">消費類別</div><div class="mi-sub">管理我的收支分類</div></div>
@@ -558,6 +563,22 @@ select.inp option{background:var(--bg2);}
   <div style="font-size:18px;font-weight:700;margin-bottom:16px;">使用者管理</div>
   <button class="btn btn-gold" style="width:100%;margin-bottom:14px;" onclick="openSheet('sh-adduser')"><i class="ti ti-plus" aria-hidden="true"></i> 新增使用者</button>
   <div class="card"><div id="user-list"></div></div>
+</div>
+
+<div class="det" id="det-budget">
+  <div class="det-back" onclick="hideDet('det-budget')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px;">預算設定</div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;">
+    <select class="inp" id="bgt-year" style="width:100px;padding:8px 12px;"></select>
+    <select class="inp" id="bgt-month" style="width:90px;padding:8px 12px;">
+      <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+      <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+      <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+      <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="loadBudget()">查詢</button>
+  </div>
+  <div class="card"><div id="budget-list"></div></div>
 </div>
 
 <div class="det" id="det-acc-manage">
@@ -986,6 +1007,7 @@ function showDet(id){
   if(id==='det-users')loadUsers();
   if(id==='det-exp-cats')loadExpCats();
   if(id==='det-acc-manage'){loadAccManage();loadAccCatOptions();}
+  if(id==='det-budget')initBudget();
 }
 function hideDet(id){document.getElementById(id).classList.remove('on');}
 function openSheet(id){
@@ -2029,6 +2051,68 @@ async function delUser(userId){
   }catch(e){toast('刪除失敗','err');}
 }
 
+// BUDGET
+function initBudget(){
+  const now=new Date();
+  const yearSel=document.getElementById('bgt-year');
+  if(!yearSel.options.length){
+    const y=now.getFullYear();
+    for(let i=y+1;i>=y-1;i--)yearSel.innerHTML+=`<option value="${i}">${i}年</option>`;
+  }
+  document.getElementById('bgt-year').value=now.getFullYear();
+  document.getElementById('bgt-month').value=now.getMonth()+1;
+  loadBudget();
+}
+
+async function loadBudget(){
+  const year=parseInt(document.getElementById('bgt-year').value);
+  const month=parseInt(document.getElementById('bgt-month').value);
+  const el=document.getElementById('budget-list');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
+  try{
+    const [cats,budgets]=await Promise.all([
+      sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{},false),
+      sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${year}&month=eq.${month}`,{},false)
+    ]);
+    const expCats=cats.filter(c=>c.type==='expense'||c.type==='both');
+    if(!expCats.length){el.innerHTML='<div class="empty"><p>尚無消費類別</p></div>';return;}
+    el.innerHTML=expCats.map(c=>{
+      const bgt=budgets.find(b=>b.category_id===c.id);
+      const amt=bgt?Number(bgt.amount):0;
+      return`<div class="list-row" style="flex-wrap:wrap;gap:8px;padding:12px 0;">
+        <div class="list-info" style="min-width:80px;">
+          <div class="list-title">${c.name}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px;">
+          <span style="font-size:12px;color:var(--text3);">NT$</span>
+          <input class="inp" type="number" placeholder="不設定" value="${amt||''}" 
+            id="bgt-${c.id}" style="flex:1;padding:8px 10px;font-size:14px;">
+          <button class="btn btn-gold btn-sm" onclick="saveBudget('${c.id}','${bgt?.id||''}',${year},${month})">儲存</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+
+async function saveBudget(catId, budgetId, year, month){
+  const amt=parseFloat(document.getElementById(`bgt-${catId}`).value)||0;
+  try{
+    if(budgetId){
+      if(amt===0){
+        await sb(`/rest/v1/budgets?id=eq.${budgetId}`,{method:'DELETE'},false);
+        toast('預算已清除');
+      } else {
+        await sb(`/rest/v1/budgets?id=eq.${budgetId}`,{method:'PATCH',body:JSON.stringify({amount:amt})},false);
+        toast('預算已更新');
+      }
+    } else if(amt>0){
+      await sb('/rest/v1/budgets',{method:'POST',body:JSON.stringify({user_id:prof.id,category_id:catId,amount:amt,year,month})},false);
+      toast('預算已設定');
+    }
+    loadBudget();
+  }catch(e){toast('儲存失敗','err');}
+}
+
 async function fetchTwStockPrice(symbol){
   try{
     // TWSE real-time API
@@ -2200,19 +2284,36 @@ async function loadReport(){
       pieCtx.clearRect(0,0,pieCtx.canvas.width,pieCtx.canvas.height);
     }
 
-    // Category list
+    // Load budgets for this month
+    const budgets=await sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${year}&month=eq.${month}`,{},false);
+    const allCats=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&parent_id=is.null`,{},false);
+
+    // Category list with budget progress
     const catListEl=document.getElementById('rpt-cat-list');
-    catListEl.innerHTML=catNames.map((n,i)=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:10px;height:10px;border-radius:50%;background:${colors[i]||'#888'};flex-shrink:0;"></div>
-          <span style="font-size:13px;">${n}</span>
+    catListEl.innerHTML=catNames.map((n,i)=>{
+      const cat=allCats.find(c=>c.name===n);
+      const bgt=cat?budgets.find(b=>b.category_id===cat.id):null;
+      const bgtAmt=bgt?Number(bgt.amount):0;
+      const spent=catMap[n];
+      const pct=expense>0?(spent/expense*100).toFixed(1):0;
+      const bgtPct=bgtAmt>0?Math.min(Math.round(spent/bgtAmt*100),100):0;
+      const overBudget=bgtAmt>0&&spent>bgtAmt;
+      return`<div style="padding:8px 0;border-bottom:0.5px solid var(--border);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:10px;height:10px;border-radius:50%;background:${colors[i]||'#888'};flex-shrink:0;"></div>
+            <span style="font-size:13px;">${n}</span>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:13px;font-weight:600;color:${overBudget?'var(--red)':'var(--text)'};">NT$${spent.toLocaleString()}</div>
+            ${bgtAmt>0?`<div style="font-size:11px;color:var(--text3);">預算 NT$${bgtAmt.toLocaleString()} · ${pct}%</div>`:`<div style="font-size:11px;color:var(--text3);">${pct}%</div>`}
+          </div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:13px;font-weight:600;color:var(--red);">NT$${catMap[n].toLocaleString()}</div>
-          <div style="font-size:11px;color:var(--text3);">${expense>0?(catMap[n]/expense*100).toFixed(1):0}%</div>
-        </div>
-      </div>`).join('');
+        ${bgtAmt>0?`<div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${bgtPct}%;background:${overBudget?'var(--red)':'var(--green)'};border-radius:2px;transition:width .3s;"></div>
+        </div>${overBudget?`<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ 超出預算 NT$${(spent-bgtAmt).toLocaleString()}</div>`:''}`:''}
+      </div>`;
+    }).join('');
 
     // 12-month trend
     const months12=[];
