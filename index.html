@@ -465,6 +465,11 @@ select.inp option{background:var(--bg2);}
 
       <div class="menu-sec-lbl">工具</div>
       <div class="card" style="padding:4px 16px;">
+        <div class="menu-item" onclick="goPage('report')">
+          <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-chart-bar" style="color:var(--blue)" aria-hidden="true"></i></div>
+          <div class="mi-info"><div class="mi-title">月報表</div><div class="mi-sub">收支統計與趨勢分析</div></div>
+          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
         <div class="menu-item" onclick="goPage('ai')">
           <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
           <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
@@ -519,7 +524,6 @@ select.inp option{background:var(--bg2);}
     <button class="bnav-item" onclick="goPage('cal')" data-p="cal"><i class="ti ti-calendar" aria-hidden="true"></i><span>行程</span></button>
     <button class="bnav-item" onclick="goPage('todo')" data-p="todo"><i class="ti ti-checklist" aria-hidden="true"></i><span>待辦</span></button>
     <button class="bnav-item" onclick="goPage('announce')" data-p="announce"><i class="ti ti-speakerphone" aria-hidden="true"></i><span>公告</span></button>
-    <button class="bnav-item" onclick="goPage('report')" data-p="report"><i class="ti ti-chart-bar" aria-hidden="true"></i><span>報表</span></button>
     <button class="bnav-item" onclick="goPage('more')" data-p="more"><i class="ti ti-dots" aria-hidden="true"></i><span>更多</span></button>
   </nav>
 </div>
