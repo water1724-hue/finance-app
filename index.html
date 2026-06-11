@@ -2083,17 +2083,23 @@ async function fetchExchangeRate(currency){
 async function updateHoldingPrices(accountId){
   try{
     const holdings=await sb(`/rest/v1/holdings?account_id=eq.${accountId}`,{},false);
-    if(!holdings.length)return;
+    if(!holdings.length){toast('尚無持倉','err');return;}
+    toast('更新中...');
+    const token=JSON.parse(localStorage.getItem('lifeos_session')||'{}').token||'';
     let updated=0;
     for(const h of holdings){
-      let price=null;
-      if(h.type==='tw_stock')price=await fetchTwStockPrice(h.symbol);
-      else if(h.type==='us_stock')price=await fetchUsStockPrice(h.symbol);
-      else if(h.type==='forex')price=await fetchExchangeRate(h.symbol);
-      if(price){
-        await sb(`/rest/v1/holdings?id=eq.${h.id}`,{method:'PATCH',body:JSON.stringify({current_price:price})},false);
-        updated++;
-      }
+      try{
+        const res=await fetch('https://twejdabdhuohfyylsprn.supabase.co/functions/v1/get-prices',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body:JSON.stringify({type:h.type||'tw_stock',symbol:h.symbol})
+        });
+        const data=await res.json();
+        if(data.price){
+          await sb(`/rest/v1/holdings?id=eq.${h.id}`,{method:'PATCH',body:JSON.stringify({current_price:data.price})},false);
+          updated++;
+        }
+      }catch(e){console.error('Price fetch error:',h.symbol,e);}
     }
     toast(`已更新 ${updated} 筆報價`);
     openAccDetail(accountId);
