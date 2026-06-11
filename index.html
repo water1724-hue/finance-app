@@ -323,7 +323,7 @@ select.inp option{background:var(--bg2);}
       <div class="row-between" style="margin-bottom:10px;">
         <div class="sec-label" style="margin:0">帳戶</div>
         <div style="display:flex;gap:6px;">
-          <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-transfer')"><i class="ti ti-transfer" aria-hidden="true"></i> 轉帳</button>
+          <button class="btn btn-ghost btn-sm" onclick="openTransfer()"><i class="ti ti-transfer" aria-hidden="true"></i> 轉帳</button>
         </div>
       </div>
       <div class="card"><div id="account-list"></div></div>
@@ -1169,6 +1169,22 @@ async function delTxnFromAcc(id, amount, type, accountId){
 
 // Update saveTxn to handle edit
 // Transfer between accounts
+async function openTransfer(){
+  const sheet=document.getElementById('sh-transfer');
+  sheet.classList.add('on');
+  try{
+    const accounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false);
+    const opts=accounts.map(a=>`<option value="${a.id}">${a.name} (NT$${Number(a.balance).toLocaleString()})</option>`).join('');
+    document.getElementById('tr-from').innerHTML=opts;
+    document.getElementById('tr-to').innerHTML=opts;
+    document.getElementById('tr-amt').value='';
+    document.getElementById('tr-fee').value='0';
+    const n=new Date();
+    document.getElementById('tr-date').value=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+    document.getElementById('tr-note').value='';
+  }catch(e){console.error('Transfer error:',e);}
+}
+
 async function initTransferSheet(){
   try{
     const accounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false);
@@ -1502,7 +1518,7 @@ async function loadExpCatOptions(){
 }
 async function openSheet(id){
   document.getElementById(id).classList.add('on');
-  if(id==='sh-transfer'){initTransferSheet().then(()=>{document.getElementById(id).classList.add('on');});return;}
+  // sh-transfer handled by openTransfer()
   if(id==='sh-txn'){setTxnType('expense');document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);document.getElementById('txn-amt').value='';document.getElementById('txn-note').value='';await loadExpCatOptions();}
   if(id==='sh-todo'){document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');}
 }
