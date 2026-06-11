@@ -1170,6 +1170,7 @@ async function delTxnFromAcc(id, amount, type, accountId){
 // Update saveTxn to handle edit
 // Transfer between accounts
 async function initTransferSheet(){
+  try{
   const accounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{},false);
   const opts=accounts.map(a=>`<option value="${a.id}">${a.name} (NT$${Number(a.balance).toLocaleString()})</option>`).join('');
   document.getElementById('tr-from').innerHTML=opts;
@@ -1178,6 +1179,7 @@ async function initTransferSheet(){
   document.getElementById('tr-fee').value='0';
   document.getElementById('tr-date').value=new Date().toISOString().slice(0,10);
   document.getElementById('tr-note').value='';
+  }catch(e){toast('載入帳戶失敗','err');}
 }
 
 async function saveTransfer(){
@@ -1582,20 +1584,20 @@ function showCalDay(){
   const el=document.getElementById('cal-ev-list');
   if(!evs.length){el.innerHTML='<div class="empty"><p>這天沒有行程</p></div>';return;}
   el.innerHTML='<div class="tl-wrap"><div class="tl-vline"></div>'+evs.map((e,i)=>`
-    <div class="tl-item">
+    <div class="tl-item" style="align-items:flex-start;">
       <div class="tl-dot" style="background:${e.color||'var(--gold)'}"></div>
       <div class="tl-time">${e.start_time?e.start_time.slice(0,5):'全天'}</div>
-      <div class="tl-card">
+      <div class="tl-card" style="flex:1;">
         <div class="tl-title">${e.title}</div>
         ${e.description?`<div class="tl-desc">${e.description}</div>`:''}
         ${e.end_time?`<div class="tl-desc">結束 ${e.end_time.slice(0,5)}</div>`:''}
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+        <div style="margin-top:6px;">
           ${e.is_shared?'<span class="tag tag-blue">共用</span>':'<span class="tag tag-gold">個人</span>'}
-          <div style="display:flex;gap:4px;position:relative;z-index:10;">
-            <button class="icon-btn" data-idx="${i}" onclick="editCalEvent(parseInt(this.dataset.idx))" style="pointer-events:auto;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
-            <button class="icon-btn" onclick="delEvent('${e.id}')" style="pointer-events:auto;"><i class="ti ti-trash" aria-hidden="true"></i></button>
-          </div>
         </div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0;padding-top:4px;">
+        <button class="icon-btn" data-idx="${i}" onclick="editCalEvent(parseInt(this.dataset.idx))"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+        <button class="icon-btn" onclick="delEvent('${e.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
       </div>
     </div>`).join('')+'</div>';
 }
