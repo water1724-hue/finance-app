@@ -551,11 +551,6 @@ select.inp option{background:var(--bg2);}
           <div class="mi-info"><div class="mi-title">預算設定</div><div class="mi-sub">設定每月各類別支出上限</div></div>
           <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
         </div>
-        <div class="menu-item" onclick="showDet('det-exp-cats')">
-          <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-tag" style="color:var(--green)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">消費類別</div><div class="mi-sub">管理我的收支分類</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
         <div class="menu-item" onclick="doLogout()" style="margin-top:0;">
           <div class="mi-icon" style="background:rgba(232,112,112,.1)"><i class="ti ti-logout" style="color:var(--red)" aria-hidden="true"></i></div>
           <div class="mi-info"><div class="mi-title" style="color:var(--red)">登出</div><div class="mi-sub">退出目前帳號</div></div>
@@ -2869,7 +2864,7 @@ async function loadExpCats(){
             ? `<button class="btn btn-ghost btn-sm" style="color:${isActive?'var(--red)':'var(--green)'};" onclick="toggleExpCatActive('${p.id}',${isActive})">${isActive?'停用':'啟用'}</button>`
             : `<span style="font-size:11px;color:var(--text4);padding:6px 8px;">🔒</span>`
           }
-          ${isAdmin?`<button class="icon-btn" onclick="delExpCat('${p.id}')" style="color:var(--red);font-size:15px;"><i class="ti ti-trash" aria-hidden="true"></i></button>`:''}
+          ${isAdmin?`<button class="icon-btn" onclick="delExpCat('${p.id}')" style="color:var(--red);font-size:15px;"><i class="ti ti-trash" aria-hidden="true"></i></button>`:(!isDefault?`<button class="icon-btn" onclick="delExpCat('${p.id}')" style="color:var(--red);font-size:15px;"><i class="ti ti-trash" aria-hidden="true"></i></button>`:'')}
         </div>
       </div>
       ${subs.length?`<div style="margin-top:4px;">`+subs.map(s=>{
@@ -2888,7 +2883,7 @@ async function loadExpCats(){
               ? `<button class="icon-btn" style="color:${sActive?'var(--red)':'var(--green)'};" onclick="toggleExpCatActive('${s.id}',${sActive})" title="${sActive?'停用':'啟用'}"><i class="ti ti-${sActive?'eye-off':'eye'}" aria-hidden="true"></i></button>`
               : `<span style="font-size:11px;color:var(--text4);padding:4px;">🔒</span>`
             }
-            ${isAdmin?`<button class="icon-btn" onclick="delExpCat('${s.id}')" style="color:var(--red);font-size:14px;" title="刪除"><i class="ti ti-trash" aria-hidden="true"></i></button>`:''}
+            ${isAdmin?`<button class="icon-btn" onclick="delExpCat('${s.id}')" style="color:var(--red);font-size:14px;" title="刪除"><i class="ti ti-trash" aria-hidden="true"></i></button>`:(!sDefault?`<button class="icon-btn" onclick="delExpCat('${s.id}')" style="color:var(--red);font-size:14px;" title="刪除"><i class="ti ti-trash" aria-hidden="true"></i></button>`:'')}
           </div>
         </div>`;
       }).join('')+'</div>':''}
@@ -2950,9 +2945,11 @@ async function saveExpCat(){
 }
 
 async function delExpCat(id){
-  if(prof.role!=='admin'){toast('此功能僅限管理員','err');return;}
-  if(!confirm('確定刪除？此類別下的細項也會一併刪除。'))return;
   try{
+    const cat=await sb(`/rest/v1/expense_categories?id=eq.${id}`,{},false);
+    if(!cat.length)return;
+    if(cat[0].is_default&&prof.role!=='admin'){toast('預設類別不可刪除','err');return;}
+    if(!confirm('確定刪除？此類別下的細項也會一併刪除。'))return;
     await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'DELETE'},false);
     toast('已刪除');loadExpCats();
   }catch(e){toast('刪除失敗','err');}
