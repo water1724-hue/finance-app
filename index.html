@@ -498,6 +498,11 @@ select.inp option{background:var(--bg2);}
 
       <div class="menu-sec-lbl">帳號</div>
       <div class="card" style="padding:4px 16px;">
+        <div class="menu-item" onclick="openMyProfile()">
+          <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-user-edit" style="color:var(--blue)" aria-hidden="true"></i></div>
+          <div class="mi-info"><div class="mi-title">個人資料</div><div class="mi-sub">修改顯示名稱與密碼</div></div>
+          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+        </div>
         <div class="menu-item" onclick="showDet('det-acc-manage')">
           <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-wallet" style="color:var(--gold)" aria-hidden="true"></i></div>
           <div class="mi-info"><div class="mi-title">帳戶管理</div><div class="mi-sub">新增、刪除銀行、信用卡、證券帳戶</div></div>
@@ -808,6 +813,35 @@ select.inp option{background:var(--bg2);}
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-edit-account')">取消</button>
       <button class="btn btn-gold" onclick="saveEditAccount()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile -->
+<div class="overlay" id="sh-edit-profile">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>個人資料</h3>
+    <div class="field"><label>顯示名稱</label><input class="inp" type="text" id="my-display-name" placeholder="顯示名稱"></div>
+    <div class="field"><label>新密碼（留空表示不修改）</label>
+      <div style="position:relative;">
+        <input class="inp" type="password" id="my-new-pwd" placeholder="至少6位" style="padding-right:44px;">
+        <button type="button" onclick="togglePwd('my-new-pwd',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;">
+          <i class="ti ti-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div class="field"><label>確認新密碼</label>
+      <div style="position:relative;">
+        <input class="inp" type="password" id="my-confirm-pwd" placeholder="再輸入一次" style="padding-right:44px;">
+        <button type="button" onclick="togglePwd('my-confirm-pwd',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;">
+          <i class="ti ti-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-edit-profile')">取消</button>
+      <button class="btn btn-gold" onclick="saveMyProfile()">儲存</button>
     </div>
   </div>
 </div>
@@ -1972,6 +2006,54 @@ async function delAnnounce(id){if(!confirm('確定刪除公告？'))return;try{a
 
 // USERS
 async function loadAllUsers(){try{allUsers=await sb('/rest/v1/user_profiles?order=created_at.asc',{},false);}catch(e){}}
+function togglePwd(inputId, btn){
+  const input=document.getElementById(inputId);
+  const icon=btn.querySelector('i');
+  if(input.type==='password'){
+    input.type='text';
+    icon.className='ti ti-eye-off';
+  } else {
+    input.type='password';
+    icon.className='ti ti-eye';
+  }
+}
+
+function openMyProfile(){
+  document.getElementById('my-display-name').value=prof.display_name||prof.username||'';
+  document.getElementById('my-new-pwd').value='';
+  document.getElementById('my-confirm-pwd').value='';
+  openSheet('sh-edit-profile');
+}
+
+async function saveMyProfile(){
+  const displayName=document.getElementById('my-display-name').value.trim();
+  const newPwd=document.getElementById('my-new-pwd').value;
+  const confirmPwd=document.getElementById('my-confirm-pwd').value;
+  if(!displayName){toast('請填寫顯示名稱','err');return;}
+  if(newPwd&&newPwd.length<6){toast('密碼至少6位','err');return;}
+  if(newPwd&&newPwd!==confirmPwd){toast('兩次密碼不一致','err');return;}
+  try{
+    // Update display name
+    await sb(`/rest/v1/user_profiles?id=eq.${prof.id}`,{method:'PATCH',body:JSON.stringify({display_name:displayName})},false);
+    prof.display_name=displayName;
+    // Update localStorage
+    const session=JSON.parse(localStorage.getItem('lifeos_session')||'{}');
+    session.prof=prof;
+    localStorage.setItem('lifeos_session',JSON.stringify(session));
+    // Update display
+    document.getElementById('more-display').textContent=displayName;
+    // Update password if needed
+    if(newPwd){
+      const token=session.token||'';
+      const res=await fetch('https://twejdabdhuohfyylsprn.supabase.co/functions/v1/manage-users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({action:'updatePassword',userId:prof.id,password:newPwd})});
+      const data=await res.json();
+      if(data.error){toast('密碼更新失敗: '+data.error,'err');return;}
+    }
+    closeSheet('sh-edit-profile');
+    toast('已更新');
+  }catch(e){toast('更新失敗','err');}
+}
+
 function editUser(userId, displayName, role){
   document.getElementById('edit-user-id').value=userId;
   document.getElementById('edit-user-name').value=displayName;
