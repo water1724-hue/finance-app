@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#1c1c1e;--bg2:#252528;--bg3:#2a2a2e;--bg4:#323236;
@@ -413,6 +414,44 @@ select.inp option{background:var(--bg2);}
       </div>
     </div>
 
+    <!-- REPORT -->
+    <div class="page" id="pg-report">
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0;">月報表</div>
+      </div>
+      <!-- Date selector -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select class="inp" id="rpt-year" style="width:100px;padding:8px 12px;" onchange="loadReport()"></select>
+          <select class="inp" id="rpt-month" style="width:90px;padding:8px 12px;" onchange="loadReport()">
+            <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+            <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+            <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+            <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="rptPrev()">‹ 上月</button>
+          <button class="btn btn-ghost btn-sm" onclick="rptNext()">下月 ›</button>
+        </div>
+      </div>
+      <!-- Summary -->
+      <div class="stat-grid" style="margin-bottom:12px;">
+        <div class="stat-card"><div class="stat-val amt-pos" id="rpt-income">—</div><div class="stat-lbl">收入</div></div>
+        <div class="stat-card"><div class="stat-val amt-neg" id="rpt-expense">—</div><div class="stat-lbl">支出</div></div>
+        <div class="stat-card" style="grid-column:span 2;"><div class="stat-val amt-gold" id="rpt-balance">—</div><div class="stat-lbl">結餘</div></div>
+      </div>
+      <!-- Expense by category -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="sec-label">支出分類</div>
+        <canvas id="rpt-pie" height="200"></canvas>
+        <div id="rpt-cat-list" style="margin-top:12px;"></div>
+      </div>
+      <!-- Monthly trend -->
+      <div class="card">
+        <div class="sec-label">近12個月趨勢</div>
+        <canvas id="rpt-bar" height="200"></canvas>
+      </div>
+    </div>
+
     <!-- MORE -->
     <div class="page" id="pg-more">
       <div class="pg-title">更多</div>
@@ -480,6 +519,7 @@ select.inp option{background:var(--bg2);}
     <button class="bnav-item" onclick="goPage('cal')" data-p="cal"><i class="ti ti-calendar" aria-hidden="true"></i><span>行程</span></button>
     <button class="bnav-item" onclick="goPage('todo')" data-p="todo"><i class="ti ti-checklist" aria-hidden="true"></i><span>待辦</span></button>
     <button class="bnav-item" onclick="goPage('announce')" data-p="announce"><i class="ti ti-speakerphone" aria-hidden="true"></i><span>公告</span></button>
+    <button class="bnav-item" onclick="goPage('report')" data-p="report"><i class="ti ti-chart-bar" aria-hidden="true"></i><span>報表</span></button>
     <button class="bnav-item" onclick="goPage('more')" data-p="more"><i class="ti ti-dots" aria-hidden="true"></i><span>更多</span></button>
   </nav>
 </div>
@@ -888,6 +928,7 @@ function goPage(p){
   if(p==='cal')renderCal();
   if(p==='todo')loadTodos();
   if(p==='announce')loadAnnouncements();
+  if(p==='report')initReport();
 }
 function showDet(id){
   if(id==='det-users'&&prof.role!=='admin'){toast('無權限','err');return;}
@@ -1817,6 +1858,155 @@ async function delUser(id){
   if(!confirm('確定刪除此使用者？'))return;
   try{await sbAdmin(`/auth/v1/admin/users/${id}`,'DELETE');toast('已刪除');await loadAllUsers();loadUsers();}
   catch(e){toast('刪除失敗','err');}
+}
+
+// REPORT
+let rptPieChart=null, rptBarChart=null;
+
+function initReport(){
+  const now=new Date();
+  const yearSel=document.getElementById('rpt-year');
+  if(!yearSel.options.length){
+    const currentYear=now.getFullYear();
+    for(let y=currentYear;y>=currentYear-2;y--){
+      yearSel.innerHTML+=`<option value="${y}">${y}年</option>`;
+    }
+  }
+  // Set current month if not set
+  if(!document.getElementById('rpt-month').value){
+    document.getElementById('rpt-month').value=now.getMonth()+1;
+  }
+  loadReport();
+}
+
+function rptPrev(){
+  const m=document.getElementById('rpt-month');
+  const y=document.getElementById('rpt-year');
+  let month=parseInt(m.value)-1;
+  let year=parseInt(y.value);
+  if(month<1){month=12;year--;}
+  m.value=month;
+  // Update year select if needed
+  let found=false;
+  for(let opt of y.options){if(parseInt(opt.value)===year){found=true;y.value=year;break;}}
+  if(!found){y.innerHTML+=`<option value="${year}">${year}年</option>`;y.value=year;}
+  loadReport();
+}
+
+function rptNext(){
+  const m=document.getElementById('rpt-month');
+  const y=document.getElementById('rpt-year');
+  let month=parseInt(m.value)+1;
+  let year=parseInt(y.value);
+  if(month>12){month=1;year++;}
+  m.value=month;
+  let found=false;
+  for(let opt of y.options){if(parseInt(opt.value)===year){found=true;y.value=year;break;}}
+  if(!found){y.innerHTML+=`<option value="${year}">${year}年</option>`;y.value=year;}
+  loadReport();
+}
+
+async function loadReport(){
+  try{
+    const year=parseInt(document.getElementById('rpt-year').value);
+    const month=parseInt(document.getElementById('rpt-month').value);
+    const dateFrom=`${year}-${String(month).padStart(2,'0')}-01`;
+    const lastDay=new Date(year,month,0).getDate();
+    const dateTo=`${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
+    const [txns,cats]=await Promise.all([
+      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${dateFrom}&date=lte.${dateTo}&order=date.asc`,{},false),
+      sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}`,{},false)
+    ]);
+
+    // Summary
+    let income=0,expense=0;
+    txns.forEach(t=>{if(t.type==='income')income+=Number(t.amount);else expense+=Number(t.amount);});
+    document.getElementById('rpt-income').textContent='NT$'+income.toLocaleString();
+    document.getElementById('rpt-expense').textContent='NT$'+expense.toLocaleString();
+    const bal=income-expense;
+    const balEl=document.getElementById('rpt-balance');
+    balEl.textContent=(bal>=0?'+':'')+'NT$'+bal.toLocaleString();
+    balEl.className='stat-val '+(bal>=0?'amt-pos':'amt-neg');
+
+    // Expense by category
+    const expTxns=txns.filter(t=>t.type==='expense');
+    const catMap={};
+    expTxns.forEach(t=>{
+      const cat=cats.find(c=>c.id===t.category_id);
+      const name=cat?cat.name:'未分類';
+      catMap[name]=(catMap[name]||0)+Number(t.amount);
+    });
+    const catNames=Object.keys(catMap).sort((a,b)=>catMap[b]-catMap[a]);
+    const catAmts=catNames.map(n=>catMap[n]);
+    const colors=['#D4AA6A','#5DBD8A','#6B9EF0','#E87070','#9C6BFF','#E8894A','#F7931A','#43d9ad','#ff6584','#c4b5fd'];
+
+    // Pie chart
+    const pieCtx=document.getElementById('rpt-pie').getContext('2d');
+    if(rptPieChart)rptPieChart.destroy();
+    if(catNames.length){
+      rptPieChart=new Chart(pieCtx,{
+        type:'doughnut',
+        data:{labels:catNames,datasets:[{data:catAmts,backgroundColor:colors.slice(0,catNames.length),borderWidth:0}]},
+        options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#aaa',font:{size:12},padding:12}}}}
+      });
+    } else {
+      pieCtx.clearRect(0,0,pieCtx.canvas.width,pieCtx.canvas.height);
+    }
+
+    // Category list
+    const catListEl=document.getElementById('rpt-cat-list');
+    catListEl.innerHTML=catNames.map((n,i)=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:${colors[i]||'#888'};flex-shrink:0;"></div>
+          <span style="font-size:13px;">${n}</span>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:13px;font-weight:600;color:var(--red);">NT$${catMap[n].toLocaleString()}</div>
+          <div style="font-size:11px;color:var(--text3);">${expense>0?(catMap[n]/expense*100).toFixed(1):0}%</div>
+        </div>
+      </div>`).join('');
+
+    // 12-month trend
+    const months12=[];
+    const incomes12=[];
+    const expenses12=[];
+    for(let i=11;i>=0;i--){
+      const d=new Date(year,month-1-i,1);
+      const y2=d.getFullYear();
+      const m2=d.getMonth()+1;
+      const from=`${y2}-${String(m2).padStart(2,'0')}-01`;
+      const last=new Date(y2,m2,0).getDate();
+      const to=`${y2}-${String(m2).padStart(2,'0')}-${String(last).padStart(2,'0')}`;
+      months12.push(`${y2}/${m2}`);
+      const mt=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${from}&date=lte.${to}`,{},false);
+      let inc=0,exp=0;mt.forEach(t=>{if(t.type==='income')inc+=Number(t.amount);else exp+=Number(t.amount);});
+      incomes12.push(inc);
+      expenses12.push(exp);
+    }
+
+    const barCtx=document.getElementById('rpt-bar').getContext('2d');
+    if(rptBarChart)rptBarChart.destroy();
+    rptBarChart=new Chart(barCtx,{
+      type:'bar',
+      data:{
+        labels:months12,
+        datasets:[
+          {label:'收入',data:incomes12,backgroundColor:'rgba(93,189,138,0.7)',borderRadius:4},
+          {label:'支出',data:expenses12,backgroundColor:'rgba(232,112,112,0.7)',borderRadius:4}
+        ]
+      },
+      options:{
+        responsive:true,
+        plugins:{legend:{labels:{color:'#aaa',font:{size:12}}}},
+        scales:{
+          x:{ticks:{color:'#666',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},
+          y:{ticks:{color:'#666',font:{size:10},callback:v=>'$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,0.05)'}}
+        }
+      }
+    });
+  }catch(e){console.error('Report error:',e);}
 }
 
 // EXPENSE CATEGORIES
