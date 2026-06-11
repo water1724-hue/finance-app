@@ -1772,7 +1772,9 @@ async function saveEvent(){
           repeatEvents.push({...body,start_date:ds,parent_event_id:parentId,repeat_type:'none'});
         }
         if(repeatEvents.length){
-          await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(repeatEvents)},false);
+          for(const ev of repeatEvents){
+            await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(ev)},false);
+          }
         }
       }
       toast(`行程已新增${repeatType!=='none'?'（含重複）':''}`);
