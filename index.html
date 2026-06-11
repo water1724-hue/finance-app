@@ -631,6 +631,21 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>帳戶名稱</label><input class="inp" type="text" id="acc-name" placeholder="例如：玉山銀行活存"></div>
     <div class="field"><label>類別</label><select class="inp" id="acc-cat"></select></div>
     <div class="field"><label>初始餘額 (NT$)</label><input class="inp" type="number" id="acc-bal" placeholder="0"></div>
+    <div id="acc-forex-fields" style="display:none;">
+      <label class="inp-label">幣別</label>
+      <select class="inp" id="acc-currency">
+        <option value="USD">美元 USD</option>
+        <option value="JPY">日圓 JPY</option>
+        <option value="EUR">歐元 EUR</option>
+        <option value="HKD">港幣 HKD</option>
+        <option value="CNY">人民幣 CNY</option>
+        <option value="GBP">英鎊 GBP</option>
+        <option value="AUD">澳幣 AUD</option>
+        <option value="SGD">新幣 SGD</option>
+        <option value="KRW">韓元 KRW</option>
+        <option value="THB">泰銖 THB</option>
+      </select>
+    </div>
     <div id="acc-credit-fields" style="display:none;">
       <div class="field"><label>信用額度</label><input class="inp" type="number" id="acc-limit" placeholder="0"></div>
       <div style="display:flex;gap:8px;">
@@ -953,7 +968,17 @@ function showDet(id){
   if(id==='det-acc-manage'){loadAccManage();loadAccCatOptions();}
 }
 function hideDet(id){document.getElementById(id).classList.remove('on');}
-function openSheet(id){document.getElementById(id).classList.add('on');}
+function openSheet(id){
+  if(id==='sh-account'){
+    loadAccCatOptions();
+    document.getElementById('acc-name').value='';
+    document.getElementById('acc-bal').value='';
+    document.getElementById('acc-note').value='';
+    document.getElementById('acc-credit-fields').style.display='none';
+    document.getElementById('acc-forex-fields').style.display='none';
+  }
+  document.getElementById(id).classList.add('on');
+}
 function closeSheet(id){document.getElementById(id).classList.remove('on');}
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('on');}));
 
@@ -1568,11 +1593,13 @@ async function saveInvTxn(){
 document.getElementById('acc-cat').addEventListener('change',function(){
   const cat=accCats.find(c=>c.id===this.value);
   document.getElementById('acc-credit-fields').style.display=cat?.type==='credit'?'block':'none';
+  document.getElementById('acc-forex-fields').style.display=cat?.type==='forex'?'block':'none';
 });
 async function saveAccount(){
   const catId=document.getElementById('acc-cat').value;
   const cat=accCats.find(c=>c.id===catId);
-  const body={user_id:prof.id,category_id:catId,name:document.getElementById('acc-name').value.trim(),balance:parseFloat(document.getElementById('acc-bal').value)||0,currency:'TWD'};
+  const currency=cat?.type==='forex'?document.getElementById('acc-currency').value:'TWD';
+  const body={user_id:prof.id,category_id:catId,name:document.getElementById('acc-name').value.trim(),balance:parseFloat(document.getElementById('acc-bal').value)||0,currency};
   if(cat?.type==='credit'){body.credit_limit=parseFloat(document.getElementById('acc-limit').value)||0;body.statement_day=parseInt(document.getElementById('acc-stmt-day').value)||null;body.payment_day=parseInt(document.getElementById('acc-pay-day').value)||null;}
   body.note=document.getElementById('acc-note').value.trim();
   if(!body.name){toast('請填寫帳戶名稱','err');return;}
@@ -1939,45 +1966,52 @@ async function delUser(id){
 // STOCK & EXCHANGE RATE
 async function fetchTwStockPrice(symbol){
   try{
-    // Use Yahoo Finance API via proxy
-    const res=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.TW?interval=1d&range=1d`);
+    // TWSE real-time API
+    const res=await fetch(`https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_${symbol}.tw&json=1&delay=0`,{mode:'cors'});
     const data=await res.json();
-    const price=data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-    return price||null;
-  }catch(e){
-    // Fallback: try TWSE API
-    try{
-      const res2=await fetch(`https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_${symbol}.tw&json=1&delay=0`);
-      const data2=await res2.json();
-      const price2=parseFloat(data2?.msgArray?.[0]?.z||data2?.msgArray?.[0]?.y);
-      return isNaN(price2)?null:price2;
-    }catch(e2){return null;}
-  }
+    const item=data?.msgArray?.[0];
+    if(item){
+      const price=parseFloat(item.z!=='-'?item.z:item.y);
+      if(!isNaN(price)&&price>0)return price;
+    }
+    // Try OTC (上櫃)
+    const res2=await fetch(`https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=otc_${symbol}.tw&json=1&delay=0`,{mode:'cors'});
+    const data2=await res2.json();
+    const item2=data2?.msgArray?.[0];
+    if(item2){
+      const price2=parseFloat(item2.z!=='-'?item2.z:item2.y);
+      if(!isNaN(price2)&&price2>0)return price2;
+    }
+    return null;
+  }catch(e){console.error('TW stock error:',e);return null;}
 }
 
 async function fetchUsStockPrice(symbol){
   try{
-    const res=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`);
+    // Use a CORS-friendly proxy
+    const res=await fetch(`https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,{mode:'cors',headers:{'User-Agent':'Mozilla/5.0'}});
     const data=await res.json();
     return data?.chart?.result?.[0]?.meta?.regularMarketPrice||null;
-  }catch(e){return null;}
+  }catch(e){console.error('US stock error:',e);return null;}
 }
 
 async function fetchExchangeRate(currency){
   try{
-    // Taiwan Bank exchange rate
-    const res=await fetch('https://tw.rter.info/capi.php');
+    const res=await fetch(`https://tw.rter.info/capi.php`,{mode:'cors'});
     const data=await res.json();
-    // data is like {"USDTWD": {ask: 32.5, bid: 32.1}, ...}
-    const key=currency+'TWD';
-    return data?.[key]?.Exrate||null;
+    const key=currency.toUpperCase()+'TWD';
+    if(data?.[key]?.Exrate)return data[key].Exrate;
+    // Try reversed
+    const key2='TWD'+currency.toUpperCase();
+    if(data?.[key2]?.Exrate)return 1/data[key2].Exrate;
+    return null;
   }catch(e){
     try{
-      // Fallback: exchangerate-api
-      const res2=await fetch(`https://api.exchangerate-api.com/v4/latest/${currency}`);
+      const res2=await fetch(`https://open.er-api.com/v6/latest/TWD`);
       const data2=await res2.json();
-      return data2?.rates?.TWD||null;
-    }catch(e2){return null;}
+      const rate=data2?.rates?.[currency.toUpperCase()];
+      return rate?1/rate:null;
+    }catch(e2){console.error('FX error:',e2);return null;}
   }
 }
 
