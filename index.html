@@ -683,6 +683,17 @@ select.inp option{background:var(--bg2);}
       <button class="btn btn-ghost" id="ev-personal-btn" onclick="setEvType(false)" style="flex:1;">個人</button>
       <button class="btn btn-ghost" id="ev-shared-btn" onclick="setEvType(true)" style="flex:1;opacity:.4;">共用</button>
     </div>
+    <div class="field"><label>重複</label>
+      <select class="inp" id="ev-repeat">
+        <option value="none">不重複</option>
+        <option value="weekly">每週</option>
+        <option value="monthly">每月</option>
+      </select>
+    </div>
+    <div id="ev-repeat-end-field" style="display:none;">
+      <label class="inp-label">重複結束日期</label>
+      <input class="inp" type="date" id="ev-repeat-end">
+    </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-event')">取消</button>
       <button class="btn btn-gold" onclick="saveEvent()">儲存</button>
@@ -1706,6 +1717,13 @@ function editCalEvent(idx){
   openSheet('sh-event');
 }
 
+// Show repeat end field when repeat is selected
+document.addEventListener('change', function(e){
+  if(e.target.id==='ev-repeat'){
+    document.getElementById('ev-repeat-end-field').style.display=e.target.value!=='none'?'block':'none';
+  }
+});
+
 function editEventFromBtn(btn){
   const id=btn.dataset.evId;
   const title=btn.dataset.evTitle;
@@ -1728,17 +1746,40 @@ function editEventFromBtn(btn){
 function openSheet_event(){setEvType(false);document.getElementById('ev-date').value=calSel;document.getElementById('ev-title').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-desc').value='';openSheet('sh-event');}
 async function saveEvent(){
   const id=document.getElementById('ev-id').value;
-  const body={user_id:prof.id,title:document.getElementById('ev-title').value.trim(),start_date:document.getElementById('ev-date').value,start_time:document.getElementById('ev-start').value||null,end_time:document.getElementById('ev-end').value||null,description:document.getElementById('ev-desc').value.trim(),is_shared:evIsShared,color:evIsShared?'#6B9EF0':'#D4AA6A'};
+  const repeatType=document.getElementById('ev-repeat').value;
+  const repeatEnd=document.getElementById('ev-repeat-end').value||null;
+  const body={user_id:prof.id,title:document.getElementById('ev-title').value.trim(),start_date:document.getElementById('ev-date').value,start_time:document.getElementById('ev-start').value||null,end_time:document.getElementById('ev-end').value||null,description:document.getElementById('ev-desc').value.trim(),is_shared:evIsShared,color:evIsShared?'#6B9EF0':'#D4AA6A',repeat_type:repeatType,repeat_end:repeatEnd};
   if(!body.title||!body.start_date){toast('請填寫標題和日期','err');return;}
   try{
     if(id){
       await sb(`/rest/v1/events?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)},false);
       toast('行程已更新');
     } else {
-      await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(body)},false);
-      toast('行程已新增');
+      // Save main event
+      const saved=await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(body)},false);
+      // Generate repeat events if needed
+      if(repeatType!=='none'&&repeatEnd&&saved.length){
+        const parentId=saved[0].id;
+        const startDate=new Date(body.start_date+'T00:00:00');
+        const endDate=new Date(repeatEnd+'T00:00:00');
+        const repeatEvents=[];
+        let current=new Date(startDate);
+        while(true){
+          if(repeatType==='weekly')current.setDate(current.getDate()+7);
+          else if(repeatType==='monthly')current.setMonth(current.getMonth()+1);
+          if(current>endDate)break;
+          const ds=`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`;
+          repeatEvents.push({...body,start_date:ds,parent_event_id:parentId,repeat_type:'none'});
+        }
+        if(repeatEvents.length){
+          await sb('/rest/v1/events',{method:'POST',body:JSON.stringify(repeatEvents)},false);
+        }
+      }
+      toast(`行程已新增${repeatType!=='none'?'（含重複）':''}`);
     }
     closeSheet('sh-event');
+    document.getElementById('ev-repeat').value='none';
+    document.getElementById('ev-repeat-end-field').style.display='none';
     await renderCal();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
   }catch(e){toast('儲存失敗','err');}
@@ -2196,7 +2237,7 @@ document.getElementById('p').addEventListener('keydown',e=>{if(e.key==='Enter')d
 // Override openSheet to handle event defaults
 const _origOpen=window.openSheet;
 window.openSheet=async function(id){
-  if(id==='sh-event'){setEvType(false);document.getElementById('ev-date').value=calSel;document.getElementById('ev-title').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-desc').value='';document.getElementById('ev-id').value='';}
+  if(id==='sh-event'){setEvType(false);document.getElementById('ev-date').value=calSel;document.getElementById('ev-title').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-desc').value='';document.getElementById('ev-id').value='';document.getElementById('ev-repeat').value='none';document.getElementById('ev-repeat-end-field').style.display='none';document.getElementById('ev-repeat-end').value='';}
   if(id==='sh-todo'){document.getElementById('sh-todo-title').textContent='新增待辦';document.getElementById('todo-id').value='';document.getElementById('todo-title').value='';document.getElementById('todo-note').value='';document.getElementById('todo-due').value='';document.getElementById('todo-pri').value='normal';document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');}
   if(id==='sh-txn'){
     setTxnType('expense');
