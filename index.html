@@ -1986,6 +1986,8 @@ async function resetUserPwd(userId, username){
 async function loadUsers(){
   if(prof.role!=='admin'){document.getElementById('user-list').innerHTML='<div class="empty"><p>無權限</p></div>';return;}
   const el=document.getElementById('user-list');
+  // Always reload from DB
+  allUsers=await sb('/rest/v1/user_profiles?order=created_at.asc',{},false);
   if(!allUsers.length){el.innerHTML='<div class="empty"><p>尚無使用者</p></div>';return;}
   el.innerHTML=allUsers.map(u=>`
     <div class="list-row">
