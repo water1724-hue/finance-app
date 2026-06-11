@@ -22,52 +22,52 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overscroll-behavior:none;}
-body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;font-size:16px;}
+body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;font-size:17px;}
 
 /* AUTH */
 #auth{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:1000;}
 .auth-wrap{width:100%;max-width:360px;padding:0 24px;}
 .auth-logo{text-align:center;margin-bottom:48px;}
-.auth-logo h1{font-size:28px;font-weight:700;color:var(--gold);letter-spacing:4px;}
-.auth-logo p{font-size:12px;color:var(--text3);letter-spacing:2px;margin-top:6px;text-transform:uppercase;}
+.auth-logo h1{font-size:30px;font-weight:700;color:var(--gold);letter-spacing:4px;}
+.auth-logo p{font-size:13px;color:var(--text3);letter-spacing:2px;margin-top:6px;text-transform:uppercase;}
 .auth-field{margin-bottom:14px;}
-.auth-field label{display:block;font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
-.auth-field input{width:100%;padding:14px 16px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r-sm);color:var(--text);font-size:15px;font-family:inherit;transition:border-color .2s;}
+.auth-field label{display:block;font-size:12px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.auth-field input{width:100%;padding:14px 16px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r-sm);color:var(--text);font-size:16px;font-family:inherit;transition:border-color .2s;}
 .auth-field input:focus{outline:none;border-color:var(--gold);}
-.auth-btn{width:100%;padding:15px;border:none;border-radius:var(--r-sm);background:var(--gold);color:#121212;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:1px;margin-top:8px;transition:opacity .2s;}
+.auth-btn{width:100%;padding:15px;border:none;border-radius:var(--r-sm);background:var(--gold);color:#121212;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:1px;margin-top:8px;transition:opacity .2s;}
 .auth-btn:hover{opacity:.9;}
-.auth-err{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:16px;}
+.auth-err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:16px;}
 
 /* APP */
 #app{display:none;height:100dvh;flex-direction:column;}
 #app.on{display:flex;}
 .app-body{flex:1;overflow:hidden;position:relative;}
-.page{position:absolute;inset:0;overflow-y:auto;padding:16px 16px 80px;display:none;scrollbar-width:none;}
+.page{position:absolute;inset:0;overflow-y:auto;padding:18px 16px 88px;display:none;scrollbar-width:none;}
 .page::-webkit-scrollbar{display:none;}
 .page.on{display:block;}
 
 /* BOTTOM NAV */
-.bnav{height:64px;background:var(--bg3);border-top:0.5px solid var(--border2);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);}
-.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;cursor:pointer;font-family:inherit;transition:all .15s;}
-.bnav-item i{font-size:20px;color:var(--text3);transition:color .15s;}
-.bnav-item span{font-size:11px;color:var(--text3);letter-spacing:.3px;transition:color .15s;}
+.bnav{height:68px;background:var(--bg3);border-top:0.5px solid var(--border2);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;cursor:pointer;font-family:inherit;transition:all .15s;}
+.bnav-item i{font-size:22px;color:var(--text3);transition:color .15s;}
+.bnav-item span{font-size:12px;color:var(--text3);letter-spacing:.3px;transition:color .15s;}
 .bnav-item.on i,.bnav-item.on span{color:var(--gold);}
 
 /* CARDS */
 .card{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;}
 .card-gold{background:#1e1a12;border-color:var(--gold-border);}
-.pg-title{font-size:20px;font-weight:700;margin-bottom:16px;}
-.sec-label{font-size:12px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
+.pg-title{font-size:22px;font-weight:700;margin-bottom:18px;}
+.sec-label{font-size:13px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
 .row-between{display:flex;align-items:center;justify-content:space-between;}
 
 /* BUTTONS */
-.btn{padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:opacity .2s;}
+.btn{padding:9px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:opacity .2s;}
 .btn:hover{opacity:.85;}
 .btn-gold{background:var(--gold);color:#121212;}
 .btn-ghost{background:var(--bg4);border:0.5px solid var(--border2);color:var(--text2);}
 .btn-danger{background:rgba(232,112,112,0.12);border:0.5px solid rgba(232,112,112,0.25);color:var(--red);}
-.btn-sm{padding:5px 12px;font-size:11px;}
-.icon-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:4px;transition:color .2s;}
+.btn-sm{padding:6px 14px;font-size:12px;}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px;transition:color .2s;}
 .icon-btn:hover{color:var(--text2);}
 
 /* SHEET (bottom modal) */
@@ -76,44 +76,44 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 .sheet{width:100%;max-width:480px;background:var(--bg3);border-radius:24px 24px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;scrollbar-width:none;}
 .sheet::-webkit-scrollbar{display:none;}
 .sheet-handle{width:36px;height:3px;border-radius:2px;background:var(--border2);margin:0 auto 18px;}
-.sheet h3{font-size:17px;font-weight:700;margin-bottom:18px;}
-.field{margin-bottom:12px;}
-.field label{display:block;font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
-.inp{width:100%;padding:13px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;color:var(--text);font-size:16px;font-family:inherit;transition:border-color .2s;}
+.sheet h3{font-size:18px;font-weight:700;margin-bottom:18px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;}
+.inp{width:100%;padding:14px 15px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:12px;color:var(--text);font-size:16px;font-family:inherit;transition:border-color .2s;}
 .inp:focus{outline:none;border-color:var(--gold);}
 select.inp option{background:var(--bg2);}
-.btn-row{display:flex;gap:8px;margin-top:16px;}
-.btn-row .btn{flex:1;padding:13px;}
+.btn-row{display:flex;gap:8px;margin-top:18px;}
+.btn-row .btn{flex:1;padding:14px;}
 
 /* DETAIL PAGE */
 .det{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;padding:16px 16px 40px;}
 .det::-webkit-scrollbar{display:none;}
 .det.on{display:block;}
-.det-back{display:flex;align-items:center;gap:6px;color:var(--gold);font-size:14px;cursor:pointer;margin-bottom:18px;}
+.det-back{display:flex;align-items:center;gap:6px;color:var(--gold);font-size:15px;cursor:pointer;margin-bottom:18px;}
 
 /* TOAST */
-#toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:10px;font-size:12px;font-weight:500;background:var(--bg4);border:0.5px solid var(--border2);z-index:999;opacity:0;transition:opacity .25s;white-space:nowrap;pointer-events:none;}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;background:var(--bg4);border:0.5px solid var(--border2);z-index:999;opacity:0;transition:opacity .25s;white-space:nowrap;pointer-events:none;}
 #toast.on{opacity:1;}
 #toast.ok{border-color:rgba(93,189,138,.35);color:var(--green);}
 #toast.err{border-color:rgba(232,112,112,.35);color:var(--red);}
 
 /* LIST ROWS */
-.list-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:0.5px solid var(--border);cursor:default;}
+.list-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:0.5px solid var(--border);cursor:default;}
 .list-row:last-child{border-bottom:none;}
-.list-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.list-icon i{font-size:17px;}
+.list-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.list-icon i{font-size:19px;}
 .list-info{flex:1;}
-.list-title{font-size:15px;font-weight:500;color:var(--text);}
-.list-sub{font-size:13px;color:var(--text3);margin-top:1px;}
+.list-title{font-size:16px;font-weight:500;color:var(--text);}
+.list-sub{font-size:13px;color:var(--text3);margin-top:2px;}
 .list-right{text-align:right;}
-.list-amt{font-size:14px;font-weight:700;}
+.list-amt{font-size:15px;font-weight:700;}
 .amt-pos{color:var(--green);}
 .amt-neg{color:var(--red);}
 .amt-gold{color:var(--gold);}
-.arr{color:var(--text4);font-size:14px;}
+.arr{color:var(--text4);font-size:15px;}
 
 /* TAG */
-.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;}
 .tag-high{background:rgba(232,112,112,.12);color:var(--red);}
 .tag-normal{background:rgba(107,158,240,.12);color:var(--blue);}
 .tag-low{background:rgba(136,136,136,.1);color:var(--text3);}
@@ -122,14 +122,14 @@ select.inp option{background:var(--bg2);}
 .tag-green{background:rgba(93,189,138,.12);color:var(--green);}
 
 /* EMPTY */
-.empty{text-align:center;padding:32px 20px;color:var(--text3);}
-.empty i{font-size:32px;display:block;margin-bottom:10px;}
-.empty p{font-size:13px;}
+.empty{text-align:center;padding:36px 20px;color:var(--text3);}
+.empty i{font-size:36px;display:block;margin-bottom:12px;}
+.empty p{font-size:14px;}
 
 /* FILTER TABS */
-.ftabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.ftabs{display:flex;gap:7px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
 .ftabs::-webkit-scrollbar{display:none;}
-.ftab{flex-shrink:0;padding:5px 14px;border-radius:16px;font-size:11px;font-weight:600;border:0.5px solid var(--border2);color:var(--text3);background:var(--bg3);cursor:pointer;font-family:inherit;transition:all .15s;}
+.ftab{flex-shrink:0;padding:6px 16px;border-radius:18px;font-size:12px;font-weight:600;border:0.5px solid var(--border2);color:var(--text3);background:var(--bg3);cursor:pointer;font-family:inherit;transition:all .15s;}
 .ftab.on{background:#1e1a12;border-color:var(--gold-border);color:var(--gold);}
 
 /* STAT GRID */
@@ -193,29 +193,29 @@ select.inp option{background:var(--bg2);}
 
 /* MORE PAGE */
 .profile-banner{background:#1e1a12;border:0.5px solid var(--gold-border);border-radius:var(--r);padding:18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;}
-.avatar{width:46px;height:46px;border-radius:13px;background:#2a2418;border:0.5px solid var(--gold-border);display:flex;align-items:center;justify-content:center;}
-.avatar i{font-size:21px;color:var(--gold);}
-.more-name{font-size:15px;font-weight:700;}
-.more-role{font-size:11px;color:var(--gold);margin-top:2px;}
-.menu-sec-lbl{font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin:4px 4px 8px;}
-.menu-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:0.5px solid var(--border);cursor:pointer;transition:opacity .15s;}
+.avatar{width:48px;height:48px;border-radius:13px;background:#2a2418;border:0.5px solid var(--gold-border);display:flex;align-items:center;justify-content:center;}
+.avatar i{font-size:22px;color:var(--gold);}
+.more-name{font-size:16px;font-weight:700;}
+.more-role{font-size:12px;color:var(--gold);margin-top:2px;}
+.menu-sec-lbl{font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin:4px 4px 8px;}
+.menu-item{display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:0.5px solid var(--border);cursor:pointer;transition:opacity .15s;}
 .menu-item:last-child{border-bottom:none;}
 .menu-item:active{opacity:.7;}
-.mi-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.mi-icon i{font-size:17px;}
+.mi-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mi-icon i{font-size:19px;}
 .mi-info{flex:1;}
-.mi-title{font-size:13px;font-weight:500;}
-.mi-sub{font-size:11px;color:var(--text3);margin-top:1px;}
-.mi-arr i{font-size:14px;color:var(--text4);}
+.mi-title{font-size:15px;font-weight:500;}
+.mi-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+.mi-arr i{font-size:15px;color:var(--text4);}
 
 /* ACCOUNT DETAIL */
-.holding-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--border);}
+.holding-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:0.5px solid var(--border);}
 .holding-row:last-child{border-bottom:none;}
-.holding-sym{font-size:13px;font-weight:600;}
-.holding-name{font-size:11px;color:var(--text3);margin-top:1px;}
-.holding-qty{font-size:11px;color:var(--text3);}
-.holding-amt{font-size:14px;font-weight:700;color:var(--gold);}
-.holding-pnl{font-size:11px;margin-top:1px;}
+.holding-sym{font-size:14px;font-weight:600;}
+.holding-name{font-size:12px;color:var(--text3);margin-top:1px;}
+.holding-qty{font-size:12px;color:var(--text3);}
+.holding-amt{font-size:15px;font-weight:700;color:var(--gold);}
+.holding-pnl{font-size:12px;margin-top:1px;}
 </style>
 </head>
 <body>
@@ -457,32 +457,6 @@ select.inp option{background:var(--bg2);}
       </div>
     </div>
 
-    <!-- DOCS -->
-    <div class="page" id="pg-docs">
-      <div class="row-between" style="margin-bottom:16px;">
-        <div class="pg-title" style="margin:0">文件中心</div>
-        <button class="btn btn-gold btn-sm" onclick="openAddDoc()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
-      </div>
-      <!-- 類別篩選 -->
-      <div class="ftabs" id="doc-cat-tabs">
-        <button class="ftab on" onclick="setDocCat('all',this)">全部</button>
-        <button class="ftab" onclick="setDocCat('合約',this)">合約</button>
-        <button class="ftab" onclick="setDocCat('保險',this)">保險</button>
-        <button class="ftab" onclick="setDocCat('證件',this)">證件</button>
-        <button class="ftab" onclick="setDocCat('醫療',this)">醫療</button>
-        <button class="ftab" onclick="setDocCat('其他',this)">其他</button>
-      </div>
-      <!-- 即將到期提醒 -->
-      <div id="doc-expiry-banner" style="display:none;margin-bottom:12px;">
-        <div style="background:rgba(232,137,74,.1);border:0.5px solid rgba(232,137,74,.35);border-radius:14px;padding:10px 14px;">
-          <div style="font-size:11px;color:var(--orange);font-weight:600;margin-bottom:4px;"><i class="ti ti-clock-exclamation"></i> 即將到期</div>
-          <div id="doc-expiry-list" style="font-size:12px;color:var(--text2);"></div>
-        </div>
-      </div>
-      <!-- 文件列表 -->
-      <div class="card"><div id="doc-list"></div></div>
-    </div>
-
     <!-- MORE -->
     <div class="page" id="pg-more">
       <div class="pg-title">更多</div>
@@ -499,11 +473,6 @@ select.inp option{background:var(--bg2);}
         <div class="menu-item" onclick="goPage('report')">
           <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-chart-bar" style="color:var(--blue)" aria-hidden="true"></i></div>
           <div class="mi-info"><div class="mi-title">月報表</div><div class="mi-sub">收支統計與趨勢分析</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-        <div class="menu-item" onclick="goPage('docs')">
-          <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-folder" style="color:var(--green)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">文件中心</div><div class="mi-sub">合約、保險、證件、醫療記錄</div></div>
           <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
         </div>
         <div class="menu-item" onclick="goPage('ai')">
@@ -580,23 +549,6 @@ select.inp option{background:var(--bg2);}
 </div>
 
 <!-- DETAIL PAGES -->
-
-<!-- 文件詳情 -->
-<div class="det" id="det-doc">
-  <div class="det-back" onclick="hideDet('det-doc')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
-  <div class="row-between" style="margin-bottom:4px;">
-    <div style="font-size:18px;font-weight:700;flex:1;margin-right:8px;" id="det-doc-title"></div>
-    <div style="display:flex;gap:6px;">
-      <button class="btn btn-ghost btn-sm" id="det-doc-edit-btn" onclick="editCurrentDoc()"><i class="ti ti-pencil" aria-hidden="true"></i></button>
-      <button class="btn btn-danger btn-sm" id="det-doc-del-btn" onclick="delCurrentDoc()"><i class="ti ti-trash" aria-hidden="true"></i></button>
-    </div>
-  </div>
-  <div id="det-doc-cat-tag" style="margin-bottom:16px;"></div>
-  <div class="card" style="margin-bottom:12px;"><div id="det-doc-info"></div></div>
-  <div id="det-doc-file-wrap"></div>
-  <div id="det-doc-note-wrap"></div>
-</div>
-
 <div class="det" id="det-account">
   <div class="det-back" onclick="hideDet('det-account')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
   <div class="row-between" style="margin-bottom:16px;">
@@ -1016,53 +968,6 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
-<!-- 新增/編輯文件 -->
-<div class="overlay" id="sh-doc">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <h3 id="sh-doc-title">新增文件</h3>
-    <input type="hidden" id="doc-id">
-    <div class="field"><label>文件名稱 *</label><input class="inp" type="text" id="doc-title" placeholder="例如：玉山銀行開戶合約"></div>
-    <div class="field"><label>類別</label>
-      <select class="inp" id="doc-category">
-        <option value="合約">合約／法律文件</option>
-        <option value="保險">保險單</option>
-        <option value="證件">重要證件</option>
-        <option value="醫療">醫療記錄</option>
-        <option value="其他">其他</option>
-      </select>
-    </div>
-    <div id="doc-custom-cat-field" style="display:none;">
-      <div class="field"><label>自訂類別名稱</label><input class="inp" type="text" id="doc-custom-cat" placeholder="輸入類別名稱"></div>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <div class="field" style="flex:1;"><label>發行機構</label><input class="inp" type="text" id="doc-issuer" placeholder="例如：玉山銀行"></div>
-      <div class="field" style="flex:1;"><label>文件編號</label><input class="inp" type="text" id="doc-number" placeholder="選填"></div>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <div class="field" style="flex:1;"><label>發行日期</label><input class="inp" type="date" id="doc-issue-date"></div>
-      <div class="field" style="flex:1;"><label>到期日期</label><input class="inp" type="date" id="doc-expiry-date"></div>
-    </div>
-    <div class="field"><label>附件上傳</label>
-      <div id="doc-file-area" style="border:0.5px dashed var(--border2);border-radius:12px;padding:14px;text-align:center;cursor:pointer;background:var(--bg2);" onclick="document.getElementById('doc-file-input').click()">
-        <i class="ti ti-upload" style="font-size:22px;color:var(--text3);" aria-hidden="true"></i>
-        <div style="font-size:12px;color:var(--text3);margin-top:6px;" id="doc-file-label">點擊選擇檔案（PDF、圖片等，最大 10MB）</div>
-      </div>
-      <input type="file" id="doc-file-input" style="display:none;" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="onDocFileChange(this)">
-    </div>
-    <div class="field"><label>備註</label><textarea class="inp" id="doc-note" rows="3" placeholder="選填" style="resize:none;"></textarea></div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text2);">
-        <input type="checkbox" id="doc-shared" style="width:16px;height:16px;"> 共用（所有使用者可見）
-      </label>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="closeSheet('sh-doc')">取消</button>
-      <button class="btn btn-gold" onclick="saveDoc()">儲存</button>
-    </div>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
@@ -1189,10 +1094,11 @@ function goPage(p){
   if(p==='todo')loadTodos();
   if(p==='announce')loadAnnouncements();
   if(p==='report')initReport();
-  if(p==='docs')loadDocs();
 }
 function showDet(id){
-  if(id==='det-users'&&prof.role!=='admin'){toast('無權限','err');return;}
+  // 管理員限定功能
+  const adminOnly=['det-users','det-view-as'];
+  if(adminOnly.includes(id)&&prof.role!=='admin'){toast('此功能僅限管理員','err');return;}
   document.getElementById(id).classList.add('on');
   if(id==='det-users')loadUsers();
   if(id==='det-exp-cats')loadExpCats();
@@ -2471,7 +2377,9 @@ function stopViewAs(){
 }
 
 function getViewAsId(){
-  return viewAsUser?viewAsUser.id:prof.id;
+  // 只有管理員才能檢視他人資料
+  if(prof.role==='admin'&&viewAsUser) return viewAsUser.id;
+  return prof.id;
 }
 
 function initBudget(){
@@ -2978,304 +2886,6 @@ function appendTyping(id){
   el.appendChild(d);el.scrollTop=el.scrollHeight;
 }
 function removeTyping(id){document.getElementById(id)?.remove();}
-
-// ─── DOCUMENT CENTER ───────────────────────────────────────────
-let docCatFilter='all';
-let currentDoc=null;
-let docPendingFile=null; // 待上傳的 File 物件
-
-// 類別設定
-const DOC_CATS={
-  '合約': {icon:'ti-file-text',   color:'rgba(107,158,240,.1)', fg:'var(--blue)'},
-  '保險': {icon:'ti-shield',      color:'rgba(93,189,138,.1)',  fg:'var(--green)'},
-  '證件': {icon:'ti-id-badge',    color:'var(--gold-dim)',      fg:'var(--gold)'},
-  '醫療': {icon:'ti-heart-rate',  color:'rgba(232,112,112,.1)', fg:'var(--red)'},
-  '其他': {icon:'ti-folder',      color:'rgba(136,136,136,.1)', fg:'var(--text3)'},
-};
-function docCatStyle(cat){return DOC_CATS[cat]||{icon:'ti-folder',color:'rgba(136,136,136,.1)',fg:'var(--text3)'};}
-
-function setDocCat(cat,btn){
-  docCatFilter=cat;
-  document.querySelectorAll('#doc-cat-tabs .ftab').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  loadDocs();
-}
-
-async function loadDocs(){
-  const el=document.getElementById('doc-list');
-  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
-  try{
-    let url=`/rest/v1/documents?order=expiry_date.asc.nullslast,created_at.desc`;
-    // 共用或自己的
-    const docs=await sb(url,{headers:{'Accept':'application/json'}},false);
-    // 過濾自己和共用
-    const myDocs=docs.filter(d=>d.user_id===getViewAsId()||d.is_shared);
-    const filtered=docCatFilter==='all'?myDocs:myDocs.filter(d=>d.category===docCatFilter);
-
-    // 到期提醒（30天內）
-    const today=new Date();
-    const soon=myDocs.filter(d=>{
-      if(!d.expiry_date)return false;
-      const exp=new Date(d.expiry_date);
-      const diff=Math.ceil((exp-today)/86400000);
-      return diff>=0&&diff<=30;
-    }).sort((a,b)=>new Date(a.expiry_date)-new Date(b.expiry_date));
-
-    const banner=document.getElementById('doc-expiry-banner');
-    const bannerList=document.getElementById('doc-expiry-list');
-    if(soon.length){
-      banner.style.display='block';
-      bannerList.innerHTML=soon.map(d=>{
-        const diff=Math.ceil((new Date(d.expiry_date)-today)/86400000);
-        return`<span style="margin-right:10px;">📄 ${d.title} <b style="color:var(--orange);">${diff===0?'今天到期':'剩'+diff+'天'}</b></span>`;
-      }).join('');
-    } else {
-      banner.style.display='none';
-    }
-
-    if(!filtered.length){
-      el.innerHTML='<div class="empty"><i class="ti ti-folder-open" aria-hidden="true"></i><p>尚無文件</p></div>';
-      return;
-    }
-
-    el.innerHTML=filtered.map(d=>{
-      const cs=docCatStyle(d.category);
-      const today2=new Date();
-      const exp=d.expiry_date?new Date(d.expiry_date):null;
-      const diff=exp?Math.ceil((exp-today2)/86400000):null;
-      const isExpired=diff!==null&&diff<0;
-      const isSoon=diff!==null&&diff>=0&&diff<=30;
-      let badge='';
-      if(isExpired) badge=`<span class="tag tag-high" style="margin-left:6px;">已到期</span>`;
-      else if(isSoon) badge=`<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:rgba(232,137,74,.12);color:var(--orange);margin-left:6px;">剩${diff}天</span>`;
-      return`<div class="list-row" onclick="openDocDetail('${d.id}')" style="cursor:pointer;">
-        <div class="list-icon" style="background:${cs.color}"><i class="ti ${cs.icon}" style="color:${cs.fg}" aria-hidden="true"></i></div>
-        <div class="list-info">
-          <div class="list-title">${d.title}${badge}</div>
-          <div class="list-sub">${d.category}${d.issuer?' · '+d.issuer:''}${d.expiry_date?' · 到期 '+d.expiry_date:''}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;">
-          ${d.file_url?`<i class="ti ti-paperclip" style="color:var(--text3);font-size:14px;" aria-hidden="true"></i>`:''}
-          <i class="ti ti-chevron-right arr" aria-hidden="true"></i>
-        </div>
-      </div>`;
-    }).join('');
-  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
-}
-
-function openDocDetail(id){
-  // 從已載入的列表找，或重新抓
-  sb(`/rest/v1/documents?id=eq.${id}`,{},false).then(docs=>{
-    if(!docs.length)return;
-    currentDoc=docs[0];
-    const d=currentDoc;
-    const cs=docCatStyle(d.category);
-    document.getElementById('det-doc-title').textContent=d.title;
-    document.getElementById('det-doc-cat-tag').innerHTML=
-      `<span class="tag" style="background:${cs.color};color:${cs.fg};">${d.category}</span>`+
-      (d.is_shared?` <span class="tag tag-blue">共用</span>`:'');
-
-    // 資訊列表
-    const rows=[];
-    if(d.issuer) rows.push(['發行機構',d.issuer]);
-    if(d.doc_number) rows.push(['文件編號',d.doc_number]);
-    if(d.issue_date) rows.push(['發行日期',d.issue_date]);
-    if(d.expiry_date){
-      const diff=Math.ceil((new Date(d.expiry_date)-new Date())/86400000);
-      const diffStr=diff<0?`<span style="color:var(--red);">已到期 ${Math.abs(diff)} 天</span>`:
-        diff<=30?`<span style="color:var(--orange);">剩 ${diff} 天</span>`:
-        `<span style="color:var(--text2);">${diff} 天後到期</span>`;
-      rows.push(['到期日期',`${d.expiry_date}　${diffStr}`]);
-    }
-    rows.push(['建立時間', new Date(d.created_at).toLocaleDateString('zh-TW')]);
-    document.getElementById('det-doc-info').innerHTML=rows.map(([k,v])=>
-      `<div class="list-row" style="cursor:default;">
-        <div class="list-sub" style="flex:0 0 72px;font-size:12px;">${k}</div>
-        <div style="font-size:13px;color:var(--text);">${v}</div>
-      </div>`).join('');
-
-    // 附件
-    const fw=document.getElementById('det-doc-file-wrap');
-    if(d.file_url){
-      fw.innerHTML=`<div class="sec-label" style="margin-top:4px;">附件</div>
-        <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <i class="ti ti-paperclip" style="font-size:18px;color:var(--gold);" aria-hidden="true"></i>
-            <div>
-              <div style="font-size:13px;font-weight:500;">${d.file_name||'附件'}</div>
-              ${d.file_size?`<div style="font-size:11px;color:var(--text3);">${(d.file_size/1024/1024).toFixed(2)} MB</div>`:''}
-            </div>
-          </div>
-          <a href="${d.file_url}" target="_blank" class="btn btn-ghost btn-sm"><i class="ti ti-external-link" aria-hidden="true"></i> 開啟</a>
-        </div>`;
-    } else {
-      fw.innerHTML='';
-    }
-
-    // 備註
-    const nw=document.getElementById('det-doc-note-wrap');
-    if(d.note){
-      nw.innerHTML=`<div class="sec-label" style="margin-top:4px;">備註</div>
-        <div class="card" style="font-size:13px;color:var(--text2);line-height:1.7;">${d.note.replace(/\n/g,'<br>')}</div>`;
-    } else {
-      nw.innerHTML='';
-    }
-
-    showDet('det-doc');
-  }).catch(()=>toast('載入失敗','err'));
-}
-
-function openAddDoc(){
-  document.getElementById('doc-id').value='';
-  document.getElementById('doc-title').value='';
-  document.getElementById('doc-category').value='合約';
-  document.getElementById('doc-custom-cat').value='';
-  document.getElementById('doc-custom-cat-field').style.display='none';
-  document.getElementById('doc-issuer').value='';
-  document.getElementById('doc-number').value='';
-  document.getElementById('doc-issue-date').value='';
-  document.getElementById('doc-expiry-date').value='';
-  document.getElementById('doc-note').value='';
-  document.getElementById('doc-shared').checked=false;
-  document.getElementById('doc-file-label').textContent='點擊選擇檔案（PDF、圖片等，最大 10MB）';
-  document.getElementById('sh-doc-title').textContent='新增文件';
-  docPendingFile=null;
-  openSheet('sh-doc');
-}
-
-function editCurrentDoc(){
-  if(!currentDoc)return;
-  const d=currentDoc;
-  document.getElementById('doc-id').value=d.id;
-  document.getElementById('sh-doc-title').textContent='編輯文件';
-  document.getElementById('doc-title').value=d.title;
-  // 若 category 不在預設清單，顯示自訂欄
-  const defaultCats=['合約','保險','證件','醫療','其他'];
-  if(defaultCats.includes(d.category)){
-    document.getElementById('doc-category').value=d.category;
-    document.getElementById('doc-custom-cat-field').style.display='none';
-  } else {
-    document.getElementById('doc-category').value='其他';
-    document.getElementById('doc-custom-cat').value=d.category;
-    document.getElementById('doc-custom-cat-field').style.display='block';
-  }
-  document.getElementById('doc-issuer').value=d.issuer||'';
-  document.getElementById('doc-number').value=d.doc_number||'';
-  document.getElementById('doc-issue-date').value=d.issue_date||'';
-  document.getElementById('doc-expiry-date').value=d.expiry_date||'';
-  document.getElementById('doc-note').value=d.note||'';
-  document.getElementById('doc-shared').checked=!!d.is_shared;
-  document.getElementById('doc-file-label').textContent=d.file_name?`已有附件：${d.file_name}`:'點擊選擇檔案（可替換）';
-  docPendingFile=null;
-  hideDet('det-doc');
-  openSheet('sh-doc');
-}
-
-function onDocFileChange(input){
-  const file=input.files[0];
-  if(!file)return;
-  if(file.size>10*1024*1024){toast('檔案超過 10MB','err');input.value='';return;}
-  docPendingFile=file;
-  document.getElementById('doc-file-label').textContent=`已選擇：${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
-}
-
-// 類別切換顯示自訂欄
-document.getElementById('doc-category').addEventListener('change',function(){
-  document.getElementById('doc-custom-cat-field').style.display=
-    this.value==='其他'?'block':'none';
-});
-
-async function uploadDocFile(file, userId){
-  const ext=file.name.split('.').pop();
-  const path=`${userId}/${Date.now()}.${ext}`;
-  const r=await fetch(`${SB}/storage/v1/object/documents/${path}`,{
-    method:'POST',
-    headers:{
-      'apikey':PUB,
-      'Authorization':`Bearer ${me.token}`,
-      'Content-Type':file.type||'application/octet-stream',
-      'x-upsert':'true'
-    },
-    body:file
-  });
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||'上傳失敗');}
-  // 取得公開/簽署 URL（private bucket 用 signed URL）
-  const sr=await fetch(`${SB}/storage/v1/object/sign/documents/${path}?expiresIn=315360000`,{
-    method:'POST',
-    headers:{
-      'apikey':PUB,
-      'Authorization':`Bearer ${me.token}`,
-      'Content-Type':'application/json'
-    },
-    body:JSON.stringify({expiresIn:315360000})
-  });
-  const sd=await sr.json();
-  const signedUrl=sd.signedURL?`${SB}/storage/v1${sd.signedURL}`:null;
-  return{url:signedUrl||`${SB}/storage/v1/object/documents/${path}`,path,name:file.name,size:file.size};
-}
-
-async function saveDoc(){
-  const title=document.getElementById('doc-title').value.trim();
-  if(!title){toast('請填寫文件名稱','err');return;}
-  const id=document.getElementById('doc-id').value;
-  let category=document.getElementById('doc-category').value;
-  if(category==='其他'){
-    const custom=document.getElementById('doc-custom-cat').value.trim();
-    if(custom) category=custom;
-  }
-  const body={
-    user_id:prof.id,
-    title,
-    category,
-    issuer:document.getElementById('doc-issuer').value.trim()||null,
-    doc_number:document.getElementById('doc-number').value.trim()||null,
-    issue_date:document.getElementById('doc-issue-date').value||null,
-    expiry_date:document.getElementById('doc-expiry-date').value||null,
-    note:document.getElementById('doc-note').value.trim()||null,
-    is_shared:document.getElementById('doc-shared').checked,
-  };
-  // 上傳附件
-  if(docPendingFile){
-    try{
-      toast('上傳中…');
-      const finfo=await uploadDocFile(docPendingFile,prof.id);
-      body.file_url=finfo.url;
-      body.file_name=finfo.name;
-      body.file_size=finfo.size;
-    }catch(e){toast('附件上傳失敗：'+e.message,'err');return;}
-  }
-  try{
-    if(id){
-      await sb(`/rest/v1/documents?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({...body,updated_at:new Date().toISOString()})},false);
-      toast('已更新');
-    } else {
-      await sb('/rest/v1/documents',{method:'POST',body:JSON.stringify(body)},false);
-      toast('文件已儲存');
-    }
-    closeSheet('sh-doc');
-    docPendingFile=null;
-    loadDocs();
-    if(id&&currentDoc){
-      // 更新詳情頁
-      currentDoc={...currentDoc,...body};
-      hideDet('det-doc');
-    }
-  }catch(e){toast('儲存失敗','err');}
-}
-
-async function delCurrentDoc(){
-  if(!currentDoc)return;
-  if(!confirm(`確定刪除「${currentDoc.title}」？`))return;
-  try{
-    await sb(`/rest/v1/documents?id=eq.${currentDoc.id}`,{method:'DELETE'},false);
-    toast('已刪除');
-    hideDet('det-doc');
-    currentDoc=null;
-    loadDocs();
-  }catch(e){toast('刪除失敗','err');}
-}
-
-// ─── END DOCUMENT CENTER ────────────────────────────────────────
 
 // UTIL
 function timeAgo(iso){
