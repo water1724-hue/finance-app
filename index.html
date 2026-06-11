@@ -490,72 +490,8 @@ select.inp option{background:var(--bg2);}
           <div class="more-role" id="more-role"></div>
         </div>
       </div>
-
-      <div class="menu-sec-lbl">工具</div>
-      <div class="card" style="padding:4px 16px;">
-        <div class="menu-item" onclick="goPage('report')">
-          <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-chart-bar" style="color:var(--blue)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">月報表</div><div class="mi-sub">收支統計與趨勢分析</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-        <div class="menu-item" onclick="goPage('docs')">
-          <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-folder" style="color:var(--green)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">文件中心</div><div class="mi-sub">合約、保險、證件、醫療記錄</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-        <div class="menu-item" onclick="goPage('ai')">
-          <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-        <div class="menu-item" onclick="goPage('announce')">
-          <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-speakerphone" style="color:var(--blue)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">公告中心</div><div class="mi-sub">查看所有公告</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-      </div>
-
-      <div class="menu-sec-lbl" id="admin-sec-lbl" style="display:none;">管理員</div>
-      <div class="card" id="admin-menu" style="padding:4px 16px;display:none;">
-        <div class="menu-item" onclick="showDet('det-users')">
-          <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-users" style="color:var(--blue)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">使用者管理</div><div class="mi-sub">新增、刪除帳號</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-        <div class="menu-item" onclick="showDet('det-view-as')">
-          <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-eye" style="color:#9C6BFF" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">檢視使用者資料</div><div class="mi-sub">以使用者視角查看帳務</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-        <div class="menu-item" onclick="showDet('det-exp-cats')">
-          <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-tag" style="color:var(--gold)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">消費類別管理</div><div class="mi-sub">新增、編輯分類</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-      </div>
-
-      <div class="menu-sec-lbl">帳號</div>
-      <div class="card" style="padding:4px 16px;">
-        <div class="menu-item" onclick="openMyProfile()">
-          <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-user-edit" style="color:var(--blue)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">個人資料</div><div class="mi-sub">修改顯示名稱與密碼</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-        <div class="menu-item" onclick="showDet('det-acc-manage')">
-          <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-wallet" style="color:var(--gold)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">帳戶管理</div><div class="mi-sub">新增、刪除銀行、信用卡、證券帳戶</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-        <div class="menu-item" onclick="showDet('det-budget')">
-          <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-target" style="color:var(--green)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title">預算設定</div><div class="mi-sub">設定每月各類別支出上限</div></div>
-          <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-        </div>
-        <div class="menu-item" onclick="doLogout()" style="margin-top:0;">
-          <div class="mi-icon" style="background:rgba(232,112,112,.1)"><i class="ti ti-logout" style="color:var(--red)" aria-hidden="true"></i></div>
-          <div class="mi-info"><div class="mi-title" style="color:var(--red)">登出</div><div class="mi-sub">退出目前帳號</div></div>
-        </div>
-      </div>
+      <!-- 動態選單由 initApp 注入 -->
+      <div id="more-menu-content"></div>
     </div>
 
   </div>
@@ -1159,9 +1095,85 @@ function initApp(){
   document.getElementById('app').classList.add('on');
   document.getElementById('more-name').textContent=prof.display_name||prof.username;
   document.getElementById('more-role').textContent=prof.role==='admin'?'管理員':'使用者';
-  if(prof.role==='admin'){
-    document.getElementById('admin-sec-lbl').style.display='block';
-    document.getElementById('admin-menu').style.display='block';
+
+  const isAdmin=prof.role==='admin';
+
+  // 動態注入更多頁選單
+  document.getElementById('more-menu-content').innerHTML=`
+    <div class="menu-sec-lbl">工具</div>
+    <div class="card" style="padding:4px 16px;">
+      <div class="menu-item" onclick="goPage('report')">
+        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-chart-bar" style="color:var(--blue)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">月報表</div><div class="mi-sub">收支統計與趨勢分析</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="goPage('docs')">
+        <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-folder" style="color:var(--green)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">文件中心</div><div class="mi-sub">合約、保險、證件、醫療記錄</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="goPage('ai')">
+        <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="goPage('announce')">
+        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-speakerphone" style="color:var(--blue)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">公告中心</div><div class="mi-sub">查看所有公告</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+    </div>
+
+    ${isAdmin?`
+    <div class="menu-sec-lbl">管理員</div>
+    <div class="card" style="padding:4px 16px;">
+      <div class="menu-item" onclick="showDet('det-users')">
+        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-users" style="color:var(--blue)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">使用者管理</div><div class="mi-sub">新增、刪除帳號</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="showDet('det-view-as')">
+        <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-eye" style="color:#9C6BFF" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">檢視使用者資料</div><div class="mi-sub">以使用者視角查看帳務</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="showDet('det-exp-cats')">
+        <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-tag" style="color:var(--gold)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">消費類別管理</div><div class="mi-sub">新增、編輯、設定預設分類</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+    </div>`:''}
+
+    <div class="menu-sec-lbl">帳號</div>
+    <div class="card" style="padding:4px 16px;">
+      <div class="menu-item" onclick="openMyProfile()">
+        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-user-edit" style="color:var(--blue)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">個人資料</div><div class="mi-sub">修改顯示名稱與密碼</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="showDet('det-acc-manage')">
+        <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-wallet" style="color:var(--gold)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">帳戶管理</div><div class="mi-sub">新增、刪除銀行、信用卡、證券帳戶</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="showDet('det-budget')">
+        <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-target" style="color:var(--green)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">預算設定</div><div class="mi-sub">設定每月各類別支出上限</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      ${!isAdmin?`
+      <div class="menu-item" onclick="showDet('det-exp-cats')">
+        <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-tag" style="color:var(--green)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">消費類別</div><div class="mi-sub">管理我的收支分類</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>`:''}
+      <div class="menu-item" onclick="doLogout()">
+        <div class="mi-icon" style="background:rgba(232,112,112,.1)"><i class="ti ti-logout" style="color:var(--red)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title" style="color:var(--red)">登出</div><div class="mi-sub">退出目前帳號</div></div>
+      </div>
+    </div>`;
+
+  if(isAdmin){
     document.getElementById('announce-admin-btn').innerHTML='<button class="btn btn-gold btn-sm" onclick="openSheet(\'sh-announce\')"><i class="ti ti-plus" aria-hidden="true"></i> 發佈</button>';
   }
   loadAllUsers();
