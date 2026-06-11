@@ -1171,16 +1171,16 @@ async function delTxnFromAcc(id, amount, type, accountId){
 // Transfer between accounts
 async function initTransferSheet(){
   try{
-  const accounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false);
-  if(!accounts.length){toast('請先新增帳戶','err');return;}
-  const opts=accounts.map(a=>`<option value="${a.id}">${a.name} (NT$${Number(a.balance).toLocaleString()})</option>`).join('');
-  document.getElementById('tr-from').innerHTML=opts;
-  document.getElementById('tr-to').innerHTML=opts;
-  document.getElementById('tr-amt').value='';
-  document.getElementById('tr-fee').value='0';
-  const _trNow=new Date();document.getElementById('tr-date').value=`${_trNow.getFullYear()}-${String(_trNow.getMonth()+1).padStart(2,'0')}-${String(_trNow.getDate()).padStart(2,'0')}`;
-  document.getElementById('tr-note').value='';
-  }catch(e){toast('載入帳戶失敗','err');}
+    const accounts=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{},false);
+    const opts=accounts.map(a=>`<option value="${a.id}">${a.name} (NT$${Number(a.balance).toLocaleString()})</option>`).join('');
+    document.getElementById('tr-from').innerHTML=opts;
+    document.getElementById('tr-to').innerHTML=opts;
+    document.getElementById('tr-amt').value='';
+    document.getElementById('tr-fee').value='0';
+    const _trNow=new Date();
+    document.getElementById('tr-date').value=`${_trNow.getFullYear()}-${String(_trNow.getMonth()+1).padStart(2,'0')}-${String(_trNow.getDate()).padStart(2,'0')}`;
+    document.getElementById('tr-note').value='';
+  }catch(e){console.error('Transfer init error:',e);}
 }
 
 async function saveTransfer(){
@@ -1502,7 +1502,7 @@ async function loadExpCatOptions(){
 }
 async function openSheet(id){
   document.getElementById(id).classList.add('on');
-  if(id==='sh-transfer'){document.getElementById(id).classList.add('on');initTransferSheet();return;}
+  if(id==='sh-transfer'){initTransferSheet().then(()=>{document.getElementById(id).classList.add('on');});return;}
   if(id==='sh-txn'){setTxnType('expense');document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);document.getElementById('txn-amt').value='';document.getElementById('txn-note').value='';await loadExpCatOptions();}
   if(id==='sh-todo'){document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');}
 }
