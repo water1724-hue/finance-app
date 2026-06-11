@@ -1580,6 +1580,7 @@ function showCalDay(){
   const parts=calSel.split('-');
   document.getElementById('cal-sel-lbl').textContent=`${parseInt(parts[1])}月${parseInt(parts[2])}日`;
   let evs=calEvents.filter(e=>e.start_date===calSel);
+  window._calEventsData=evs;
   if(evFilter==='personal')evs=evs.filter(e=>!e.is_shared);
   if(evFilter==='shared')evs=evs.filter(e=>e.is_shared);
   const el=document.getElementById('cal-ev-list');
