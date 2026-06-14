@@ -61,6 +61,8 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 .card-gold{background:#1e1a12;border-color:var(--gold-border);}
 .pg-title{font-size:22px;font-weight:700;margin-bottom:18px;}
 .sec-label{font-size:13px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
+.home-tab{font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;padding-bottom:2px;border-bottom:2px solid transparent;transition:all .15s;}
+.home-tab.on{color:var(--gold);border-bottom-color:var(--gold);}
 .row-between{display:flex;align-items:center;justify-content:space-between;}
 
 /* BUTTONS */
@@ -296,13 +298,23 @@ select.inp option{background:var(--bg2);}
         <div id="h-todos"></div>
       </div>
 
-      <!-- 最新公告 -->
+      <!-- 公告 / 留言板 -->
       <div class="card">
         <div class="row-between" style="margin-bottom:12px;">
-          <div class="sec-label" style="margin:0">最新公告</div>
-          <span style="font-size:11px;color:var(--gold);cursor:pointer;" onclick="goPage('announce')">全部</span>
+          <div style="display:flex;gap:14px;">
+            <div class="home-tab on" id="home-tab-announce" onclick="switchHomeTab('announce')">公告</div>
+            <div class="home-tab" id="home-tab-memo" onclick="switchHomeTab('memo')">留言板</div>
+          </div>
+          <span style="font-size:11px;color:var(--gold);cursor:pointer;" id="home-tab-more" onclick="goPage('announce')">全部</span>
         </div>
         <div id="h-announce"></div>
+        <div id="h-memo" style="display:none;">
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <input class="inp" type="text" id="h-memo-input" placeholder="留言給家人……" style="flex:1;padding:10px 12px;font-size:13px;" onkeydown="if(event.key==='Enter')postMemoFromHome()">
+            <button class="btn btn-gold btn-sm" onclick="postMemoFromHome()"><i class="ti ti-send" aria-hidden="true"></i></button>
+          </div>
+          <div id="h-memo-list"></div>
+        </div>
       </div>
     </div>
 
@@ -481,6 +493,20 @@ select.inp option{background:var(--bg2);}
         </div>
       </div>
       <div class="card"><div id="doc-list"></div></div>
+    </div>
+
+    <!-- MEMO BOARD -->
+    <div class="page" id="pg-memo">
+      <div class="pg-title">留言板</div>
+      <!-- 發布留言 -->
+      <div class="card" style="margin-bottom:14px;">
+        <textarea class="inp" id="memo-input" rows="3" placeholder="在這裡留言給家人……" style="resize:vertical;margin-bottom:10px;"></textarea>
+        <div style="text-align:right;">
+          <button class="btn btn-gold btn-sm" onclick="postMemo()"><i class="ti ti-send" aria-hidden="true"></i> 發送</button>
+        </div>
+      </div>
+      <!-- 留言列表 -->
+      <div id="memo-list"></div>
     </div>
 
     <!-- MORE -->
@@ -821,6 +847,20 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Memo Edit (admin) -->
+<div class="overlay" id="sh-memo-edit">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>編輯留言</h3>
+    <input type="hidden" id="memo-edit-id">
+    <div class="field"><textarea class="inp" id="memo-edit-content" rows="4" style="resize:vertical;"></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-memo-edit')">取消</button>
+      <button class="btn btn-gold" onclick="saveMemoEdit()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Transfer -->
 <div class="overlay" id="sh-transfer">
   <div class="sheet">
@@ -1110,6 +1150,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">文件中心</div><div class="mi-sub">合約、保險、證件、醫療記錄</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="goPage('memo')">
+        <div class="mi-icon" style="background:rgba(232,137,74,.1)"><i class="ti ti-notes" style="color:var(--orange)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">留言板</div><div class="mi-sub">家庭共用留言，類似冰箱便條</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="goPage('ai')">
         <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
@@ -1191,6 +1236,7 @@ function goPage(p){
   if(p==='announce')loadAnnouncements();
   if(p==='report')initReport();
   if(p==='docs')loadDocs();
+  if(p==='memo')loadMemos();
 }
 function showDet(id){
   // 管理員限定功能
@@ -1232,10 +1278,11 @@ async function loadHome(){
   document.getElementById('home-date').textContent=`${now.getMonth()+1}月${now.getDate()}日 週${wds[now.getDay()]}`;
   const today=now.toISOString().slice(0,10);
   try{
-    const [todos,events,announces]=await Promise.all([
+    const [todos,events,announces,memos]=await Promise.all([
       (async()=>{const t1=await sb(`/rest/v1/todos?user_id=eq.${getViewAsId()}&completed=eq.false`,{});const t2=await sb(`/rest/v1/todos?assigned_to=eq.${getViewAsId()}&completed=eq.false`,{});const seen=new Set(t1.map(t=>t.id));return [...t1,...t2.filter(t=>!seen.has(t.id))];})(),
       sb(`/rest/v1/events?start_date=eq.${today}&user_id=eq.${getViewAsId()}&order=start_time.asc`,{}),
-      sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{})
+      sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{}),
+      sb('/rest/v1/memos?order=created_at.desc&limit=3',{})
     ]);
     document.getElementById('h-todo-count').textContent=todos.length;
     document.getElementById('h-event-count').textContent=events.length;
@@ -1278,6 +1325,22 @@ async function loadHome(){
             <div class="list-sub">${timeAgo(a.created_at)}</div>
           </div>
         </div>`).join('');
+    }
+    // Memo board preview
+    if(!allUsers.length)await loadAllUsers();
+    const hmEl=document.getElementById('h-memo-list');
+    if(!memos.length){hmEl.innerHTML='<div class="empty" style="padding:16px;"><p>還沒有人留言</p></div>';}
+    else{
+      hmEl.innerHTML=memos.map(m=>{
+        const author=allUsers.find(u=>u.id===m.user_id);
+        const name=author?(author.display_name||author.username):'未知';
+        return`<div class="list-row" style="align-items:flex-start;">
+          <div class="list-info">
+            <div style="font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;">${escapeHtml(m.content)}</div>
+            <div class="list-sub" style="margin-top:3px;"><span style="color:var(--gold);font-weight:600;">${name}</span>　${timeAgo(m.created_at)}</div>
+          </div>
+        </div>`;
+      }).join('');
     }
     // Credit card reminders
     try{
@@ -2203,6 +2266,107 @@ async function saveAnnounce(){
   }catch(e){toast('儲存失敗','err');}
 }
 async function delAnnounce(id){if(!confirm('確定刪除公告？'))return;try{await sb(`/rest/v1/announcements?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadAnnouncements();if(document.getElementById('pg-home').classList.contains('on'))loadHome();}catch(e){}}
+
+// ─── HOME TAB SWITCH（公告／留言板） ──────────────────────────
+function switchHomeTab(tab){
+  const isAnnounce=tab==='announce';
+  document.getElementById('home-tab-announce').classList.toggle('on',isAnnounce);
+  document.getElementById('home-tab-memo').classList.toggle('on',!isAnnounce);
+  document.getElementById('h-announce').style.display=isAnnounce?'block':'none';
+  document.getElementById('h-memo').style.display=isAnnounce?'none':'block';
+  document.getElementById('home-tab-more').onclick=()=>goPage(isAnnounce?'announce':'memo');
+}
+
+async function postMemoFromHome(){
+  const input=document.getElementById('h-memo-input');
+  const content=input.value.trim();
+  if(!content){toast('請輸入留言內容','err');return;}
+  try{
+    await sb('/rest/v1/memos',{method:'POST',body:JSON.stringify({user_id:prof.id,content})});
+    input.value='';
+    toast('留言已送出');
+    loadHome();
+  }catch(e){toast('送出失敗','err');}
+}
+// ─── END HOME TAB SWITCH ─────────────────────────────────────
+
+// ─── MEMO BOARD（留言板） ────────────────────────────────────
+async function loadMemos(){
+  const el=document.getElementById('memo-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    const [memos]=await Promise.all([
+      sb('/rest/v1/memos?order=created_at.desc',{}),
+    ]);
+    if(!allUsers.length)await loadAllUsers();
+    if(!memos.length){el.innerHTML='<div class="empty"><i class="ti ti-notes" aria-hidden="true"></i><p>還沒有人留言，來寫第一則吧！</p></div>';return;}
+
+    const isAdmin=prof.role==='admin';
+    el.innerHTML=memos.map(m=>{
+      const author=allUsers.find(u=>u.id===m.user_id);
+      const name=author?(author.display_name||author.username):'未知使用者';
+      const isMine=m.user_id===prof.id;
+      const canEdit=isAdmin; // 只有管理員可編輯/刪除
+      return`<div class="card" style="margin-bottom:10px;${isMine?'border-color:var(--gold-border);':''}">
+        <div style="white-space:pre-wrap;font-size:14px;color:var(--text);line-height:1.6;margin-bottom:8px;">${escapeHtml(m.content)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:12px;color:var(--text3);">
+            <span style="color:var(--gold);font-weight:600;">${name}</span>　${timeAgo(m.created_at)}${m.updated_at&&m.updated_at!==m.created_at?'（已編輯）':''}
+          </div>
+          ${canEdit?`<div style="display:flex;gap:4px;">
+            <button class="icon-btn" onclick='openMemoEdit(${JSON.stringify(m).replace(/'/g,"&#39;")})' style="font-size:14px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" onclick="delMemo('${m.id}')" style="font-size:14px;color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          </div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+
+function escapeHtml(s){
+  const d=document.createElement('div');d.textContent=s;return d.innerHTML;
+}
+
+async function postMemo(){
+  const content=document.getElementById('memo-input').value.trim();
+  if(!content){toast('請輸入留言內容','err');return;}
+  try{
+    await sb('/rest/v1/memos',{method:'POST',body:JSON.stringify({user_id:prof.id,content})});
+    document.getElementById('memo-input').value='';
+    toast('留言已送出');
+    loadMemos();
+  }catch(e){toast('送出失敗','err');}
+}
+
+function openMemoEdit(m){
+  if(prof.role!=='admin'){toast('此功能僅限管理員','err');return;}
+  document.getElementById('memo-edit-id').value=m.id;
+  document.getElementById('memo-edit-content').value=m.content;
+  openSheet('sh-memo-edit');
+}
+
+async function saveMemoEdit(){
+  const id=document.getElementById('memo-edit-id').value;
+  const content=document.getElementById('memo-edit-content').value.trim();
+  if(!content){toast('內容不能為空','err');return;}
+  try{
+    await sb(`/rest/v1/memos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({content,updated_at:new Date().toISOString()})});
+    closeSheet('sh-memo-edit');
+    toast('已更新');
+    loadMemos();
+  }catch(e){toast('更新失敗','err');}
+}
+
+async function delMemo(id){
+  if(prof.role!=='admin'){toast('此功能僅限管理員','err');return;}
+  if(!confirm('確定刪除這則留言？'))return;
+  try{
+    await sb(`/rest/v1/memos?id=eq.${id}`,{method:'DELETE'});
+    toast('已刪除');
+    loadMemos();
+  }catch(e){toast('刪除失敗','err');}
+}
+// ─── END MEMO BOARD ──────────────────────────────────────────
 
 // USERS
 async function loadAllUsers(){try{allUsers=await sb('/rest/v1/user_profiles?order=created_at.asc',{});}catch(e){}}
