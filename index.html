@@ -251,7 +251,16 @@ select.inp option{background:var(--bg2);}
 
     <!-- HOME -->
     <div class="page on" id="pg-home">
-      <div class="pg-title">首頁</div>
+      <div class="row-between" style="margin-bottom:18px;">
+        <div class="pg-title" style="margin:0">首頁</div>
+        <button onclick="goPage('notify')" style="position:relative;background:none;border:none;cursor:pointer;color:var(--text2);font-size:20px;padding:4px;">
+          <i class="ti ti-bell" aria-hidden="true"></i>
+          <span id="notify-badge" style="display:none;position:absolute;top:0;right:0;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:8px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;">0</span>
+        </button>
+      </div>
+
+      <!-- 通知摘要橫幅 -->
+      <div id="home-notify-banner" style="display:none;margin-bottom:12px;"></div>
 
       <!-- 快速記帳 -->
       <div class="card card-gold" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:12px;" onclick="openSheet('sh-txn')">
@@ -515,6 +524,34 @@ select.inp option{background:var(--bg2);}
       </div>
       <!-- 留言列表 -->
       <div id="memo-list"></div>
+    </div>
+
+    <!-- NOTIFICATION CENTER -->
+    <div class="page" id="pg-notify">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('home')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 首頁</div>
+      <div class="pg-title">通知中心</div>
+      <div id="notify-list"></div>
+    </div>
+
+    <!-- RECURRING TRANSACTIONS -->
+    <div class="page" id="pg-recurring">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">固定週期記帳</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddRecurring()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6;">設定每月或每週自動產生的收支記錄，例如房租、訂閱費、保費。系統會在到期日當天自動記帳。</div>
+      <div class="card"><div id="recurring-list"></div></div>
+    </div>
+
+    <!-- SAVINGS GOALS -->
+    <div class="page" id="pg-goals">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">儲蓄目標</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddGoal()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+      </div>
+      <div id="goals-list"></div>
     </div>
 
     <!-- MORE -->
@@ -873,6 +910,80 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Recurring Transaction -->
+<div class="overlay" id="sh-recurring">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-recurring-title">新增固定週期記帳</h3>
+    <input type="hidden" id="rec-id">
+    <div class="field"><label>名稱</label><input class="inp" type="text" id="rec-name" placeholder="例如：房租、Netflix訂閱"></div>
+    <div class="field"><label>帳戶</label><select class="inp" id="rec-account"></select></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-ghost" id="rec-type-exp" onclick="setRecType('expense')" style="flex:1;">支出</button>
+      <button class="btn btn-gold" id="rec-type-inc" onclick="setRecType('income')" style="flex:1;opacity:.4;">收入</button>
+    </div>
+    <div class="field"><label>金額 (NT$)</label><input class="inp" type="number" id="rec-amt" placeholder="0"></div>
+    <div class="field"><label>消費類別</label><select class="inp" id="rec-cat"></select></div>
+    <div class="field">
+      <label>週期</label>
+      <select class="inp" id="rec-freq" onchange="onRecFreqChange()">
+        <option value="monthly">每月</option>
+        <option value="weekly">每週</option>
+      </select>
+    </div>
+    <div class="field" id="rec-day-month-field">
+      <label>每月幾號記帳</label>
+      <input class="inp" type="number" id="rec-day-month" min="1" max="28" placeholder="1-28">
+    </div>
+    <div class="field" id="rec-day-week-field" style="display:none;">
+      <label>每週星期幾</label>
+      <select class="inp" id="rec-day-week">
+        <option value="1">星期一</option><option value="2">星期二</option><option value="3">星期三</option>
+        <option value="4">星期四</option><option value="5">星期五</option><option value="6">星期六</option>
+        <option value="0">星期日</option>
+      </select>
+    </div>
+    <div class="field"><label>下次記帳日期</label><input class="inp" type="date" id="rec-next-date"></div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="rec-note" placeholder="選填"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-recurring')">取消</button>
+      <button class="btn btn-gold" onclick="saveRecurring()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Savings Goal -->
+<div class="overlay" id="sh-goal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-goal-title">新增儲蓄目標</h3>
+    <input type="hidden" id="goal-id">
+    <div class="field"><label>目標名稱</label><input class="inp" type="text" id="goal-name" placeholder="例如：日本旅遊基金"></div>
+    <div class="field"><label>目標金額 (NT$)</label><input class="inp" type="number" id="goal-target" placeholder="0"></div>
+    <div class="field"><label>目前已存金額 (NT$)</label><input class="inp" type="number" id="goal-current" placeholder="0"></div>
+    <div class="field"><label>目標日期</label><input class="inp" type="date" id="goal-date"></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="goal-shared" style="width:16px;height:16px;"> 共用（所有成員可見）</label></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-goal')">取消</button>
+      <button class="btn btn-gold" onclick="saveGoal()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Goal Contribution -->
+<div class="overlay" id="sh-goal-add">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>存入金額</h3>
+    <input type="hidden" id="goal-add-id">
+    <div class="field"><label>金額 (NT$)</label><input class="inp" type="number" id="goal-add-amt" placeholder="0"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-goal-add')">取消</button>
+      <button class="btn btn-gold" onclick="saveGoalContribution()">確認存入</button>
+    </div>
+  </div>
+</div>
+
 <!-- Transfer -->
 <div class="overlay" id="sh-transfer">
   <div class="sheet">
@@ -1175,6 +1286,16 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">文件中心</div><div class="mi-sub">合約、保險、證件、醫療記錄</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="goPage('recurring')">
+        <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-repeat" style="color:#9C6BFF" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">固定週期記帳</div><div class="mi-sub">房租、訂閱費自動記帳</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="goPage('goals')">
+        <div class="mi-icon" style="background:rgba(212,170,106,.1)"><i class="ti ti-target-arrow" style="color:var(--gold)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">儲蓄目標</div><div class="mi-sub">設定目標金額並追蹤進度</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="goPage('ai')">
         <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
@@ -1241,6 +1362,7 @@ function initApp(){
   }
   loadAllUsers();
   goPage('home');
+  processRecurringTxns().then(()=>{ if(document.getElementById('pg-home').classList.contains('on')) loadHome(); });
 }
 
 // NAV
@@ -1257,6 +1379,9 @@ function goPage(p){
   if(p==='report')initReport();
   if(p==='docs')loadDocs();
   if(p==='memo')loadMemos();
+  if(p==='notify')loadNotifyCenter();
+  if(p==='recurring')loadRecurring();
+  if(p==='goals')loadGoals();
 }
 function showDet(id){
   // 管理員限定功能
@@ -1385,6 +1510,7 @@ async function loadHome(){
       }
     }catch(e){}
   }catch(e){console.error(e);}
+  updateHomeNotifyBadge();
 }
 
 async function quickDone(id){
@@ -2523,6 +2649,409 @@ async function delMemo(id){
   }catch(e){toast('刪除失敗','err');}
 }
 // ─── END MEMO BOARD ──────────────────────────────────────────
+
+// ─── NOTIFICATION CENTER（通知整合中心） ─────────────────────
+async function getAllAlerts(){
+  const alerts=[]; // {level:'red'|'orange'|'gold', icon, title, sub, onclick}
+  const today=new Date();
+  const todayStr=today.toISOString().slice(0,10);
+  const ym=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  const year=today.getFullYear(),month=today.getMonth()+1;
+
+  try{
+    // 1. 預算警示
+    const mStart=`${ym}-01`;
+    const [cats,budgets,txns]=await Promise.all([
+      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{}),
+      sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{}),
+      sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&type=eq.expense&date=gte.${mStart}`,{})
+    ]);
+    budgets.forEach(b=>{
+      const cat=cats.find(c=>c.id===b.category_id);
+      if(!cat||!Number(b.amount))return;
+      const spent=txns.filter(t=>t.category_id===b.category_id).reduce((s,t)=>s+Number(t.amount),0);
+      const pct=spent/Number(b.amount)*100;
+      if(pct>=100){
+        alerts.push({level:'red',icon:'ti-alert-triangle',title:`「${cat.name}」已超支`,sub:`預算 NT$${Number(b.amount).toLocaleString()}，已花 NT$${Math.round(spent).toLocaleString()}（${Math.round(pct)}%）`,page:'finance'});
+      } else if(pct>=80){
+        alerts.push({level:'gold',icon:'ti-alert-circle',title:`「${cat.name}」即將超支`,sub:`已使用 ${Math.round(pct)}% 預算（NT$${Math.round(spent).toLocaleString()} / NT$${Number(b.amount).toLocaleString()}）`,page:'finance'});
+      }
+    });
+
+    // 2. 信用卡帳單/繳款提醒
+    const allAccs=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{});
+    const accCatsLocal=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
+    const creditAccs=allAccs.filter(a=>{const c=accCatsLocal.find(x=>x.id===a.category_id);return c?.type==='credit';});
+    const todayDay=today.getDate();
+    creditAccs.forEach(acc=>{
+      if(acc.statement_day){const diff=acc.statement_day-todayDay;if(diff>=0&&diff<=3)alerts.push({level:diff===0?'red':'orange',icon:'ti-credit-card',title:`${acc.name} 帳單日`,sub:diff===0?'今天結帳':`${diff} 天後結帳`,page:'finance'});}
+      if(acc.payment_day){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)alerts.push({level:diff===0?'red':'orange',icon:'ti-credit-card-pay',title:`${acc.name} 繳款日`,sub:diff===0?'今天到期繳款':`${diff} 天後到期繳款`,page:'finance'});}
+    });
+
+    // 3. 文件到期提醒
+    const docs=await sb(`/rest/v1/documents?or=(user_id.eq.${getViewAsId()},is_shared.eq.true)`,{});
+    docs.forEach(d=>{
+      if(!d.expiry_date)return;
+      const diff=Math.ceil((new Date(d.expiry_date)-today)/(1000*60*60*24));
+      if(diff<0)alerts.push({level:'red',icon:'ti-file-alert',title:`「${d.title}」已到期`,sub:`到期日 ${d.expiry_date}`,page:'docs'});
+      else if(diff<=30)alerts.push({level:'orange',icon:'ti-file-clock',title:`「${d.title}」即將到期`,sub:`剩 ${diff} 天（${d.expiry_date}）`,page:'docs'});
+    });
+
+    // 4. 待辦逾期/即將到期
+    const [myTodos,assignedTodos]=await Promise.all([
+      sb(`/rest/v1/todos?user_id=eq.${getViewAsId()}&completed=eq.false`,{}),
+      sb(`/rest/v1/todos?assigned_to=eq.${getViewAsId()}&completed=eq.false`,{})
+    ]);
+    const seen=new Set(myTodos.map(t=>t.id));
+    const allTodos=[...myTodos,...assignedTodos.filter(t=>!seen.has(t.id))];
+    allTodos.forEach(t=>{
+      if(!t.due_date)return;
+      const diff=Math.ceil((new Date(t.due_date)-today)/(1000*60*60*24));
+      if(diff<0)alerts.push({level:'red',icon:'ti-clock-exclamation',title:`待辦「${t.title}」已逾期`,sub:`截止 ${t.due_date}`,page:'todo'});
+      else if(diff<=2)alerts.push({level:'gold',icon:'ti-clock',title:`待辦「${t.title}」即將到期`,sub:diff===0?'今天截止':`${diff} 天後截止`,page:'todo'});
+    });
+
+    // 5. 固定週期記帳即將執行（明日內）
+    try{
+      const recs=await sb(`/rest/v1/recurring_transactions?user_id=eq.${prof.id}&is_active=eq.true`,{});
+      recs.forEach(r=>{
+        if(r.next_date===todayStr)alerts.push({level:'gold',icon:'ti-repeat',title:`固定週期「${r.name}」今日已自動記帳`,sub:`NT$${Number(r.amount).toLocaleString()}`,page:'recurring'});
+      });
+    }catch(e){}
+
+  }catch(e){console.error('getAllAlerts',e);}
+
+  // 排序：red > orange > gold
+  const order={red:0,orange:1,gold:2};
+  alerts.sort((a,b)=>order[a.level]-order[b.level]);
+  return alerts;
+}
+
+async function loadNotifyCenter(){
+  const el=document.getElementById('notify-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  const alerts=await getAllAlerts();
+  if(!alerts.length){el.innerHTML='<div class="empty"><i class="ti ti-bell-off" aria-hidden="true"></i><p>目前沒有任何通知</p></div>';return;}
+  const colorMap={red:'var(--red)',orange:'var(--orange)',gold:'var(--gold)'};
+  const bgMap={red:'rgba(232,112,112,.1)',orange:'rgba(232,137,74,.1)',gold:'var(--gold-dim)'};
+  el.innerHTML=alerts.map(a=>`
+    <div class="card" style="margin-bottom:8px;cursor:pointer;" onclick="goPage('${a.page}')">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <div class="list-icon" style="background:${bgMap[a.level]};flex-shrink:0;"><i class="ti ${a.icon}" style="color:${colorMap[a.level]}" aria-hidden="true"></i></div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${a.title}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">${a.sub}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function updateHomeNotifyBadge(){
+  try{
+    const alerts=await getAllAlerts();
+    const badge=document.getElementById('notify-badge');
+    const banner=document.getElementById('home-notify-banner');
+    if(alerts.length){
+      badge.style.display='block';
+      badge.textContent=alerts.length>9?'9+':alerts.length;
+      const top=alerts[0];
+      const colorMap={red:'var(--red)',orange:'var(--orange)',gold:'var(--gold)'};
+      const bgMap={red:'rgba(232,112,112,.1)',orange:'rgba(232,137,74,.1)',gold:'var(--gold-dim)'};
+      const borderMap={red:'rgba(232,112,112,.35)',orange:'rgba(232,137,74,.35)',gold:'var(--gold-border)'};
+      banner.style.display='block';
+      banner.innerHTML=`<div class="card" style="background:${bgMap[top.level]};border:0.5px solid ${borderMap[top.level]};cursor:pointer;" onclick="goPage('notify')">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <i class="ti ${top.icon}" style="color:${colorMap[top.level]};font-size:18px;" aria-hidden="true"></i>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);">${top.title}</div>
+            <div style="font-size:11px;color:var(--text3);">${top.sub}</div>
+          </div>
+          ${alerts.length>1?`<div style="font-size:11px;color:${colorMap[top.level]};font-weight:600;">+${alerts.length-1} 則</div>`:''}
+        </div>
+      </div>`;
+    } else {
+      badge.style.display='none';
+      banner.style.display='none';
+    }
+  }catch(e){}
+}
+// ─── END NOTIFICATION CENTER ─────────────────────────────────
+
+// ─── RECURRING TRANSACTIONS（固定週期記帳） ──────────────────
+let recType='expense';
+function setRecType(t){
+  recType=t;
+  document.getElementById('rec-type-exp').className=t==='expense'?'btn btn-gold':'btn btn-ghost';
+  document.getElementById('rec-type-inc').className=t==='income'?'btn btn-gold':'btn btn-ghost';
+  document.getElementById('rec-type-exp').style.opacity=t==='expense'?'1':'.4';
+  document.getElementById('rec-type-inc').style.opacity=t==='income'?'1':'.4';
+  loadRecCatOptions();
+}
+async function loadRecCatOptions(selected){
+  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&order=sort_order.asc`,{});
+  const filtered=cats.filter(c=>(c.type===recType||c.type==='both')&&c.is_active!==false);
+  const parents=filtered.filter(c=>!c.parent_id);
+  const children=filtered.filter(c=>c.parent_id);
+  let opts='<option value="">不分類</option>';
+  parents.forEach(p=>{
+    const subs=children.filter(c=>c.parent_id===p.id);
+    if(subs.length){
+      opts+=`<optgroup label="${p.name}">`;
+      subs.forEach(s=>{opts+=`<option value="${s.id}" ${s.id===selected?'selected':''}>${s.name}</option>`;});
+      opts+=`</optgroup>`;
+    } else {
+      opts+=`<option value="${p.id}" ${p.id===selected?'selected':''}>${p.name}</option>`;
+    }
+  });
+  document.getElementById('rec-cat').innerHTML=opts;
+}
+function onRecFreqChange(){
+  const freq=document.getElementById('rec-freq').value;
+  document.getElementById('rec-day-month-field').style.display=freq==='monthly'?'block':'none';
+  document.getElementById('rec-day-week-field').style.display=freq==='weekly'?'block':'none';
+}
+async function openAddRecurring(){
+  document.getElementById('sh-recurring-title').textContent='新增固定週期記帳';
+  document.getElementById('rec-id').value='';
+  document.getElementById('rec-name').value='';
+  document.getElementById('rec-amt').value='';
+  document.getElementById('rec-note').value='';
+  document.getElementById('rec-freq').value='monthly';
+  document.getElementById('rec-day-month').value='1';
+  document.getElementById('rec-day-week').value='1';
+  document.getElementById('rec-next-date').value=new Date().toISOString().slice(0,10);
+  onRecFreqChange();
+  setRecType('expense');
+  const accounts=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{});
+  document.getElementById('rec-account').innerHTML=accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  openSheet('sh-recurring');
+}
+function editRecurring(idx){
+  const r=window._recurring?.[idx];
+  if(!r)return;
+  document.getElementById('sh-recurring-title').textContent='編輯固定週期記帳';
+  document.getElementById('rec-id').value=r.id;
+  document.getElementById('rec-name').value=r.name;
+  document.getElementById('rec-account').innerHTML=(window._recAccounts||[]).map(a=>`<option value="${a.id}" ${a.id===r.account_id?'selected':''}>${a.name}</option>`).join('');
+  document.getElementById('rec-amt').value=r.amount;
+  document.getElementById('rec-note').value=r.note||'';
+  document.getElementById('rec-freq').value=r.frequency;
+  document.getElementById('rec-day-month').value=r.day_of_month||1;
+  document.getElementById('rec-day-week').value=r.day_of_week!=null?r.day_of_week:1;
+  document.getElementById('rec-next-date').value=r.next_date;
+  onRecFreqChange();
+  setRecType(r.type);
+  setTimeout(()=>loadRecCatOptions(r.category_id),100);
+  openSheet('sh-recurring');
+}
+async function saveRecurring(){
+  const id=document.getElementById('rec-id').value;
+  const name=document.getElementById('rec-name').value.trim();
+  const accountId=document.getElementById('rec-account').value;
+  const amt=parseFloat(document.getElementById('rec-amt').value);
+  const freq=document.getElementById('rec-freq').value;
+  const nextDate=document.getElementById('rec-next-date').value;
+  if(!name||!accountId||!amt||!nextDate){toast('請填寫完整資料','err');return;}
+  const body={
+    user_id:prof.id,name,account_id:accountId,type:recType,amount:amt,
+    category_id:document.getElementById('rec-cat').value||null,
+    note:document.getElementById('rec-note').value.trim(),
+    frequency:freq,
+    day_of_month:freq==='monthly'?parseInt(document.getElementById('rec-day-month').value)||1:null,
+    day_of_week:freq==='weekly'?parseInt(document.getElementById('rec-day-week').value):null,
+    next_date:nextDate,
+    is_active:true
+  };
+  try{
+    if(id) await sb(`/rest/v1/recurring_transactions?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    else await sb('/rest/v1/recurring_transactions',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-recurring');
+    toast('已儲存');
+    loadRecurring();
+  }catch(e){toast('儲存失敗','err');}
+}
+async function toggleRecurring(id,cur){
+  try{await sb(`/rest/v1/recurring_transactions?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_active:!cur})});loadRecurring();}catch(e){}
+}
+async function delRecurring(id){
+  if(!confirm('確定刪除此固定週期項目？（已產生的記錄不會被刪除）'))return;
+  try{await sb(`/rest/v1/recurring_transactions?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadRecurring();}catch(e){}
+}
+async function loadRecurring(){
+  const el=document.getElementById('recurring-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    const [recs,accounts,cats]=await Promise.all([
+      sb(`/rest/v1/recurring_transactions?user_id=eq.${prof.id}&order=next_date.asc`,{}),
+      sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{}),
+      sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}`,{})
+    ]);
+    window._recurring=recs;window._recAccounts=accounts;window._recCats=cats;
+    if(!recs.length){el.innerHTML='<div class="empty"><i class="ti ti-repeat" aria-hidden="true"></i><p>尚無固定週期項目</p></div>';return;}
+    const wdLabel=['日','一','二','三','四','五','六'];
+    el.innerHTML=recs.map((r,i)=>{
+      const acc=accounts.find(a=>a.id===r.account_id);
+      const cat=cats.find(c=>c.id===r.category_id);
+      const freqLabel=r.frequency==='monthly'?`每月${r.day_of_month}日`:`每週${wdLabel[r.day_of_week]}`;
+      return`<div class="list-row" style="opacity:${r.is_active?'1':'0.5'};">
+        <div class="list-icon" style="background:${r.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
+          <i class="ti ti-repeat" style="color:${r.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
+        </div>
+        <div class="list-info">
+          <div class="list-title">${r.name}${!r.is_active?'<span style="font-size:10px;color:var(--text3);margin-left:6px;">(已停用)</span>':''}</div>
+          <div class="list-sub">${acc?.name||''}${cat?' · '+cat.name:''} · ${freqLabel} · 下次 ${r.next_date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <div class="list-amt ${r.type==='income'?'amt-pos':'amt-neg'}">${r.type==='income'?'+':'-'}NT$${Number(r.amount).toLocaleString()}</div>
+          <button class="icon-btn" onclick="editRecurring(${i})" style="padding:3px 6px;font-size:13px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+          <button class="icon-btn" onclick="toggleRecurring('${r.id}',${r.is_active})" style="padding:3px 6px;font-size:13px;"><i class="ti ti-${r.is_active?'player-pause':'player-play'}" aria-hidden="true"></i></button>
+          <button class="icon-btn" onclick="delRecurring('${r.id}')" style="padding:3px 6px;font-size:13px;color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+
+// 自動產生到期的固定週期記帳（app 啟動時執行一次）
+async function processRecurringTxns(){
+  try{
+    const today=new Date();
+    const todayStr=today.toISOString().slice(0,10);
+    const recs=await sb(`/rest/v1/recurring_transactions?user_id=eq.${prof.id}&is_active=eq.true&next_date=lte.${todayStr}`,{});
+    if(!recs.length)return;
+    for(const r of recs){
+      let next=new Date(r.next_date+'T00:00:00');
+      let guard=0;
+      while(next.toISOString().slice(0,10)<=todayStr&&guard<24){
+        const dateStr=next.toISOString().slice(0,10);
+        await sb('/rest/v1/transactions',{method:'POST',body:JSON.stringify({
+          user_id:r.user_id,account_id:r.account_id,type:r.type,amount:r.amount,
+          category_id:r.category_id,note:r.note||r.name,date:dateStr,tags:['固定週期']
+        })});
+        const accs=await sb(`/rest/v1/accounts?id=eq.${r.account_id}`,{});
+        if(accs.length){
+          const delta=r.type==='income'?Number(r.amount):-Number(r.amount);
+          await sb(`/rest/v1/accounts?id=eq.${r.account_id}`,{method:'PATCH',body:JSON.stringify({balance:Number(accs[0].balance)+delta})});
+        }
+        if(r.frequency==='monthly'){
+          next.setMonth(next.getMonth()+1);
+          if(r.day_of_month) next.setDate(Math.min(r.day_of_month,28));
+        } else {
+          next.setDate(next.getDate()+7);
+        }
+        guard++;
+      }
+      await sb(`/rest/v1/recurring_transactions?id=eq.${r.id}`,{method:'PATCH',body:JSON.stringify({next_date:next.toISOString().slice(0,10)})});
+    }
+  }catch(e){console.error('processRecurringTxns',e);}
+}
+// ─── END RECURRING TRANSACTIONS ──────────────────────────────
+
+// ─── SAVINGS GOALS（儲蓄目標） ────────────────────────────────
+async function loadGoals(){
+  const el=document.getElementById('goals-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    const goals=await sb(`/rest/v1/savings_goals?or=(user_id.eq.${prof.id},is_shared.eq.true)&is_active=eq.true&order=created_at.desc`,{});
+    if(!allUsers.length)await loadAllUsers();
+    window._goals=goals;
+    if(!goals.length){el.innerHTML='<div class="empty"><i class="ti ti-target-arrow" aria-hidden="true"></i><p>尚無儲蓄目標，點右上角新增</p></div>';return;}
+    el.innerHTML=goals.map((g,i)=>{
+      const pct=Math.min(100,Number(g.target_amount)>0?(Number(g.current_amount)/Number(g.target_amount)*100):0);
+      const owner=allUsers.find(u=>u.id===g.user_id);
+      const isMine=g.user_id===prof.id;
+      const daysLeft=g.target_date?Math.ceil((new Date(g.target_date)-new Date())/(1000*60*60*24)):null;
+      return`<div class="card" style="margin-bottom:10px;">
+        <div class="row-between" style="margin-bottom:8px;">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);">${g.name}${g.is_shared?'<span class="tag tag-blue" style="margin-left:6px;font-size:9px;">共用</span>':''}</div>
+            ${!isMine?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">由 ${owner?(owner.display_name||owner.username):'未知'} 建立</div>`:''}
+          </div>
+          ${isMine?`<div style="display:flex;gap:4px;">
+            <button class="icon-btn" onclick="editGoal(${i})" style="font-size:14px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" onclick="delGoal('${g.id}')" style="font-size:14px;color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          </div>`:''}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+          <div style="font-size:18px;font-weight:700;color:var(--gold);">NT$${Math.round(Number(g.current_amount)).toLocaleString()}</div>
+          <div style="font-size:12px;color:var(--text3);">目標 NT$${Math.round(Number(g.target_amount)).toLocaleString()}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;height:8px;overflow:hidden;margin-bottom:6px;">
+          <div style="background:var(--gold);height:100%;width:${pct}%;transition:width .3s;"></div>
+        </div>
+        <div class="row-between">
+          <div style="font-size:11px;color:var(--text3);">${pct.toFixed(1)}% ${g.target_date?`· ${daysLeft>=0?`剩 ${daysLeft} 天`:'已過期'}（${g.target_date}）`:''}</div>
+          <button class="btn btn-gold btn-sm" onclick="openGoalAdd('${g.id}')">＋ 存入</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+function openAddGoal(){
+  document.getElementById('sh-goal-title').textContent='新增儲蓄目標';
+  document.getElementById('goal-id').value='';
+  document.getElementById('goal-name').value='';
+  document.getElementById('goal-target').value='';
+  document.getElementById('goal-current').value='0';
+  document.getElementById('goal-date').value='';
+  document.getElementById('goal-shared').checked=false;
+  openSheet('sh-goal');
+}
+function editGoal(idx){
+  const g=window._goals?.[idx];
+  if(!g)return;
+  document.getElementById('sh-goal-title').textContent='編輯儲蓄目標';
+  document.getElementById('goal-id').value=g.id;
+  document.getElementById('goal-name').value=g.name;
+  document.getElementById('goal-target').value=g.target_amount;
+  document.getElementById('goal-current').value=g.current_amount;
+  document.getElementById('goal-date').value=g.target_date||'';
+  document.getElementById('goal-shared').checked=!!g.is_shared;
+  openSheet('sh-goal');
+}
+async function saveGoal(){
+  const id=document.getElementById('goal-id').value;
+  const name=document.getElementById('goal-name').value.trim();
+  const target=parseFloat(document.getElementById('goal-target').value);
+  const current=parseFloat(document.getElementById('goal-current').value)||0;
+  if(!name||!target){toast('請填寫名稱和目標金額','err');return;}
+  const body={
+    user_id:prof.id,name,target_amount:target,current_amount:current,
+    target_date:document.getElementById('goal-date').value||null,
+    is_shared:document.getElementById('goal-shared').checked
+  };
+  try{
+    if(id) await sb(`/rest/v1/savings_goals?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    else await sb('/rest/v1/savings_goals',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-goal');
+    toast('已儲存');
+    loadGoals();
+  }catch(e){toast('儲存失敗','err');}
+}
+async function delGoal(id){
+  if(!confirm('確定刪除此儲蓄目標？'))return;
+  try{await sb(`/rest/v1/savings_goals?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadGoals();}catch(e){}
+}
+function openGoalAdd(id){
+  document.getElementById('goal-add-id').value=id;
+  document.getElementById('goal-add-amt').value='';
+  openSheet('sh-goal-add');
+}
+async function saveGoalContribution(){
+  const id=document.getElementById('goal-add-id').value;
+  const amt=parseFloat(document.getElementById('goal-add-amt').value);
+  if(!amt){toast('請輸入金額','err');return;}
+  try{
+    const goals=await sb(`/rest/v1/savings_goals?id=eq.${id}`,{});
+    if(!goals.length)return;
+    const newAmt=Number(goals[0].current_amount)+amt;
+    await sb(`/rest/v1/savings_goals?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({current_amount:newAmt})});
+    closeSheet('sh-goal-add');
+    toast(newAmt>=Number(goals[0].target_amount)?'🎉 已達成目標！':'已存入');
+    loadGoals();
+  }catch(e){toast('操作失敗','err');}
+}
+// ─── END SAVINGS GOALS ────────────────────────────────────────
 
 // USERS
 async function loadAllUsers(){try{allUsers=await sb('/rest/v1/user_profiles?order=created_at.asc',{});}catch(e){}}
