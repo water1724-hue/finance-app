@@ -614,7 +614,7 @@ select.inp option{background:var(--bg2);}
       </select>
     </div>
     <div style="display:flex;gap:8px;">
-      <input class="inp" type="text" id="atxn-keyword" placeholder="搜尋備註..." style="flex:1;padding:8px 10px;font-size:13px;">
+      <input class="inp" type="text" id="atxn-keyword" placeholder="搜尋備註、類別、帳戶或 #標籤..." style="flex:1;padding:8px 10px;font-size:13px;">
       <button class="btn btn-gold btn-sm" onclick="searchAllTxns()">查詢</button>
       <button class="btn btn-ghost btn-sm" onclick="resetAllTxns()">重置</button>
     </div>
@@ -624,6 +624,9 @@ select.inp option{background:var(--bg2);}
     <div class="stat-card" style="flex:1;"><div class="stat-val amt-pos" id="atxn-income">—</div><div class="stat-lbl">收入</div></div>
     <div class="stat-card" style="flex:1;"><div class="stat-val amt-neg" id="atxn-expense">—</div><div class="stat-lbl">支出</div></div>
     <div class="stat-card" style="flex:1;"><div class="stat-val" id="atxn-count">—</div><div class="stat-lbl">筆數</div></div>
+  </div>
+  <div style="text-align:right;margin-bottom:10px;">
+    <button class="btn btn-ghost btn-sm" onclick="exportTxnsCSV()"><i class="ti ti-download" aria-hidden="true"></i> 匯出 CSV</button>
   </div>
   <!-- List -->
   <div class="card"><div id="atxn-list"></div></div>
@@ -688,6 +691,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>金額 (NT$)</label><input class="inp" type="number" id="txn-amt" placeholder="0"></div>
     <div class="field"><label>消費類別</label><select class="inp" id="txn-cat"></select></div>
     <div class="field"><label>備註</label><input class="inp" type="text" id="txn-note" placeholder="選填"></div>
+    <div class="field"><label>標籤</label><input class="inp" type="text" id="txn-tags" placeholder="用逗號分隔，例如：旅遊,報帳"></div>
     <div class="field"><label>日期</label><input class="inp" type="date" id="txn-date"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-txn')">取消</button>
@@ -1545,7 +1549,7 @@ function renderFinTxns(txns,accounts){
       <div class="list-icon" style="background:${t.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
         <i class="ti ${t.type==='income'?'ti-arrow-down-circle':'ti-arrow-up-circle'}" style="color:${t.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
       </div>
-      <div class="list-info"><div class="list-title">${t.note||'記帳'}</div><div class="list-sub">${acc?.name||''} · ${t.date}</div></div>
+      <div class="list-info"><div class="list-title">${t.note||'記帳'}</div><div class="list-sub">${acc?.name||''} · ${t.date}${tagChips(t.tags)}</div></div>
       <div style="display:flex;align-items:center;gap:6px;">
         <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
         <button class="icon-btn" data-fi="${i}" onclick="editFinTxnByIdx(this.dataset.fi)" style="padding:3px 6px;font-size:13px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
@@ -1639,6 +1643,7 @@ function editTxnByIdx(idx){
   setTxnType(t.type);
   document.getElementById('txn-amt').value=t.amount;
   document.getElementById('txn-note').value=t.note||'';
+  document.getElementById('txn-tags').value=(t.tags||[]).join(',');
   document.getElementById('txn-date').value=t.date;
   openSheet('sh-txn');
 }
@@ -1653,6 +1658,7 @@ function editFinTxnByIdx(idx){
   setTxnType(t.type);
   document.getElementById('txn-amt').value=t.amount;
   document.getElementById('txn-note').value=t.note||'';
+  document.getElementById('txn-tags').value=(t.tags||[]).join(',');
   document.getElementById('txn-date').value=t.date;
   openSheet('sh-txn');
 }
@@ -2088,7 +2094,9 @@ async function saveTxn(){
   const accId=document.getElementById('txn-account').value;
   const amt=parseFloat(document.getElementById('txn-amt').value);
   if(!accId||!amt){toast('請填寫帳戶和金額','err');return;}
-  const body={user_id:prof.id,account_id:accId,type:txnType,amount:amt,category_id:document.getElementById('txn-cat').value||null,note:document.getElementById('txn-note').value.trim(),date:document.getElementById('txn-date').value};
+  const tagsStr=document.getElementById('txn-tags').value.trim();
+  const tags=tagsStr?tagsStr.split(',').map(s=>s.trim()).filter(Boolean):[];
+  const body={user_id:prof.id,account_id:accId,type:txnType,amount:amt,category_id:document.getElementById('txn-cat').value||null,note:document.getElementById('txn-note').value.trim(),tags,date:document.getElementById('txn-date').value};
   try{
     if(id){
       // Edit: get old txn to reverse balance
@@ -2470,6 +2478,10 @@ async function loadMemos(){
 function escapeHtml(s){
   const d=document.createElement('div');d.textContent=s;return d.innerHTML;
 }
+function tagChips(tags){
+  if(!tags||!tags.length)return'';
+  return tags.map(tg=>`<span class="tag" style="background:rgba(107,158,240,.12);color:var(--blue);font-size:9px;margin-left:4px;">#${escapeHtml(tg)}</span>`).join('');
+}
 
 async function postMemo(){
   const content=document.getElementById('memo-input').value.trim();
@@ -2683,7 +2695,7 @@ async function searchAllTxns(){
       sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{})
     ]);
 
-    // Filter by keyword (note or category name)
+    // Filter by keyword (note, category name, account name, or tags)
     let txns=allTxns;
     if(keyword){
       const kw=keyword.toLowerCase();
@@ -2693,7 +2705,8 @@ async function searchAllTxns(){
         const catMatch=cat&&cat.name.toLowerCase().includes(kw);
         const acc=accounts.find(a=>a.id===t.account_id);
         const accMatch=acc&&acc.name.toLowerCase().includes(kw);
-        return noteMatch||catMatch||accMatch;
+        const tagMatch=(t.tags||[]).some(tg=>tg.toLowerCase().includes(kw));
+        return noteMatch||catMatch||accMatch||tagMatch;
       });
     }
 
@@ -2715,7 +2728,7 @@ async function searchAllTxns(){
         </div>
         <div class="list-info">
           <div class="list-title">${t.note||'記帳'}</div>
-          <div class="list-sub">${acc?.name||''} ${cat?'· '+cat.name:''} · ${t.date}</div>
+          <div class="list-sub">${acc?.name||''} ${cat?'· '+cat.name:''} · ${t.date}${tagChips(t.tags)}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
@@ -2725,7 +2738,41 @@ async function searchAllTxns(){
       </div>`;
     }).join('');
     window._allTxns=txns;
+    window._allTxnsAccounts=accounts;
+    window._allTxnsCats=cats;
   }catch(e){el.innerHTML='<div class="empty"><p>查詢失敗</p></div>';console.error(e);}
+}
+
+function exportTxnsCSV(){
+  const txns=window._allTxns;
+  if(!txns||!txns.length){toast('沒有可匯出的資料','err');return;}
+  const accounts=window._allTxnsAccounts||[];
+  const cats=window._allTxnsCats||[];
+  const typeLabel={income:'收入',expense:'支出'};
+  const header=['日期','類型','帳戶','類別','金額','備註','標籤'];
+  const rows=txns.map(t=>{
+    const acc=accounts.find(a=>a.id===t.account_id);
+    const cat=cats.find(c=>c.id===t.category_id);
+    const tags=(t.tags||[]).map(tg=>'#'+tg).join(' ');
+    return [t.date,typeLabel[t.type]||t.type,acc?.name||'',cat?.name||'',t.amount,t.note||'',tags];
+  });
+  const csvEsc=v=>{
+    const s=String(v??'');
+    return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+  };
+  const csv=[header,...rows].map(r=>r.map(csvEsc).join(',')).join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  a.href=url;
+  a.download=`life-os-交易記錄_${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(`已匯出 ${txns.length} 筆交易`);
 }
 
 async function resetAllTxns(){
@@ -2750,6 +2797,7 @@ function editFinTxnByIdx2(idx){
   setTxnType(t.type);
   document.getElementById('txn-amt').value=t.amount;
   document.getElementById('txn-note').value=t.note||'';
+  document.getElementById('txn-tags').value=(t.tags||[]).join(',');
   document.getElementById('txn-date').value=t.date;
   openSheet('sh-txn');
 }
@@ -3655,6 +3703,7 @@ window.openSheet=async function(id){
     document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);
     document.getElementById('txn-amt').value='';
     document.getElementById('txn-note').value='';
+    document.getElementById('txn-tags').value='';
     document.getElementById('txn-id').value='';
     // Load accounts if not already loaded
     const accSel=document.getElementById('txn-account');
