@@ -307,6 +307,15 @@ select.inp option{background:var(--bg2);}
         <div id="h-todos"></div>
       </div>
 
+      <!-- 今日習慣 -->
+      <div class="card" id="h-habits-card" style="display:none;">
+        <div class="row-between" style="margin-bottom:12px;">
+          <div class="sec-label" style="margin:0">今日習慣</div>
+          <span style="font-size:11px;color:var(--gold);cursor:pointer;" onclick="goPage('habits')">管理 →</span>
+        </div>
+        <div id="h-habits"></div>
+      </div>
+
       <!-- 公告 / 留言板 -->
       <div class="card">
         <div class="row-between" style="margin-bottom:12px;">
@@ -552,6 +561,16 @@ select.inp option{background:var(--bg2);}
         <button class="btn btn-gold btn-sm" onclick="openAddGoal()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
       </div>
       <div id="goals-list"></div>
+    </div>
+
+    <!-- HABIT TRACKER -->
+    <div class="page" id="pg-habits">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">習慣追蹤</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddHabit()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+      </div>
+      <div id="habits-list"></div>
     </div>
 
     <!-- MORE -->
@@ -984,6 +1003,36 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Habit -->
+<div class="overlay" id="sh-habit">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-habit-title">新增習慣</h3>
+    <input type="hidden" id="habit-id">
+    <div class="field"><label>名稱</label><input class="inp" type="text" id="habit-name" placeholder="例如：喝水、運動、吃藥"></div>
+    <div class="field">
+      <label>圖示</label>
+      <div id="habit-icon-picker" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div class="habit-icon-opt" data-icon="💧" onclick="selectHabitIcon('💧')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">💧</div>
+        <div class="habit-icon-opt" data-icon="🏃" onclick="selectHabitIcon('🏃')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">🏃</div>
+        <div class="habit-icon-opt" data-icon="💊" onclick="selectHabitIcon('💊')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">💊</div>
+        <div class="habit-icon-opt" data-icon="📖" onclick="selectHabitIcon('📖')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">📖</div>
+        <div class="habit-icon-opt" data-icon="🧘" onclick="selectHabitIcon('🧘')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">🧘</div>
+        <div class="habit-icon-opt" data-icon="🥗" onclick="selectHabitIcon('🥗')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">🥗</div>
+        <div class="habit-icon-opt" data-icon="😴" onclick="selectHabitIcon('😴')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">😴</div>
+        <div class="habit-icon-opt" data-icon="🚭" onclick="selectHabitIcon('🚭')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">🚭</div>
+        <div class="habit-icon-opt" data-icon="✍️" onclick="selectHabitIcon('✍️')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">✍️</div>
+        <div class="habit-icon-opt" data-icon="🎯" onclick="selectHabitIcon('🎯')" style="width:38px;height:38px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:1.5px solid transparent;">🎯</div>
+      </div>
+    </div>
+    <input type="hidden" id="habit-icon" value="🎯">
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-habit')">取消</button>
+      <button class="btn btn-gold" onclick="saveHabit()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Transfer -->
 <div class="overlay" id="sh-transfer">
   <div class="sheet">
@@ -1296,6 +1345,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">儲蓄目標</div><div class="mi-sub">設定目標金額並追蹤進度</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="goPage('habits')">
+        <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-checkbox" style="color:var(--green)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">習慣追蹤</div><div class="mi-sub">每日打卡，養成好習慣</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="goPage('ai')">
         <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
@@ -1382,6 +1436,7 @@ function goPage(p){
   if(p==='notify')loadNotifyCenter();
   if(p==='recurring')loadRecurring();
   if(p==='goals')loadGoals();
+  if(p==='habits')loadHabits();
 }
 function showDet(id){
   // 管理員限定功能
@@ -1511,6 +1566,7 @@ async function loadHome(){
     }catch(e){}
   }catch(e){console.error(e);}
   updateHomeNotifyBadge();
+  loadHomeHabits();
 }
 
 async function quickDone(id){
@@ -3052,6 +3108,137 @@ async function saveGoalContribution(){
   }catch(e){toast('操作失敗','err');}
 }
 // ─── END SAVINGS GOALS ────────────────────────────────────────
+
+// ─── HABIT TRACKER（習慣追蹤） ────────────────────────────────
+function selectHabitIcon(icon){
+  document.getElementById('habit-icon').value=icon;
+  document.querySelectorAll('.habit-icon-opt').forEach(el=>{
+    el.style.borderColor = el.dataset.icon===icon ? 'var(--gold)' : 'transparent';
+  });
+}
+function openAddHabit(){
+  document.getElementById('sh-habit-title').textContent='新增習慣';
+  document.getElementById('habit-id').value='';
+  document.getElementById('habit-name').value='';
+  selectHabitIcon('🎯');
+  openSheet('sh-habit');
+}
+function editHabit(idx){
+  const h=window._habits?.[idx];
+  if(!h)return;
+  document.getElementById('sh-habit-title').textContent='編輯習慣';
+  document.getElementById('habit-id').value=h.id;
+  document.getElementById('habit-name').value=h.name;
+  selectHabitIcon(h.icon||'🎯');
+  openSheet('sh-habit');
+}
+async function saveHabit(){
+  const id=document.getElementById('habit-id').value;
+  const name=document.getElementById('habit-name').value.trim();
+  const icon=document.getElementById('habit-icon').value;
+  if(!name){toast('請輸入名稱','err');return;}
+  const body={user_id:prof.id,name,icon,is_active:true};
+  try{
+    if(id) await sb(`/rest/v1/habits?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    else await sb('/rest/v1/habits',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-habit');
+    toast('已儲存');
+    loadHabits();
+    if(document.getElementById('pg-home').classList.contains('on'))loadHomeHabits();
+  }catch(e){toast('儲存失敗','err');}
+}
+async function delHabit(id){
+  if(!confirm('確定刪除此習慣？打卡記錄也會一併刪除。'))return;
+  try{await sb(`/rest/v1/habits?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadHabits();loadHomeHabits();}catch(e){}
+}
+function habitDateOffset(daysAgo){
+  const d=new Date();
+  d.setDate(d.getDate()-daysAgo);
+  return d.toISOString().slice(0,10);
+}
+function computeHabitStreak(logDates){
+  let streak=0,i=0;
+  while(logDates.has(habitDateOffset(i))){streak++;i++;}
+  return streak;
+}
+async function loadHabits(){
+  const el=document.getElementById('habits-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    const habits=await sb(`/rest/v1/habits?user_id=eq.${prof.id}&is_active=eq.true&order=created_at.asc`,{});
+    if(!habits.length){el.innerHTML='<div class="empty"><i class="ti ti-checkbox" aria-hidden="true"></i><p>尚無習慣，點右上角新增</p></div>';return;}
+    const since=habitDateOffset(60);
+    const logs=await sb(`/rest/v1/habit_logs?user_id=eq.${prof.id}&date=gte.${since}`,{});
+    window._habits=habits;
+    const wdLabel=['日','一','二','三','四','五','六'];
+    el.innerHTML=habits.map((h,i)=>{
+      const habitLogs=new Set(logs.filter(l=>l.habit_id===h.id).map(l=>l.date));
+      const streak=computeHabitStreak(habitLogs);
+      const days=[];
+      for(let d=6;d>=0;d--){
+        const ds=habitDateOffset(d);
+        const dateObj=new Date(ds+'T00:00:00');
+        days.push({date:ds,wd:wdLabel[dateObj.getDay()],done:habitLogs.has(ds)});
+      }
+      return`<div class="card" style="margin-bottom:10px;">
+        <div class="row-between" style="margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:20px;">${h.icon||'🎯'}</span>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--text);">${h.name}</div>
+              <div style="font-size:11px;color:var(--text3);">${streak>0?`🔥 連續 ${streak} 天`:'尚未開始'}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button class="icon-btn" onclick="editHabit(${i})" style="font-size:14px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" onclick="delHabit('${h.id}')" style="font-size:14px;color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:4px;">
+          ${days.map(d=>`
+            <div style="text-align:center;flex:1;">
+              <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">${d.wd}</div>
+              <div onclick="toggleHabitDay('${h.id}','${d.date}')" style="width:100%;aspect-ratio:1;border-radius:8px;background:${d.done?'var(--gold)':'var(--bg3)'};display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;">
+                ${d.done?'<i class="ti ti-check" style="color:#1c1c1e;font-size:14px;" aria-hidden="true"></i>':''}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+async function toggleHabitDay(habitId,date){
+  const today=habitDateOffset(0);
+  if(date>today)return;
+  try{
+    const existing=await sb(`/rest/v1/habit_logs?habit_id=eq.${habitId}&date=eq.${date}`,{});
+    if(existing.length) await sb(`/rest/v1/habit_logs?id=eq.${existing[0].id}`,{method:'DELETE'});
+    else await sb('/rest/v1/habit_logs',{method:'POST',body:JSON.stringify({habit_id:habitId,user_id:prof.id,date})});
+    if(document.getElementById('pg-habits').classList.contains('on'))loadHabits();
+    if(document.getElementById('pg-home').classList.contains('on'))loadHomeHabits();
+  }catch(e){toast('操作失敗','err');}
+}
+async function loadHomeHabits(){
+  try{
+    const habits=await sb(`/rest/v1/habits?user_id=eq.${prof.id}&is_active=eq.true&order=created_at.asc`,{});
+    const card=document.getElementById('h-habits-card');
+    if(!habits.length){card.style.display='none';return;}
+    card.style.display='block';
+    const today=habitDateOffset(0);
+    const logs=await sb(`/rest/v1/habit_logs?user_id=eq.${prof.id}&date=eq.${today}`,{});
+    const doneSet=new Set(logs.map(l=>l.habit_id));
+    document.getElementById('h-habits').innerHTML=habits.map(h=>{
+      const done=doneSet.has(h.id);
+      return`<div class="list-row" style="cursor:pointer;" onclick="toggleHabitDay('${h.id}','${today}')">
+        <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${done?'var(--gold)':'var(--text3)'};flex-shrink:0;display:flex;align-items:center;justify-content:center;background:${done?'var(--gold)':'transparent'};">
+          ${done?'<i class="ti ti-check" style="font-size:12px;color:#1c1c1e" aria-hidden="true"></i>':''}
+        </div>
+        <div class="list-info"><div class="list-title" style="${done?'color:var(--text3);text-decoration:line-through;':''}">${h.icon||'🎯'} ${h.name}</div></div>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+// ─── END HABIT TRACKER ────────────────────────────────────────
 
 // USERS
 async function loadAllUsers(){try{allUsers=await sb('/rest/v1/user_profiles?order=created_at.asc',{});}catch(e){}}
