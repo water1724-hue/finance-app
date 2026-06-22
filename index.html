@@ -1650,7 +1650,8 @@ async function loadFinance(){
       if(a.is_hidden)return;
       const cat=cats.find(c=>c.id===a.category_id);
       const cur=(a.currency||'TWD').toUpperCase();
-      if(cat?.type==='credit'||cat?.type==='loan'){ totalDebt+=Number(a.balance); }
+      if(cat?.type==='credit'){ totalDebt+=Number(a.balance); }
+      else if(cat?.type==='loan'){ /* 貸款不計入資產或負債 */ return; }
       else if(cur==='TWD'){ totalTWD+=Number(a.balance); }
       else {
         if(!fxMap[cur])fxMap[cur]={balance:0,twdVal:0};
@@ -1664,7 +1665,7 @@ async function loadFinance(){
     const netWorth=grandTotal-totalDebt;
 
     document.getElementById('fin-net').textContent='NT$ '+Math.round(netWorth).toLocaleString();
-    document.getElementById('fin-sub').textContent=`台幣 NT$${Math.round(totalTWD).toLocaleString()}${fxTWDTotal>0?` ＋ 外幣折合 NT$${Math.round(fxTWDTotal).toLocaleString()}`:''}　負債 NT$${Math.round(totalDebt).toLocaleString()}　淨值 NT$${Math.round(netWorth).toLocaleString()}`;
+    document.getElementById('fin-sub').textContent=`台幣 NT$${Math.round(totalTWD).toLocaleString()}${fxTWDTotal>0?` ＋ 外幣折合 NT$${Math.round(fxTWDTotal).toLocaleString()}`:''}　信用卡負債 NT$${Math.round(totalDebt).toLocaleString()}　淨值 NT$${Math.round(netWorth).toLocaleString()}`;
 
     // 外幣摘要區塊
     const fxKeys=Object.keys(fxMap);
@@ -1706,8 +1707,9 @@ async function loadFinance(){
     // Txns
     renderFinTxns(txns,accounts);
 
-    // Populate account selects
-    const accOpts=accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+    // Populate account selects（貸款帳戶不列入一般記帳選項）
+    const txnAccounts=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='loan';});
+    const accOpts=txnAccounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
     document.getElementById('txn-account').innerHTML=accOpts;
     const bankAccs=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c&&['bank','cash'].includes(c.type);});
     document.getElementById('inv-bank').innerHTML=bankAccs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
@@ -1759,7 +1761,7 @@ function renderAccounts(accounts,cats){
       <div style="background:var(--bg2);border-radius:16px;overflow:hidden;">
         ${g.accounts.map((a,i)=>{
           const cat=cats.find(c=>c.id===a.category_id);
-          const isNeg=cat?.type==='credit'||cat?.type==='loan';
+          const isNeg=cat?.type==='credit';
           const cur=(a.currency||'TWD').toUpperCase();
           const isFx=cur!=='TWD';
           const bal=Number(a.balance);
@@ -1793,7 +1795,7 @@ function renderAccounts(accounts,cats){
       <div id="hidden-acc-list" style="display:none;margin-top:8px;background:var(--bg2);border-radius:16px;overflow:hidden;opacity:0.6;">
         ${hidden.map((a,i)=>{
           const cat=cats.find(c=>c.id===a.category_id);
-          const isNeg=cat?.type==='credit'||cat?.type==='loan';
+          const isNeg=cat?.type==='credit';
           const cur=(a.currency||'TWD').toUpperCase();
           const bal=Number(a.balance);
           const amtStr=cur!=='TWD'?`${cur} ${bal.toLocaleString()}`:`NT$${bal.toLocaleString()}`;
@@ -2208,7 +2210,7 @@ async function openAccDetail(id){
         }).join('');}
     }else{
       contEl.innerHTML=`
-        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt ${cat?.type==='loan'?'amt-neg':'amt-gold'}">${accBalStr}${isAccFx&&accRate?`<div style="font-size:10px;color:var(--text3);font-weight:400;">≈ NT$${Math.round(accBal*accRate).toLocaleString()} (1 ${accCur} = ${accRate.toFixed(2)})</div>`:''}</div></div>
+        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">${accBalStr}${isAccFx&&accRate?`<div style="font-size:10px;color:var(--text3);font-weight:400;">≈ NT$${Math.round(accBal*accRate).toLocaleString()} (1 ${accCur} = ${accRate.toFixed(2)})</div>`:''}</div></div>
         ${currentAcc.credit_limit?`<div class="list-row"><div class="list-info"><div class="list-sub">信用額度</div></div><div class="list-amt">NT$${Number(currentAcc.credit_limit).toLocaleString()}</div></div>`:''}
         ${currentAcc.statement_day?`<div class="list-row"><div class="list-info"><div class="list-sub">帳單日</div></div><div class="list-amt">每月 ${currentAcc.statement_day} 日</div></div>`:''}
         ${currentAcc.payment_day&&cat?.type==='credit'?`<div class="list-row"><div class="list-info"><div class="list-sub">繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}
@@ -4141,6 +4143,7 @@ async function loadReport(){
     currentAccounts.forEach(a=>{
       const c=currentCats.find(x=>x.id===a.category_id);
       if(c?.type==='credit')totalLiab+=Number(a.balance);
+      else if(c?.type==='loan')return; // 貸款不計入
       else totalAssets+=Number(a.balance);
     });
     const currentNetWorth=totalAssets-totalLiab;
