@@ -4464,47 +4464,75 @@ async function loadBudget(){
   const el=document.getElementById('budget-list');
   el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
   try{
-    const [cats,budgets]=await Promise.all([
-      sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{}),
-      sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{})
-    ]);
+    const isAdminView=prof.role==='admin';
+    // 撈類別（自己的 + 預設）
+    const cats=await sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
+    // 管理員撈：自己設的預設預算（user_id=null 或 is_default=true）+ 使用者自己的覆蓋
+    const queries=[
+      sb(`/rest/v1/budgets?is_default=eq.true&year=eq.${year}&month=eq.${month}`,{}), // 管理員預設
+    ];
+    if(!isAdminView){
+      queries.push(sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${year}&month=eq.${month}`,{})); // 使用者覆蓋
+    }
+    const results=await Promise.all(queries);
+    const defaultBudgets=results[0];
+    const userBudgets=isAdminView?[]:results[1];
+
     const expCats=cats.filter(c=>c.type==='expense'||c.type==='both');
     if(!expCats.length){el.innerHTML='<div class="empty"><p>尚無消費類別</p></div>';return;}
     el.innerHTML=expCats.map(c=>{
-      const bgt=budgets.find(b=>b.category_id===c.id);
-      const amt=bgt?Number(bgt.amount):0;
+      // 使用者自己的覆蓋優先，否則用管理員預設
+      const userBgt=userBudgets.find(b=>b.category_id===c.id);
+      const defBgt=defaultBudgets.find(b=>b.category_id===c.id);
+      const activeBgt=isAdminView?defBgt:userBgt;
+      const fallbackAmt=defBgt?Number(defBgt.amount):0;
+      const amt=activeBgt?Number(activeBgt.amount):0;
+      const showDefault=!isAdminView&&!userBgt&&defBgt; // 顯示「預設」標籤
       return`<div class="list-row" style="flex-wrap:wrap;gap:8px;padding:12px 0;">
         <div class="list-info" style="min-width:80px;">
           <div class="list-title">${c.name}</div>
+          ${showDefault?`<div class="list-sub" style="color:var(--gold);font-size:11px;">預設 NT$${fallbackAmt.toLocaleString()}</div>`:''}
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px;">
           <span style="font-size:12px;color:var(--text3);">NT$</span>
-          <input class="inp" type="number" placeholder="不設定" value="${amt||''}" 
+          <input class="inp" type="number" placeholder="${showDefault?fallbackAmt:'不設定'}" value="${amt||''}" 
             id="bgt-${c.id}" style="flex:1;padding:8px 10px;font-size:14px;">
-          <button class="btn btn-gold btn-sm" onclick="saveBudget('${c.id}','${bgt?.id||''}',${year},${month})">儲存</button>
+          <button class="btn btn-gold btn-sm" onclick="saveBudget('${c.id}','${activeBgt?.id||''}',${year},${month},${isAdminView})">儲存</button>
+          ${!isAdminView&&userBgt?`<button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="resetBudget('${userBgt.id}')">還原</button>`:''}
         </div>
       </div>`;
     }).join('');
   }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
 }
 
-async function saveBudget(catId, budgetId, year, month){
+async function saveBudget(catId, budgetId, year, month, isDefaultBudget=false){
   const amt=parseFloat(document.getElementById(`bgt-${catId}`).value)||0;
   try{
     if(budgetId){
       if(amt===0){
         await sb(`/rest/v1/budgets?id=eq.${budgetId}`,{method:'DELETE'});
-        toast('預算已清除');
+        toast(isDefaultBudget?'預設預算已清除':'預算已清除');
       } else {
         await sb(`/rest/v1/budgets?id=eq.${budgetId}`,{method:'PATCH',body:JSON.stringify({amount:amt})});
-        toast('預算已更新');
+        toast(isDefaultBudget?'預設預算已更新':'預算已更新');
       }
     } else if(amt>0){
-      await sb('/rest/v1/budgets',{method:'POST',body:JSON.stringify({user_id:prof.id,category_id:catId,amount:amt,year,month})});
-      toast('預算已設定');
+      const body=isDefaultBudget
+        ?{is_default:true,category_id:catId,amount:amt,year,month} // 管理員設預設，不帶 user_id
+        :{user_id:prof.id,category_id:catId,amount:amt,year,month}; // 使用者自訂
+      await sb('/rest/v1/budgets',{method:'POST',body:JSON.stringify(body)});
+      toast(isDefaultBudget?'預設預算已設定':'預算已設定');
     }
     loadBudget();
   }catch(e){toast('儲存失敗','err');}
+}
+
+async function resetBudget(budgetId){
+  if(!confirm('確定還原為管理員預設預算？'))return;
+  try{
+    await sb(`/rest/v1/budgets?id=eq.${budgetId}`,{method:'DELETE'});
+    toast('已還原預設');loadBudget();
+  }catch(e){toast('操作失敗','err');}
 }
 
 async function fetchTwStockPrice(symbol){
