@@ -907,6 +907,19 @@ select.inp option{background:var(--bg2);}
     <input type="hidden" id="an-id">
     <div class="field"><label>標題</label><input class="inp" type="text" id="an-title" placeholder="公告標題"></div>
     <div class="field"><label>內容</label><textarea class="inp" id="an-content" rows="4" placeholder="公告內容" style="resize:vertical;"></textarea></div>
+    <div class="field">
+      <label>接收對象</label>
+      <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+          <input type="checkbox" id="an-all" checked onchange="onAnAllChange()" style="width:16px;height:16px;">
+          <span style="font-size:13px;font-weight:600;color:var(--text);">所有人</span>
+        </label>
+        <div id="an-target-list" style="display:none;border-top:0.5px solid var(--border);padding-top:10px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">選擇指定接收者（可多選）</div>
+          <div id="an-target-users"></div>
+        </div>
+      </div>
+    </div>
     <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="an-pin" style="width:16px;height:16px;"> 置頂</label></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-announce')">取消</button>
@@ -2539,11 +2552,15 @@ async function loadAnnouncements(){
     const ans=await sb('/rest/v1/announcements?order=pinned.desc,created_at.desc',{});
     const el=document.getElementById('announce-list');
     if(!ans.length){el.innerHTML='<div class="empty"><i class="ti ti-speakerphone" aria-hidden="true"></i><p>尚無公告</p></div>';return;}
-    el.innerHTML=ans.map(a=>`
-      <div class="list-row" style="align-items:flex-start;padding:14px 0;">
+    if(!allUsers.length)await loadAllUsers();
+    el.innerHTML=ans.map(a=>{
+      const isTargeted=a.target_users&&a.target_users.length>0;
+      const targetNames=isTargeted?a.target_users.map(uid=>{const u=allUsers.find(x=>x.id===uid);return u?(u.display_name||u.username):'未知';}):[]; 
+      return`<div class="list-row" style="align-items:flex-start;padding:14px 0;">
         <div class="list-info">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
             ${a.pinned?'<span class="tag tag-gold">置頂</span>':''}
+            ${isTargeted?`<span class="tag" style="background:rgba(107,158,240,.15);color:var(--blue);font-size:10px;">📌 僅 ${targetNames.join('、')} 可見</span>`:''}
             <div class="list-title">${a.title}</div>
           </div>
           <div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:4px;white-space:pre-wrap;">${a.content}</div>
@@ -2554,8 +2571,23 @@ async function loadAnnouncements(){
           <button class="icon-btn" onclick='editAnnounce(${JSON.stringify(a).replace(/'/g,"&#39;")})'><i class="ti ti-pencil" aria-hidden="true"></i></button>
           <button class="icon-btn" onclick="delAnnounce('${a.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
         </div>`:''}
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }catch(e){}
+}
+
+function onAnAllChange(){
+  const allChecked=document.getElementById('an-all').checked;
+  document.getElementById('an-target-list').style.display=allChecked?'none':'block';
+}
+
+function populateAnTargetUsers(selectedIds=[]){
+  const others=allUsers.filter(u=>u.id!==prof.id);
+  document.getElementById('an-target-users').innerHTML=others.map(u=>`
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;border-bottom:0.5px solid var(--border);">
+      <input type="checkbox" class="an-target-cb" value="${u.id}" ${selectedIds.includes(u.id)?'checked':''} style="width:16px;height:16px;">
+      <span style="font-size:13px;color:var(--text);">${u.display_name||u.username}</span>
+    </label>`).join('');
 }
 
 function openAddAnnounce(){
@@ -2563,8 +2595,11 @@ function openAddAnnounce(){
   document.getElementById('an-title').value='';
   document.getElementById('an-content').value='';
   document.getElementById('an-pin').checked=false;
+  document.getElementById('an-all').checked=true;
+  document.getElementById('an-target-list').style.display='none';
   document.getElementById('sh-announce-title').textContent='發佈公告';
   document.getElementById('sh-announce-save').textContent='發佈';
+  populateAnTargetUsers([]);
   openSheet('sh-announce');
 }
 
@@ -2573,14 +2608,26 @@ function editAnnounce(a){
   document.getElementById('an-title').value=a.title;
   document.getElementById('an-content').value=a.content;
   document.getElementById('an-pin').checked=!!a.pinned;
+  const isTargeted=a.target_users&&a.target_users.length>0;
+  document.getElementById('an-all').checked=!isTargeted;
+  document.getElementById('an-target-list').style.display=isTargeted?'block':'none';
   document.getElementById('sh-announce-title').textContent='編輯公告';
   document.getElementById('sh-announce-save').textContent='儲存';
+  populateAnTargetUsers(a.target_users||[]);
   openSheet('sh-announce');
 }
 
 async function saveAnnounce(){
   const id=document.getElementById('an-id').value;
-  const body={title:document.getElementById('an-title').value.trim(),content:document.getElementById('an-content').value.trim(),pinned:document.getElementById('an-pin').checked};
+  const allChecked=document.getElementById('an-all').checked;
+  const targetUsers=allChecked?[]:
+    [...document.querySelectorAll('.an-target-cb:checked')].map(cb=>cb.value);
+  const body={
+    title:document.getElementById('an-title').value.trim(),
+    content:document.getElementById('an-content').value.trim(),
+    pinned:document.getElementById('an-pin').checked,
+    target_users:targetUsers
+  };
   if(!body.title||!body.content){toast('請填寫標題和內容','err');return;}
   try{
     if(id){
@@ -2591,15 +2638,15 @@ async function saveAnnounce(){
       toast('公告已發佈');
     }
     closeSheet('sh-announce');
-    document.getElementById('an-id').value='';
-    document.getElementById('an-title').value='';
-    document.getElementById('an-content').value='';
-    document.getElementById('an-pin').checked=false;
     loadAnnouncements();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
   }catch(e){toast('儲存失敗','err');}
 }
-async function delAnnounce(id){if(!confirm('確定刪除公告？'))return;try{await sb(`/rest/v1/announcements?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadAnnouncements();if(document.getElementById('pg-home').classList.contains('on'))loadHome();}catch(e){}}
+
+async function delAnnounce(id){
+  if(!confirm('確定刪除公告？'))return;
+  try{await sb(`/rest/v1/announcements?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadAnnouncements();if(document.getElementById('pg-home').classList.contains('on'))loadHome();}catch(e){}
+}
 
 // ─── HOME TAB SWITCH（公告／留言板） ──────────────────────────
 function switchHomeTab(tab){
