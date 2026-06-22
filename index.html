@@ -812,6 +812,14 @@ select.inp option{background:var(--bg2);}
         <div class="field" style="flex:1;"><label>繳款日</label><input class="inp" type="number" id="acc-pay-day" placeholder="5" min="1" max="31"></div>
       </div>
     </div>
+    <div id="acc-loan-fields" style="display:none;">
+      <div class="field"><label>貸款總額 (NT$)</label><input class="inp" type="number" id="acc-loan-total" placeholder="0"></div>
+      <div style="display:flex;gap:8px;">
+        <div class="field" style="flex:1;"><label>每月繳款日</label><input class="inp" type="number" id="acc-loan-pay-day" placeholder="5" min="1" max="31"></div>
+        <div class="field" style="flex:1;"><label>每月還款金額</label><input class="inp" type="number" id="acc-loan-monthly" placeholder="0"></div>
+      </div>
+      <div class="field"><label>貸款到期日</label><input class="inp" type="date" id="acc-loan-end-date"></div>
+    </div>
     <div class="field"><label>備註</label><input class="inp" type="text" id="acc-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-account')">取消</button>
@@ -1471,6 +1479,7 @@ function openSheet(id){
     document.getElementById('acc-note').value='';
     document.getElementById('acc-credit-fields').style.display='none';
     document.getElementById('acc-forex-fields').style.display='none';
+    document.getElementById('acc-loan-fields').style.display='none';
   }
   document.getElementById(id).classList.add('on');
 }
@@ -1564,7 +1573,8 @@ async function loadHome(){
       const reminders=[];
       creditAccs.forEach(acc=>{
         if(acc.statement_day){const diff=acc.statement_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'帳單日',diff});}
-        if(acc.payment_day){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'繳款日',diff});}
+        if(acc.payment_day&&cat?.type==='credit'){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'繳款日',diff});}
+        if(cat?.type==='loan'&&acc.payment_day){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'貸款繳款日',diff});}
       });
       if(reminders.length){
         const aiStats=document.getElementById('ai-stats');
@@ -1640,7 +1650,7 @@ async function loadFinance(){
       if(a.is_hidden)return;
       const cat=cats.find(c=>c.id===a.category_id);
       const cur=(a.currency||'TWD').toUpperCase();
-      if(cat?.type==='credit'){ totalDebt+=Number(a.balance); }
+      if(cat?.type==='credit'||cat?.type==='loan'){ totalDebt+=Number(a.balance); }
       else if(cur==='TWD'){ totalTWD+=Number(a.balance); }
       else {
         if(!fxMap[cur])fxMap[cur]={balance:0,twdVal:0};
@@ -1725,13 +1735,13 @@ function renderAccounts(accounts,cats){
     groups[key].accounts.push(a);
   });
 
-  const catOrder=['bank','cash','securities','fund','credit','forex','other'];
+  const catOrder=['cash','bank','credit','securities','fund','forex','loan','other'];
   const sortedGroups=catOrder.filter(k=>groups[k]).concat(Object.keys(groups).filter(k=>!catOrder.includes(k)));
 
   let html='';
   sortedGroups.forEach(key=>{
     const g=groups[key];
-    const isNegGroup=key==='credit';
+    const isNegGroup=key==='credit'||key==='loan';
     // 小計
     const subtotal=g.accounts.reduce((s,a)=>{
       const cur=(a.currency||'TWD').toUpperCase();
@@ -1749,7 +1759,7 @@ function renderAccounts(accounts,cats){
       <div style="background:var(--bg2);border-radius:16px;overflow:hidden;">
         ${g.accounts.map((a,i)=>{
           const cat=cats.find(c=>c.id===a.category_id);
-          const isNeg=cat?.type==='credit';
+          const isNeg=cat?.type==='credit'||cat?.type==='loan';
           const cur=(a.currency||'TWD').toUpperCase();
           const isFx=cur!=='TWD';
           const bal=Number(a.balance);
@@ -1783,7 +1793,7 @@ function renderAccounts(accounts,cats){
       <div id="hidden-acc-list" style="display:none;margin-top:8px;background:var(--bg2);border-radius:16px;overflow:hidden;opacity:0.6;">
         ${hidden.map((a,i)=>{
           const cat=cats.find(c=>c.id===a.category_id);
-          const isNeg=cat?.type==='credit';
+          const isNeg=cat?.type==='credit'||cat?.type==='loan';
           const cur=(a.currency||'TWD').toUpperCase();
           const bal=Number(a.balance);
           const amtStr=cur!=='TWD'?`${cur} ${bal.toLocaleString()}`:`NT$${bal.toLocaleString()}`;
@@ -1869,7 +1879,7 @@ async function loadAccManage(){
     const el=document.getElementById('acc-manage-list');
     if(!accounts.length){el.innerHTML='<div class="empty"><i class="ti ti-wallet" aria-hidden="true"></i><p>尚無帳戶，點上方新增</p></div>';return;}
 
-    const catOrder=['bank','cash','securities','fund','credit','forex','other'];
+    const catOrder=['cash','bank','credit','securities','fund','forex','loan','other'];
     const groups={};
     accounts.forEach(a=>{
       const cat=cats.find(c=>c.id===a.category_id);
@@ -2198,10 +2208,21 @@ async function openAccDetail(id){
         }).join('');}
     }else{
       contEl.innerHTML=`
-        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">${accBalStr}${isAccFx&&accRate?`<div style="font-size:10px;color:var(--text3);font-weight:400;">≈ NT$${Math.round(accBal*accRate).toLocaleString()} (1 ${accCur} = ${accRate.toFixed(2)})</div>`:''}</div></div>
+        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt ${cat?.type==='loan'?'amt-neg':'amt-gold'}">${accBalStr}${isAccFx&&accRate?`<div style="font-size:10px;color:var(--text3);font-weight:400;">≈ NT$${Math.round(accBal*accRate).toLocaleString()} (1 ${accCur} = ${accRate.toFixed(2)})</div>`:''}</div></div>
         ${currentAcc.credit_limit?`<div class="list-row"><div class="list-info"><div class="list-sub">信用額度</div></div><div class="list-amt">NT$${Number(currentAcc.credit_limit).toLocaleString()}</div></div>`:''}
         ${currentAcc.statement_day?`<div class="list-row"><div class="list-info"><div class="list-sub">帳單日</div></div><div class="list-amt">每月 ${currentAcc.statement_day} 日</div></div>`:''}
-        ${currentAcc.payment_day?`<div class="list-row"><div class="list-info"><div class="list-sub">繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}`;
+        ${currentAcc.payment_day&&cat?.type==='credit'?`<div class="list-row"><div class="list-info"><div class="list-sub">繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}
+        ${cat?.type==='loan'?`
+          ${currentAcc.loan_total?`<div class="list-row"><div class="list-info"><div class="list-sub">貸款總額</div></div><div class="list-amt amt-neg">NT$${Number(currentAcc.loan_total).toLocaleString()}</div></div>`:''}
+          ${currentAcc.loan_monthly?`<div class="list-row"><div class="list-info"><div class="list-sub">每月還款</div></div><div class="list-amt">NT$${Number(currentAcc.loan_monthly).toLocaleString()}</div></div>`:''}
+          ${currentAcc.payment_day?`<div class="list-row"><div class="list-info"><div class="list-sub">每月繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}
+          ${currentAcc.loan_end_date?`<div class="list-row"><div class="list-info"><div class="list-sub">貸款到期日</div></div><div class="list-amt">${currentAcc.loan_end_date}</div></div>`:''}
+          ${currentAcc.loan_total&&currentAcc.balance?`<div style="padding:12px 0 4px;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">還款進度 ${((Number(currentAcc.loan_total)-Number(currentAcc.balance))/Number(currentAcc.loan_total)*100).toFixed(1)}%</div>
+            <div style="background:var(--bg3);border-radius:8px;height:8px;overflow:hidden;">
+              <div style="background:var(--gold);height:100%;width:${Math.min(100,((Number(currentAcc.loan_total)-Number(currentAcc.balance))/Number(currentAcc.loan_total)*100)).toFixed(1)}%;"></div>
+            </div>
+          </div>`:''}`:''}`;
     }
     // Txns - check if investment account
     const accCat=accCats.find(c=>c.id===currentAcc.category_id);
@@ -2394,6 +2415,7 @@ document.getElementById('acc-cat').addEventListener('change',function(){
   const cat=accCats.find(c=>c.id===this.value);
   document.getElementById('acc-credit-fields').style.display=cat?.type==='credit'?'block':'none';
   document.getElementById('acc-forex-fields').style.display=cat?.type==='forex'?'block':'none';
+  document.getElementById('acc-loan-fields').style.display=cat?.type==='loan'?'block':'none';
 });
 async function saveAccount(){
   const catId=document.getElementById('acc-cat').value;
@@ -2401,6 +2423,12 @@ async function saveAccount(){
   const currency=cat?.type==='forex'?document.getElementById('acc-currency').value:'TWD';
   const body={user_id:prof.id,category_id:catId,name:document.getElementById('acc-name').value.trim(),balance:parseFloat(document.getElementById('acc-bal').value)||0,currency};
   if(cat?.type==='credit'){body.credit_limit=parseFloat(document.getElementById('acc-limit').value)||0;body.statement_day=parseInt(document.getElementById('acc-stmt-day').value)||null;body.payment_day=parseInt(document.getElementById('acc-pay-day').value)||null;}
+  if(cat?.type==='loan'){
+    body.loan_total=parseFloat(document.getElementById('acc-loan-total').value)||0;
+    body.payment_day=parseInt(document.getElementById('acc-loan-pay-day').value)||null;
+    body.loan_monthly=parseFloat(document.getElementById('acc-loan-monthly').value)||0;
+    body.loan_end_date=document.getElementById('acc-loan-end-date').value||null;
+  }
   body.note=document.getElementById('acc-note').value.trim();
   if(!body.name){toast('請填寫帳戶名稱','err');return;}
   try{await sb('/rest/v1/accounts',{method:'POST',body:JSON.stringify(body)});closeSheet('sh-account');toast('帳戶已新增');loadFinance();}
@@ -2944,7 +2972,8 @@ async function getAllAlerts(){
     const todayDay=today.getDate();
     creditAccs.forEach(acc=>{
       if(acc.statement_day){const diff=acc.statement_day-todayDay;if(diff>=0&&diff<=3)alerts.push({level:diff===0?'red':'orange',icon:'ti-credit-card',title:`${acc.name} 帳單日`,sub:diff===0?'今天結帳':`${diff} 天後結帳`,page:'finance'});}
-      if(acc.payment_day){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)alerts.push({level:diff===0?'red':'orange',icon:'ti-credit-card-pay',title:`${acc.name} 繳款日`,sub:diff===0?'今天到期繳款':`${diff} 天後到期繳款`,page:'finance'});}
+      if(acc.payment_day&&cat?.type==='credit'){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)alerts.push({level:diff===0?'red':'orange',icon:'ti-credit-card-pay',title:`${acc.name} 繳款日`,sub:diff===0?'今天到期繳款':`${diff} 天後到期繳款`,page:'finance'});}
+      if(cat?.type==='loan'&&acc.payment_day){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)alerts.push({level:diff===0?'red':'orange',icon:'ti-receipt',title:`${acc.name} 貸款繳款日`,sub:diff===0?`今天需還款 NT$${Number(acc.loan_monthly||0).toLocaleString()}`:`${diff} 天後繳款 NT$${Number(acc.loan_monthly||0).toLocaleString()}`,page:'finance'});}
     });
 
     // 3. 文件到期提醒
