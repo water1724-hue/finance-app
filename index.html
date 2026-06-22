@@ -2445,17 +2445,9 @@ async function openAccDetail(id){
         }).join('');
       }
     } else {
-      // Show regular transactions
-      const txns=await sb(`/rest/v1/transactions?account_id=eq.${id}&order=date.desc&limit=20`,{});
-      if(!txns.length){txEl.innerHTML='<div class="empty"><p>尚無記錄</p></div>';}
-      else{txEl.innerHTML=txns.map(t=>`
-        <div class="list-row">
-          <div class="list-icon" style="background:${t.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
-            <i class="ti ${t.type==='income'?'ti-arrow-down-circle':'ti-arrow-up-circle'}" style="color:${t.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
-          </div>
-          <div class="list-info"><div class="list-title">${t.note||'記帳'}</div><div class="list-sub">${t.date}</div></div>
-          <div class="list-amt ${t.type==='income'?'amt-pos':'amt-neg'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</div>
-        </div>`).join('');}
+      // 一般帳戶：顯示交易記錄 + 轉帳記錄
+      const isFxAccType=accCat?.type==='forex';
+      await renderAccAllTxns(id, isFxAccType, txEl);
     }
     initAccTxnFilter();
     showDet('det-account');
@@ -2476,7 +2468,7 @@ async function filterAccTxns(){
   const to=document.getElementById('txn-filter-to').value;
   const id=currentHoldingAccId;
   const accCat2=accCats.find(c=>c.id===currentAcc.category_id);
-  const isInv=['securities','fund','forex'].includes(accCat2?.type);
+  const isInv=['securities','fund'].includes(accCat2?.type);
   const txEl=document.getElementById('det-acc-txns');
   
   if(isInv){
@@ -2489,11 +2481,10 @@ async function filterAccTxns(){
     const txns=await sb(url,{});
     renderInvTxns(txns,holdings,txEl);
   } else {
-    let url=`/rest/v1/transactions?account_id=eq.${id}&order=date.desc&limit=200`;
-    if(from)url+=`&date=gte.${from}`;
-    if(to)url+=`&date=lte.${to}`;
-    const txns=await sb(url,{});
-    renderRegTxns(txns,txEl);
+    const isFxAccType=accCat2?.type==='forex';
+    let fromParam=from?`&date=gte.${from}`:'';
+    let toParam=to?`&date=lte.${to}`:'';
+    await renderAccAllTxns(id, isFxAccType, txEl, fromParam, toParam);
   }
 }
 
@@ -2501,6 +2492,88 @@ async function clearAccTxnFilter(){
   document.getElementById('txn-filter-from').value='';
   document.getElementById('txn-filter-to').value='';
   filterAccTxns();
+}
+
+async function renderAccAllTxns(id, isFxAcc, txEl, fromParam='', toParam=''){
+  try{
+    // 一般交易記錄
+    const txns=await sb(`/rest/v1/transactions?account_id=eq.${id}&order=date.desc&limit=200${fromParam}${toParam}`,{});
+    // 轉帳記錄（轉出或轉入）
+    const [trFrom,trTo]=await Promise.all([
+      sb(`/rest/v1/transfers?from_account_id=eq.${id}&order=date.desc&limit=100${fromParam}${toParam}`,{}),
+      sb(`/rest/v1/transfers?to_account_id=eq.${id}&order=date.desc&limit=100${fromParam}${toParam}`,{})
+    ]);
+    // 換匯記錄（只有外幣帳戶才顯示）
+    let fxLogs=[];
+    if(isFxAcc){
+      const [fxFrom,fxTo]=await Promise.all([
+        sb(`/rest/v1/fx_exchange_logs?from_account_id=eq.${id}&order=date.desc&limit=50${fromParam}${toParam}`,{}),
+        sb(`/rest/v1/fx_exchange_logs?to_account_id=eq.${id}&order=date.desc&limit=50${fromParam}${toParam}`,{})
+      ]);
+      // 去重複（轉帳時已同步記換匯，避免雙重顯示）
+      const transferIds=new Set([...trFrom,...trTo].map(t=>t.date+t.amount));
+      fxLogs=[...fxFrom,...fxTo].filter(l=>{
+        const key=l.date+(l.from_account_id===id?l.from_amount:l.to_amount);
+        return!transferIds.has(key);
+      });
+    }
+    // 組合所有記錄並依日期排序
+    const allItems=[
+      ...txns.map(t=>({...t,_type:'txn',_date:t.date})),
+      ...trFrom.map(t=>({...t,_type:'tr_out',_date:t.date})),
+      ...trTo.map(t=>({...t,_type:'tr_in',_date:t.date})),
+      ...fxLogs.map(l=>({...l,_type:l.from_account_id===id?'fx_out':'fx_in',_date:l.date})),
+    ].sort((a,b)=>b._date.localeCompare(a._date)||b.created_at?.localeCompare(a.created_at||'')||0);
+
+    if(!allItems.length){txEl.innerHTML='<div class="empty"><p>尚無記錄</p></div>';return;}
+
+    const cur=(currentAcc?.currency||'TWD').toUpperCase();
+    txEl.innerHTML=allItems.map(item=>{
+      if(item._type==='txn'){
+        return`<div class="list-row">
+          <div class="list-icon" style="background:${item.type==='income'?'rgba(93,189,138,.1)':'rgba(232,112,112,.1)'}">
+            <i class="ti ${item.type==='income'?'ti-arrow-down-circle':'ti-arrow-up-circle'}" style="color:${item.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
+          </div>
+          <div class="list-info"><div class="list-title">${item.note||'記帳'}</div><div class="list-sub">${item.date}</div></div>
+          <div class="list-amt ${item.type==='income'?'amt-pos':'amt-neg'}">${item.type==='income'?'+':'-'}${cur==='TWD'?'NT$':''}${Number(item.amount).toLocaleString()} ${cur!=='TWD'?cur:''}</div>
+        </div>`;
+      } else if(item._type==='tr_out'){
+        return`<div class="list-row">
+          <div class="list-icon" style="background:rgba(107,158,240,.1)">
+            <i class="ti ti-transfer" style="color:var(--blue)" aria-hidden="true"></i>
+          </div>
+          <div class="list-info"><div class="list-title">轉出${item.note?' · '+item.note:''}</div><div class="list-sub">${item.date}${item.fee?` · 手續費 NT$${item.fee}`:''}</div></div>
+          <div class="list-amt amt-neg">-${cur==='TWD'?'NT$':''}${Number(item.amount).toLocaleString()} ${cur!=='TWD'?cur:''}</div>
+        </div>`;
+      } else if(item._type==='tr_in'){
+        const inAmt=item.to_amount||item.amount;
+        return`<div class="list-row">
+          <div class="list-icon" style="background:rgba(93,189,138,.1)">
+            <i class="ti ti-transfer" style="color:var(--green)" aria-hidden="true"></i>
+          </div>
+          <div class="list-info"><div class="list-title">轉入${item.note?' · '+item.note:''}</div><div class="list-sub">${item.date}</div></div>
+          <div class="list-amt amt-pos">+${cur==='TWD'?'NT$':''}${Number(inAmt).toLocaleString()} ${cur!=='TWD'?cur:''}</div>
+        </div>`;
+      } else if(item._type==='fx_out'){
+        return`<div class="list-row">
+          <div class="list-icon" style="background:rgba(155,107,255,.1)">
+            <i class="ti ti-currency-exchange" style="color:#9C6BFF" aria-hidden="true"></i>
+          </div>
+          <div class="list-info"><div class="list-title">換匯 → ${item.to_currency}</div><div class="list-sub">${item.date} · 匯率 ${Number(item.rate).toFixed(4)}${item.note?' · '+item.note:''}</div></div>
+          <div class="list-amt amt-neg">-${Number(item.from_amount).toLocaleString()} ${item.from_currency}</div>
+        </div>`;
+      } else if(item._type==='fx_in'){
+        return`<div class="list-row">
+          <div class="list-icon" style="background:rgba(155,107,255,.1)">
+            <i class="ti ti-currency-exchange" style="color:#9C6BFF" aria-hidden="true"></i>
+          </div>
+          <div class="list-info"><div class="list-title">換匯 ← ${item.from_currency}</div><div class="list-sub">${item.date} · 匯率 ${Number(item.rate).toFixed(4)}${item.note?' · '+item.note:''}</div></div>
+          <div class="list-amt amt-pos">+${Number(item.to_amount).toLocaleString()} ${item.to_currency}</div>
+        </div>`;
+      }
+      return '';
+    }).join('');
+  }catch(e){txEl.innerHTML='<div class="empty"><p>載入失敗</p></div>';console.error(e);}
 }
 
 function renderInvTxns(allInvTxns,holdings,txEl){
