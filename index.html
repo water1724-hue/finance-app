@@ -1108,6 +1108,7 @@ select.inp option{background:var(--bg2);}
         <option value="其他">📦 其他</option>
       </select>
     </div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="shop-note" placeholder="選填，例如：買大包裝、找特價"></div>
     <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="shop-shared" checked style="width:16px;height:16px;"> 共用（所有成員可見）</label></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-shop')">取消</button>
@@ -3784,7 +3785,7 @@ async function loadShopping(){
         </div>
         <div class="list-info" style="flex:1;">
           <div class="list-title" style="${it.is_done?'text-decoration:line-through;':''}">${catEmoji[it.category]||'📦'} ${it.name}</div>
-          <div class="list-sub">${it.quantity||1}${it.unit||'個'}${it.price?` · NT$${Number(it.price).toLocaleString()}`:''}${adderName?` · ${adderName}`:''}</div>
+          <div class="list-sub">${it.quantity||1}${it.unit||'個'}${it.price?` · NT$${Number(it.price).toLocaleString()}`:''}${it.note?` · ${it.note}`:''}${adderName?` · ${adderName}`:''}</div>
         </div>
         <button class="icon-btn" onclick="delShopItem('${it.id}')" style="color:var(--text4);font-size:14px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
       </div>`;
@@ -3806,6 +3807,7 @@ function openAddShopItem(){
   document.getElementById('shop-unit').value='';
   document.getElementById('shop-price').value='';
   document.getElementById('shop-cat').value='食品';
+  document.getElementById('shop-note').value='';
   document.getElementById('shop-shared').checked=true;
   openSheet('sh-shop');
 }
@@ -3819,6 +3821,7 @@ async function saveShopItem(){
     unit:document.getElementById('shop-unit').value.trim()||'個',
     price:parseFloat(document.getElementById('shop-price').value)||null,
     category:document.getElementById('shop-cat').value,
+    note:document.getElementById('shop-note').value.trim()||null,
     is_shared:document.getElementById('shop-shared').checked,
     is_done:false
   };
