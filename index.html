@@ -1108,7 +1108,6 @@ select.inp option{background:var(--bg2);}
         <option value="其他">📦 其他</option>
       </select>
     </div>
-    <div class="field"><label>備註</label><input class="inp" type="text" id="shop-note" placeholder="選填，例如：買大包裝、找特價"></div>
     <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="shop-shared" checked style="width:16px;height:16px;"> 共用（所有成員可見）</label></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-shop')">取消</button>
@@ -1427,23 +1426,8 @@ function doLogout(){
 }
 
 async function copyDefaultCats(){
-  try{
-    const existing=await sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}&limit=1`,{});
-    if(existing.length>0)return; // 已有類別，不重複複製
-    const defaults=await sb(`/rest/v1/expense_categories?is_default=eq.true&order=sort_order.asc`,{});
-    if(!defaults.length)return;
-    const parentMap={};
-    const parents=defaults.filter(c=>!c.parent_id);
-    const children=defaults.filter(c=>c.parent_id);
-    for(const p of parents){
-      const newCat=await sb('/rest/v1/expense_categories',{method:'POST',body:JSON.stringify({user_id:prof.id,name:p.name,type:p.type,sort_order:p.sort_order,parent_id:null})});
-      if(newCat.length)parentMap[p.id]=newCat[0].id;
-    }
-    for(const c of children){
-      const newParentId=parentMap[c.parent_id];
-      if(newParentId)await sb('/rest/v1/expense_categories',{method:'POST',body:JSON.stringify({user_id:prof.id,name:c.name,type:c.type,sort_order:c.sort_order,parent_id:newParentId})});
-    }
-  }catch(e){console.log('copyDefaultCats error:',e);}
+  // 已改為共用預設類別機制（is_default=true 直接對所有使用者顯示）
+  // 不再需要複製，保留函數避免呼叫處報錯
 }
 
 function initApp(){
@@ -2720,7 +2704,7 @@ function setTxnType(t){
   loadExpCatOptions();
 }
 async function loadExpCatOptions(){
-  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&order=sort_order.asc`,{});
+  const cats=await sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)&order=sort_order.asc`,{});
   const filtered=cats.filter(c=>(c.type===txnType||c.type==='both')&&c.is_active!==false);
   const parents=filtered.filter(c=>!c.parent_id);
   const children=filtered.filter(c=>c.parent_id);
@@ -3224,7 +3208,7 @@ async function getAllAlerts(){
     // 1. 預算警示
     const mStart=`${ym}-01`;
     const [cats,budgets,txns]=await Promise.all([
-      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{}),
+      sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)`,{}),
       sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{}),
       sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&type=eq.expense&date=gte.${mStart}`,{})
     ]);
@@ -3368,7 +3352,7 @@ function setRecType(t){
   loadRecCatOptions();
 }
 async function loadRecCatOptions(selected){
-  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&order=sort_order.asc`,{});
+  const cats=await sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)&order=sort_order.asc`,{});
   const filtered=cats.filter(c=>(c.type===recType||c.type==='both')&&c.is_active!==false);
   const parents=filtered.filter(c=>!c.parent_id);
   const children=filtered.filter(c=>c.parent_id);
@@ -3464,7 +3448,7 @@ async function loadRecurring(){
     const [recs,accounts,cats]=await Promise.all([
       sb(`/rest/v1/recurring_transactions?user_id=eq.${prof.id}&order=next_date.asc`,{}),
       sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{}),
-      sb(`/rest/v1/expense_categories?user_id=eq.${prof.id}`,{})
+      sb(`/rest/v1/expense_categories?or=(user_id.eq.${prof.id},is_default.eq.true)`,{})
     ]);
     window._recurring=recs;window._recAccounts=accounts;window._recCats=cats;
     if(!recs.length){el.innerHTML='<div class="empty"><i class="ti ti-repeat" aria-hidden="true"></i><p>尚無固定週期項目</p></div>';return;}
@@ -3785,7 +3769,7 @@ async function loadShopping(){
         </div>
         <div class="list-info" style="flex:1;">
           <div class="list-title" style="${it.is_done?'text-decoration:line-through;':''}">${catEmoji[it.category]||'📦'} ${it.name}</div>
-          <div class="list-sub">${it.quantity||1}${it.unit||'個'}${it.price?` · NT$${Number(it.price).toLocaleString()}`:''}${it.note?` · ${it.note}`:''}${adderName?` · ${adderName}`:''}</div>
+          <div class="list-sub">${it.quantity||1}${it.unit||'個'}${it.price?` · NT$${Number(it.price).toLocaleString()}`:''}${adderName?` · ${adderName}`:''}</div>
         </div>
         <button class="icon-btn" onclick="delShopItem('${it.id}')" style="color:var(--text4);font-size:14px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
       </div>`;
@@ -3807,7 +3791,6 @@ function openAddShopItem(){
   document.getElementById('shop-unit').value='';
   document.getElementById('shop-price').value='';
   document.getElementById('shop-cat').value='食品';
-  document.getElementById('shop-note').value='';
   document.getElementById('shop-shared').checked=true;
   openSheet('sh-shop');
 }
@@ -3821,7 +3804,6 @@ async function saveShopItem(){
     unit:document.getElementById('shop-unit').value.trim()||'個',
     price:parseFloat(document.getElementById('shop-price').value)||null,
     category:document.getElementById('shop-cat').value,
-    note:document.getElementById('shop-note').value.trim()||null,
     is_shared:document.getElementById('shop-shared').checked,
     is_done:false
   };
@@ -4281,7 +4263,7 @@ async function searchAllTxns(){
     const [allTxns,accounts,cats]=await Promise.all([
       sb(url,{}),
       sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{}),
-      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{})
+      sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)`,{})
     ]);
 
     // Filter by keyword (note, category name, account name, or tags)
@@ -4483,7 +4465,7 @@ async function loadBudget(){
   el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
   try{
     const [cats,budgets]=await Promise.all([
-      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{}),
+      sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{}),
       sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{})
     ]);
     const expCats=cats.filter(c=>c.type==='expense'||c.type==='both');
@@ -4658,7 +4640,7 @@ async function loadReport(){
 
     const [txns,cats]=await Promise.all([
       sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&date=gte.${dateFrom}&date=lte.${dateTo}&order=date.asc`,{}),
-      sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}`,{})
+      sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)`,{})
     ]);
 
     // Summary
@@ -4698,7 +4680,7 @@ async function loadReport(){
 
     // Load budgets for this month
     const budgets=await sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{});
-    const allCats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&parent_id=is.null`,{});
+    const allCats=await sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)&parent_id=is.null`,{});
 
     // Category list with budget progress
     const catListEl=document.getElementById('rpt-cat-list');
@@ -4829,7 +4811,7 @@ async function loadReport(){
 let currentParentCat=null;
 async function loadExpCats(){
   const isAdmin=prof.role==='admin';
-  const cats=await sb(`/rest/v1/expense_categories?user_id=eq.${getViewAsId()}&order=sort_order.asc`,{});
+  const cats=await sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)&order=sort_order.asc`,{});
   const el=document.getElementById('exp-cat-list');
   if(!cats.length){el.innerHTML='<div class="empty"><p>尚無類別，點上方新增</p></div>';return;}
 
