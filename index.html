@@ -656,7 +656,7 @@ select.inp option{background:var(--bg2);}
       <div style="font-size:18px;font-weight:700;" id="det-acc-name"></div>
       <div style="font-size:20px;font-weight:700;color:var(--gold);margin-top:4px;" id="det-acc-bal"></div>
     </div>
-    <button class="btn btn-gold btn-sm" onclick="showAddHolding()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+    <div id="det-acc-add-btn"></div>
   </div>
   <div class="sec-label" id="det-acc-type-label"></div>
   <div class="card"><div id="det-acc-content"></div></div>
@@ -1508,11 +1508,6 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">聯絡人備忘</div><div class="mi-sub">生日、紀念日提醒</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
-      <div class="menu-item" onclick="goPage('fxlog')">
-        <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-currency-exchange" style="color:#9C6BFF" aria-hidden="true"></i></div>
-        <div class="mi-info"><div class="mi-title">外幣兌換紀錄</div><div class="mi-sub">記錄換匯匯率與金額</div></div>
-        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
-      </div>
       <div class="menu-item" onclick="goPage('ai')">
         <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
@@ -2345,15 +2340,24 @@ async function openAccDetail(id){
     const accRate=isAccFx?fxRates[accCur]:null;
     document.getElementById('det-acc-name').textContent=currentAcc.name;
     document.getElementById('det-acc-bal').textContent=accBalStr+(accRate?` ≈NT$${Math.round(accBal*accRate).toLocaleString()}`:'');
-    const isInv=['securities','fund','forex'].includes(cat?.type);
-    document.getElementById('det-acc-type-label').textContent=isInv?'持倉明細':'帳戶資訊';
+    const isInv=['securities','fund'].includes(cat?.type);
+    const isFxAcc=cat?.type==='forex';
+    document.getElementById('det-acc-type-label').textContent=isInv?'持倉明細':isFxAcc?'換匯紀錄':'帳戶資訊';
+
+    // 帳戶詳情右上角按鈕
+    const addBtn=document.getElementById('det-acc-add-btn');
+    if(addBtn){
+      if(isInv) addBtn.innerHTML=`<button class="btn btn-gold btn-sm" onclick="showAddHolding()"><i class="ti ti-plus" aria-hidden="true"></i> 新增持股</button>`;
+      else if(isFxAcc) addBtn.innerHTML=`<button class="btn btn-gold btn-sm" onclick="openFxExchange('${id}')"><i class="ti ti-currency-exchange" aria-hidden="true"></i> 換匯</button>`;
+      else addBtn.innerHTML='';
+    }
+
     // Holdings or info
     const contEl=document.getElementById('det-acc-content');
     if(isInv){
       const holdings=await sb(`/rest/v1/holdings?account_id=eq.${id}&order=created_at.desc`,{});
       if(!holdings.length){contEl.innerHTML='<div class="empty"><p>尚無持倉</p></div>';}
       else{
-        // Add update prices button
         contEl.innerHTML=`<div style="text-align:right;margin-bottom:10px;">
           <button class="btn btn-ghost btn-sm" onclick="updateHoldingPrices('${id}')"><i class="ti ti-refresh" aria-hidden="true"></i> 更新報價</button>
         </div>`+holdings.map(h=>{
@@ -2377,7 +2381,25 @@ async function openAccDetail(id){
             </div>
           </div>`;
         }).join('');}
-    }else{
+    }else if(isFxAcc){
+      // 外幣帳戶：顯示換匯紀錄
+      const logs=await sb(`/rest/v1/fx_exchange_logs?user_id=eq.${prof.id}&or=(from_account_id.eq.${id},to_account_id.eq.${id})&order=date.desc,created_at.desc&limit=20`,{});
+      if(!logs.length){contEl.innerHTML='<div class="empty"><p>尚無換匯紀錄，點右上角「換匯」新增</p></div>';}
+      else{
+        contEl.innerHTML=logs.map((l,i)=>`
+          <div class="list-row" style="${i>0?'border-top:0.5px solid var(--border);':''}">
+            <div class="list-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-currency-exchange" style="color:#9C6BFF" aria-hidden="true"></i></div>
+            <div class="list-info">
+              <div class="list-title">${l.from_currency} → ${l.to_currency}</div>
+              <div class="list-sub">${l.date}${l.note?` · ${l.note}`:''} · 匯率 ${Number(l.rate).toFixed(4)}</div>
+            </div>
+            <div class="list-right">
+              <div style="font-size:13px;font-weight:600;color:var(--text);">${l.from_currency} ${Number(l.from_amount).toLocaleString()}</div>
+              <div style="font-size:11px;color:var(--gold);">→ ${l.to_currency} ${Number(l.to_amount).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+            </div>
+            <button class="icon-btn" onclick="delFxLog('${l.id}','${id}')" style="color:var(--text4);font-size:14px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          </div>`).join('');
+      }
       contEl.innerHTML=`
         <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">${accBalStr}${isAccFx&&accRate?`<div style="font-size:10px;color:var(--text3);font-weight:400;">≈ NT$${Math.round(accBal*accRate).toLocaleString()} (1 ${accCur} = ${accRate.toFixed(2)})</div>`:''}</div></div>
         ${currentAcc.credit_limit?`<div class="list-row"><div class="list-info"><div class="list-sub">信用額度</div></div><div class="list-amt">NT$${Number(currentAcc.credit_limit).toLocaleString()}</div></div>`:''}
@@ -3849,6 +3871,28 @@ function calcFxResult(){
     el.style.display='none';
   }
 }
+async function openFxExchange(accountId){
+  // 預設填入當前帳戶的幣別
+  const acc=window.currentAcc;
+  const accCur=acc?(acc.currency||'TWD').toUpperCase():'TWD';
+  document.getElementById('fxlog-id').value='';
+  document.getElementById('fxlog-from-amt').value='';
+  document.getElementById('fxlog-rate').value='';
+  document.getElementById('fxlog-fee').value='0';
+  document.getElementById('fxlog-note').value='';
+  document.getElementById('fxlog-result').style.display='none';
+  document.getElementById('fxlog-date').value=new Date().toISOString().slice(0,10);
+  // 自動帶入幣別：若外幣帳戶是 JPY，預設 TWD→JPY
+  document.getElementById('fxlog-from-cur').value='TWD';
+  document.getElementById('fxlog-to-cur').value=accCur!=='TWD'?accCur:'USD';
+  // 存目前帳戶 id，儲存時用
+  document.getElementById('sh-fxlog').dataset.accountId=accountId;
+  // 自動帶入即時匯率
+  const toCur=document.getElementById('fxlog-to-cur').value;
+  if(fxRates[toCur]) document.getElementById('fxlog-rate').value=fxRates[toCur].toFixed(4);
+  openSheet('sh-fxlog');
+}
+
 async function openAddFxLog(){
   document.getElementById('fxlog-id').value='';
   document.getElementById('fxlog-from-amt').value='';
@@ -3857,6 +3901,7 @@ async function openAddFxLog(){
   document.getElementById('fxlog-note').value='';
   document.getElementById('fxlog-result').style.display='none';
   document.getElementById('fxlog-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('sh-fxlog').dataset.accountId='';
   openSheet('sh-fxlog');
 }
 async function saveFxLog(){
@@ -3864,23 +3909,45 @@ async function saveFxLog(){
   const rate=parseFloat(document.getElementById('fxlog-rate').value);
   const fromCur=document.getElementById('fxlog-from-cur').value;
   const toCur=document.getElementById('fxlog-to-cur').value;
+  const fee=parseFloat(document.getElementById('fxlog-fee').value)||0;
   if(!fromAmt||!rate){toast('請填寫金額和匯率','err');return;}
   if(fromCur===toCur){toast('賣出和買入幣別不能相同','err');return;}
+  const toAmt=fromAmt*rate;
+  const accountId=document.getElementById('sh-fxlog').dataset.accountId;
   const body={
     user_id:prof.id,
-    from_currency:fromCur,
-    to_currency:toCur,
-    from_amount:fromAmt,
-    to_amount:fromAmt*rate,
-    rate,
-    fee:parseFloat(document.getElementById('fxlog-fee').value)||0,
+    from_currency:fromCur,to_currency:toCur,
+    from_amount:fromAmt,to_amount:toAmt,
+    rate,fee,
     date:document.getElementById('fxlog-date').value,
-    note:document.getElementById('fxlog-note').value.trim()||null
+    note:document.getElementById('fxlog-note').value.trim()||null,
+    from_account_id:null,to_account_id:null
   };
   try{
+    // 找對應帳戶並更新餘額
+    const allAccs=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{});
+    const fromAcc=allAccs.find(a=>(a.currency||'TWD').toUpperCase()===fromCur)||(fromCur==='TWD'?allAccs.find(a=>!a.currency||a.currency==='TWD'):null);
+    const toAcc=allAccs.find(a=>(a.currency||'TWD').toUpperCase()===toCur)||(toCur==='TWD'?allAccs.find(a=>!a.currency||a.currency==='TWD'):null);
+    // 若從帳戶詳情進入，優先用當前帳戶
+    const linkedAcc=accountId?allAccs.find(a=>a.id===accountId):null;
+    if(linkedAcc){
+      const cur=(linkedAcc.currency||'TWD').toUpperCase();
+      if(cur===toCur){body.to_account_id=linkedAcc.id;}
+      else if(cur===fromCur){body.from_account_id=linkedAcc.id;}
+    }
+    if(fromAcc&&!body.from_account_id)body.from_account_id=fromAcc.id;
+    if(toAcc&&!body.to_account_id)body.to_account_id=toAcc.id;
+    // 儲存紀錄
     await sb('/rest/v1/fx_exchange_logs',{method:'POST',body:JSON.stringify(body)});
-    closeSheet('sh-fxlog');toast('已記錄');loadFxLog();
-  }catch(e){toast('儲存失敗','err');}
+    // 更新帳戶餘額
+    if(fromAcc) await sb(`/rest/v1/accounts?id=eq.${fromAcc.id}`,{method:'PATCH',body:JSON.stringify({balance:Number(fromAcc.balance)-fromAmt-fee})});
+    if(toAcc) await sb(`/rest/v1/accounts?id=eq.${toAcc.id}`,{method:'PATCH',body:JSON.stringify({balance:Number(toAcc.balance)+toAmt})});
+    closeSheet('sh-fxlog');
+    toast('換匯已記錄，帳戶餘額已更新');
+    if(accountId) openAccDetail(accountId);
+    else loadFxLog();
+    if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
+  }catch(e){toast('儲存失敗','err');console.error(e);}
 }
 async function loadFxLog(){
   const el=document.getElementById('fxlog-list');
@@ -3903,9 +3970,14 @@ async function loadFxLog(){
       </div>`).join('');
   }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
 }
-async function delFxLog(id){
-  if(!confirm('確定刪除此紀錄？'))return;
-  try{await sb(`/rest/v1/fx_exchange_logs?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadFxLog();}catch(e){}
+async function delFxLog(id,accountId){
+  if(!confirm('確定刪除此換匯紀錄？（帳戶餘額不會還原，請手動調整）'))return;
+  try{
+    await sb(`/rest/v1/fx_exchange_logs?id=eq.${id}`,{method:'DELETE'});
+    toast('已刪除');
+    if(accountId)openAccDetail(accountId);
+    else loadFxLog();
+  }catch(e){}
 }
 // ─── END FX EXCHANGE LOG ──────────────────────────────────────
 
