@@ -573,6 +573,37 @@ select.inp option{background:var(--bg2);}
       <div id="habits-list"></div>
     </div>
 
+    <!-- SHOPPING LIST -->
+    <div class="page" id="pg-shopping">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">購物清單</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddShopItem()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">勾選表示已購買，長按可刪除</div>
+      <div class="card"><div id="shopping-list"></div></div>
+    </div>
+
+    <!-- CONTACTS -->
+    <div class="page" id="pg-contacts">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">聯絡人備忘</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddContact()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+      </div>
+      <div id="contacts-list"></div>
+    </div>
+
+    <!-- FX EXCHANGE LOG -->
+    <div class="page" id="pg-fxlog">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">外幣兌換紀錄</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddFxLog()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+      </div>
+      <div class="card"><div id="fxlog-list"></div></div>
+    </div>
+
     <!-- MORE -->
     <div class="page" id="pg-more">
       <div class="pg-title">更多</div>
@@ -1054,6 +1085,102 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Shopping Item -->
+<div class="overlay" id="sh-shop">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-shop-title">新增購物項目</h3>
+    <input type="hidden" id="shop-id">
+    <div class="field"><label>品項名稱</label><input class="inp" type="text" id="shop-name" placeholder="例如：牛奶、衛生紙"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div class="field" style="flex:1;"><label>數量</label><input class="inp" type="number" id="shop-qty" placeholder="1" min="1" value="1"></div>
+      <div class="field" style="flex:1;"><label>單位</label><input class="inp" type="text" id="shop-unit" placeholder="個、包、瓶"></div>
+    </div>
+    <div class="field"><label>預估金額 (NT$)</label><input class="inp" type="number" id="shop-price" placeholder="選填"></div>
+    <div class="field"><label>分類</label>
+      <select class="inp" id="shop-cat">
+        <option value="食品">🥬 食品</option>
+        <option value="飲料">🥤 飲料</option>
+        <option value="日用品">🧴 日用品</option>
+        <option value="清潔">🧹 清潔</option>
+        <option value="服飾">👕 服飾</option>
+        <option value="電器">🔌 電器</option>
+        <option value="其他">📦 其他</option>
+      </select>
+    </div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="shop-shared" checked style="width:16px;height:16px;"> 共用（所有成員可見）</label></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-shop')">取消</button>
+      <button class="btn btn-gold" onclick="saveShopItem()">新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contact -->
+<div class="overlay" id="sh-contact">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-contact-title">新增聯絡人</h3>
+    <input type="hidden" id="contact-id">
+    <div class="field"><label>姓名</label><input class="inp" type="text" id="contact-name" placeholder="名字"></div>
+    <div class="field"><label>關係</label><input class="inp" type="text" id="contact-relation" placeholder="例如：父親、同事、朋友"></div>
+    <div class="field"><label>生日</label><input class="inp" type="date" id="contact-birthday"></div>
+    <div class="field"><label>紀念日</label><input class="inp" type="date" id="contact-anniversary"></div>
+    <div class="field"><label>紀念日說明</label><input class="inp" type="text" id="contact-anniversary-note" placeholder="例如：結婚紀念日"></div>
+    <div class="field"><label>電話</label><input class="inp" type="tel" id="contact-phone" placeholder="選填"></div>
+    <div class="field"><label>備註</label><textarea class="inp" id="contact-note" rows="2" placeholder="選填"></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-contact')">取消</button>
+      <button class="btn btn-gold" onclick="saveContact()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- FX Exchange Log -->
+<div class="overlay" id="sh-fxlog">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>新增外幣兌換紀錄</h3>
+    <input type="hidden" id="fxlog-id">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div class="field" style="flex:1;">
+        <label>賣出幣別</label>
+        <select class="inp" id="fxlog-from-cur" onchange="calcFxResult()">
+          <option value="TWD">台幣 TWD</option>
+          <option value="USD">美元 USD</option>
+          <option value="JPY">日圓 JPY</option>
+          <option value="EUR">歐元 EUR</option>
+          <option value="HKD">港幣 HKD</option>
+          <option value="CNY">人民幣 CNY</option>
+        </select>
+      </div>
+      <div class="field" style="flex:1;">
+        <label>買入幣別</label>
+        <select class="inp" id="fxlog-to-cur" onchange="calcFxResult()">
+          <option value="JPY">日圓 JPY</option>
+          <option value="USD">美元 USD</option>
+          <option value="TWD">台幣 TWD</option>
+          <option value="EUR">歐元 EUR</option>
+          <option value="HKD">港幣 HKD</option>
+          <option value="CNY">人民幣 CNY</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div class="field" style="flex:1;"><label>賣出金額</label><input class="inp" type="number" id="fxlog-from-amt" placeholder="0" oninput="calcFxResult()"></div>
+      <div class="field" style="flex:1;"><label>實際匯率</label><input class="inp" type="number" id="fxlog-rate" placeholder="0.00" step="0.0001" oninput="calcFxResult()"></div>
+    </div>
+    <div id="fxlog-result" style="background:var(--bg3);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--gold);font-weight:600;display:none;"></div>
+    <div class="field"><label>兌換日期</label><input class="inp" type="date" id="fxlog-date"></div>
+    <div class="field"><label>手續費 (NT$)</label><input class="inp" type="number" id="fxlog-fee" placeholder="0"></div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="fxlog-note" placeholder="例如：桃園機場換匯"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-fxlog')">取消</button>
+      <button class="btn btn-gold" onclick="saveFxLog()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Transfer -->
 <div class="overlay" id="sh-transfer">
   <div class="sheet">
@@ -1371,6 +1498,21 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">習慣追蹤</div><div class="mi-sub">每日打卡，養成好習慣</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="goPage('shopping')">
+        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-shopping-cart" style="color:var(--blue)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">購物清單</div><div class="mi-sub">家庭共用採購清單</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="goPage('contacts')">
+        <div class="mi-icon" style="background:rgba(232,137,74,.1)"><i class="ti ti-users" style="color:var(--orange)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">聯絡人備忘</div><div class="mi-sub">生日、紀念日提醒</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="goPage('fxlog')">
+        <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-currency-exchange" style="color:#9C6BFF" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">外幣兌換紀錄</div><div class="mi-sub">記錄換匯匯率與金額</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="goPage('ai')">
         <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
@@ -1458,6 +1600,9 @@ function goPage(p){
   if(p==='recurring')loadRecurring();
   if(p==='goals')loadGoals();
   if(p==='habits')loadHabits();
+  if(p==='shopping')loadShopping();
+  if(p==='contacts')loadContacts();
+  if(p==='fxlog')loadFxLog();
 }
 function showDet(id){
   // 管理員限定功能
@@ -3009,6 +3154,23 @@ async function getAllAlerts(){
       });
     }catch(e){}
 
+    // 6. 生日 & 紀念日提醒
+    try{
+      const contacts=await sb(`/rest/v1/contacts?user_id=eq.${prof.id}`,{});
+      contacts.forEach(c=>{
+        const checkDate=(dateStr,label)=>{
+          if(!dateStr)return;
+          const md=dateStr.slice(5);
+          const thisYear=new Date(`${today.getFullYear()}-${md}`);
+          let diff=Math.ceil((thisYear-today)/(1000*60*60*24));
+          if(diff<0){const nextYear=new Date(`${today.getFullYear()+1}-${md}`);diff=Math.ceil((nextYear-today)/(1000*60*60*24));}
+          if(diff<=7) alerts.push({level:diff===0?'red':diff<=3?'orange':'gold',icon:'ti-gift',title:`${c.name} ${label}`,sub:diff===0?`今天是${label}！`:`${diff} 天後`,page:'contacts'});
+        };
+        checkDate(c.birthday,'生日');
+        if(c.anniversary)checkDate(c.anniversary,c.anniversary_note||'紀念日');
+      });
+    }catch(e){}
+
   }catch(e){console.error('getAllAlerts',e);}
 
   // 排序：red > orange > gold
@@ -3473,6 +3635,255 @@ async function loadHomeHabits(){
   }catch(e){}
 }
 // ─── END HABIT TRACKER ────────────────────────────────────────
+
+// ─── SHOPPING LIST（購物清單） ────────────────────────────────
+async function loadShopping(){
+  const el=document.getElementById('shopping-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    if(!allUsers.length)await loadAllUsers();
+    const items=await sb('/rest/v1/shopping_items?order=is_done.asc,created_at.desc',{});
+    if(!items.length){el.innerHTML='<div class="empty"><i class="ti ti-shopping-cart" aria-hidden="true"></i><p>清單是空的，點右上角新增</p></div>';return;}
+    window._shopItems=items;
+    const catEmoji={'食品':'🥬','飲料':'🥤','日用品':'🧴','清潔':'🧹','服飾':'👕','電器':'🔌','其他':'📦'};
+    const done=items.filter(i=>i.is_done);
+    const pending=items.filter(i=>!i.is_done);
+    const renderItem=(it,i)=>{
+      const adder=allUsers.find(u=>u.id===it.user_id);
+      const adderName=adder?(adder.display_name||adder.username):'';
+      return`<div class="list-row" style="${it.is_done?'opacity:0.5;':''}" oncontextmenu="event.preventDefault();delShopItem('${it.id}')">
+        <div onclick="toggleShopItem('${it.id}',${it.is_done})" style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${it.is_done?'var(--green)':'var(--text3)'};flex-shrink:0;display:flex;align-items:center;justify-content:center;background:${it.is_done?'var(--green)':'transparent'};cursor:pointer;">
+          ${it.is_done?'<i class="ti ti-check" style="font-size:12px;color:#fff" aria-hidden="true"></i>':''}
+        </div>
+        <div class="list-info" style="flex:1;">
+          <div class="list-title" style="${it.is_done?'text-decoration:line-through;':''}">${catEmoji[it.category]||'📦'} ${it.name}</div>
+          <div class="list-sub">${it.quantity||1}${it.unit||'個'}${it.price?` · NT$${Number(it.price).toLocaleString()}`:''}${adderName?` · ${adderName}`:''}</div>
+        </div>
+        <button class="icon-btn" onclick="delShopItem('${it.id}')" style="color:var(--text4);font-size:14px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>`;
+    };
+    let html='';
+    if(pending.length) html+=pending.map(renderItem).join('');
+    if(done.length){
+      html+=`<div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin:12px 2px 6px;text-transform:uppercase;">已購買（${done.length}）</div>`;
+      html+=done.map(renderItem).join('');
+    }
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+function openAddShopItem(){
+  document.getElementById('sh-shop-title').textContent='新增購物項目';
+  document.getElementById('shop-id').value='';
+  document.getElementById('shop-name').value='';
+  document.getElementById('shop-qty').value='1';
+  document.getElementById('shop-unit').value='';
+  document.getElementById('shop-price').value='';
+  document.getElementById('shop-cat').value='食品';
+  document.getElementById('shop-shared').checked=true;
+  openSheet('sh-shop');
+}
+async function saveShopItem(){
+  const name=document.getElementById('shop-name').value.trim();
+  if(!name){toast('請填寫品項名稱','err');return;}
+  const body={
+    user_id:prof.id,
+    name,
+    quantity:parseInt(document.getElementById('shop-qty').value)||1,
+    unit:document.getElementById('shop-unit').value.trim()||'個',
+    price:parseFloat(document.getElementById('shop-price').value)||null,
+    category:document.getElementById('shop-cat').value,
+    is_shared:document.getElementById('shop-shared').checked,
+    is_done:false
+  };
+  try{
+    await sb('/rest/v1/shopping_items',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-shop');toast('已新增');loadShopping();
+  }catch(e){toast('儲存失敗','err');}
+}
+async function toggleShopItem(id,isDone){
+  try{
+    await sb(`/rest/v1/shopping_items?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_done:!isDone,done_at:!isDone?new Date().toISOString():null})});
+    loadShopping();
+  }catch(e){}
+}
+async function delShopItem(id){
+  if(!confirm('確定刪除此項目？'))return;
+  try{await sb(`/rest/v1/shopping_items?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadShopping();}catch(e){}
+}
+async function clearDoneItems(){
+  if(!confirm('確定清除所有已購買項目？'))return;
+  try{await sb(`/rest/v1/shopping_items?is_done=eq.true&user_id=eq.${prof.id}`,{method:'DELETE'});toast('已清除');loadShopping();}catch(e){}
+}
+// ─── END SHOPPING LIST ────────────────────────────────────────
+
+// ─── CONTACTS（聯絡人備忘） ───────────────────────────────────
+async function loadContacts(){
+  const el=document.getElementById('contacts-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    const contacts=await sb(`/rest/v1/contacts?user_id=eq.${prof.id}&order=name.asc`,{});
+    window._contacts=contacts;
+    if(!contacts.length){el.innerHTML='<div class="empty"><i class="ti ti-users" aria-hidden="true"></i><p>尚無聯絡人，點右上角新增</p></div>';return;}
+    const today=new Date();
+    const todayMD=`${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    const soon=(dateStr)=>{
+      if(!dateStr)return null;
+      const md=dateStr.slice(5);
+      const thisYear=new Date(`${today.getFullYear()}-${md}`);
+      let diff=Math.ceil((thisYear-today)/(1000*60*60*24));
+      if(diff<0){const nextYear=new Date(`${today.getFullYear()+1}-${md}`);diff=Math.ceil((nextYear-today)/(1000*60*60*24));}
+      return diff;
+    };
+    el.innerHTML=contacts.map((c,i)=>{
+      const bdDiff=soon(c.birthday);
+      const annDiff=soon(c.anniversary);
+      const bdBadge=bdDiff!==null&&bdDiff<=7?`<span class="tag" style="background:rgba(232,112,112,.15);color:var(--red);font-size:10px;">${bdDiff===0?'🎂 今天生日':`🎂 ${bdDiff}天後生日`}</span>`:'';
+      const annBadge=annDiff!==null&&annDiff<=7?`<span class="tag" style="background:rgba(212,170,106,.15);color:var(--gold);font-size:10px;">${annDiff===0?`🎉 今天${c.anniversary_note||'紀念日'}`:`🎉 ${annDiff}天後${c.anniversary_note||'紀念日'}`}</span>`:'';
+      return`<div class="card" style="margin-bottom:10px;">
+        <div class="row-between">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--gold);">${c.name[0]}</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--text);">${c.name}</div>
+              ${c.relation?`<div style="font-size:12px;color:var(--text3);">${c.relation}</div>`:''}
+            </div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button class="icon-btn" onclick="editContact(${i})" style="font-size:14px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" onclick="delContact('${c.id}')" style="font-size:14px;color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        ${bdBadge||annBadge?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${bdBadge}${annBadge}</div>`:''}
+        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
+          ${c.birthday?`<div style="font-size:12px;color:var(--text3);">🎂 ${c.birthday.slice(5).replace('-','/')}</div>`:''}
+          ${c.anniversary?`<div style="font-size:12px;color:var(--text3);">🎉 ${c.anniversary.slice(5).replace('-','/')} ${c.anniversary_note||''}</div>`:''}
+          ${c.phone?`<div style="font-size:12px;color:var(--blue);">📞 ${c.phone}</div>`:''}
+        </div>
+        ${c.note?`<div style="font-size:12px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border);">${c.note}</div>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+function openAddContact(){
+  document.getElementById('sh-contact-title').textContent='新增聯絡人';
+  document.getElementById('contact-id').value='';
+  ['contact-name','contact-relation','contact-phone','contact-anniversary-note','contact-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('contact-birthday').value='';
+  document.getElementById('contact-anniversary').value='';
+  openSheet('sh-contact');
+}
+function editContact(idx){
+  const c=window._contacts?.[idx];if(!c)return;
+  document.getElementById('sh-contact-title').textContent='編輯聯絡人';
+  document.getElementById('contact-id').value=c.id;
+  document.getElementById('contact-name').value=c.name||'';
+  document.getElementById('contact-relation').value=c.relation||'';
+  document.getElementById('contact-birthday').value=c.birthday||'';
+  document.getElementById('contact-anniversary').value=c.anniversary||'';
+  document.getElementById('contact-anniversary-note').value=c.anniversary_note||'';
+  document.getElementById('contact-phone').value=c.phone||'';
+  document.getElementById('contact-note').value=c.note||'';
+  openSheet('sh-contact');
+}
+async function saveContact(){
+  const id=document.getElementById('contact-id').value;
+  const name=document.getElementById('contact-name').value.trim();
+  if(!name){toast('請填寫姓名','err');return;}
+  const body={
+    user_id:prof.id,name,
+    relation:document.getElementById('contact-relation').value.trim()||null,
+    birthday:document.getElementById('contact-birthday').value||null,
+    anniversary:document.getElementById('contact-anniversary').value||null,
+    anniversary_note:document.getElementById('contact-anniversary-note').value.trim()||null,
+    phone:document.getElementById('contact-phone').value.trim()||null,
+    note:document.getElementById('contact-note').value.trim()||null
+  };
+  try{
+    if(id)await sb(`/rest/v1/contacts?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    else await sb('/rest/v1/contacts',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-contact');toast('已儲存');loadContacts();
+  }catch(e){toast('儲存失敗','err');}
+}
+async function delContact(id){
+  if(!confirm('確定刪除此聯絡人？'))return;
+  try{await sb(`/rest/v1/contacts?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadContacts();}catch(e){}
+}
+// ─── END CONTACTS ─────────────────────────────────────────────
+
+// ─── FX EXCHANGE LOG（外幣兌換紀錄） ─────────────────────────
+function calcFxResult(){
+  const fromAmt=parseFloat(document.getElementById('fxlog-from-amt').value)||0;
+  const rate=parseFloat(document.getElementById('fxlog-rate').value)||0;
+  const fromCur=document.getElementById('fxlog-from-cur').value;
+  const toCur=document.getElementById('fxlog-to-cur').value;
+  const result=fromAmt*rate;
+  const el=document.getElementById('fxlog-result');
+  if(fromAmt>0&&rate>0){
+    el.style.display='block';
+    el.textContent=`${fromCur} ${fromAmt.toLocaleString()} → ${toCur} ${result.toLocaleString(undefined,{maximumFractionDigits:2})}`;
+  } else {
+    el.style.display='none';
+  }
+}
+async function openAddFxLog(){
+  document.getElementById('fxlog-id').value='';
+  document.getElementById('fxlog-from-amt').value='';
+  document.getElementById('fxlog-rate').value='';
+  document.getElementById('fxlog-fee').value='0';
+  document.getElementById('fxlog-note').value='';
+  document.getElementById('fxlog-result').style.display='none';
+  document.getElementById('fxlog-date').value=new Date().toISOString().slice(0,10);
+  openSheet('sh-fxlog');
+}
+async function saveFxLog(){
+  const fromAmt=parseFloat(document.getElementById('fxlog-from-amt').value);
+  const rate=parseFloat(document.getElementById('fxlog-rate').value);
+  const fromCur=document.getElementById('fxlog-from-cur').value;
+  const toCur=document.getElementById('fxlog-to-cur').value;
+  if(!fromAmt||!rate){toast('請填寫金額和匯率','err');return;}
+  if(fromCur===toCur){toast('賣出和買入幣別不能相同','err');return;}
+  const body={
+    user_id:prof.id,
+    from_currency:fromCur,
+    to_currency:toCur,
+    from_amount:fromAmt,
+    to_amount:fromAmt*rate,
+    rate,
+    fee:parseFloat(document.getElementById('fxlog-fee').value)||0,
+    date:document.getElementById('fxlog-date').value,
+    note:document.getElementById('fxlog-note').value.trim()||null
+  };
+  try{
+    await sb('/rest/v1/fx_exchange_logs',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-fxlog');toast('已記錄');loadFxLog();
+  }catch(e){toast('儲存失敗','err');}
+}
+async function loadFxLog(){
+  const el=document.getElementById('fxlog-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    const logs=await sb(`/rest/v1/fx_exchange_logs?user_id=eq.${prof.id}&order=date.desc,created_at.desc`,{});
+    if(!logs.length){el.innerHTML='<div class="empty"><i class="ti ti-currency-exchange" aria-hidden="true"></i><p>尚無兌換紀錄</p></div>';return;}
+    el.innerHTML=logs.map((l,i)=>`
+      <div class="list-row" style="${i>0?'border-top:0.5px solid var(--border);':''}">
+        <div class="list-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-currency-exchange" style="color:#9C6BFF" aria-hidden="true"></i></div>
+        <div class="list-info">
+          <div class="list-title">${l.from_currency} → ${l.to_currency}</div>
+          <div class="list-sub">${l.date}${l.note?` · ${l.note}`:''} · 匯率 ${Number(l.rate).toFixed(4)}${l.fee?` · 手續費 NT$${l.fee}`:''}</div>
+        </div>
+        <div class="list-right">
+          <div style="font-size:13px;color:var(--text);font-weight:600;">${l.from_currency} ${Number(l.from_amount).toLocaleString()}</div>
+          <div style="font-size:11px;color:var(--gold);">→ ${l.to_currency} ${Number(l.to_amount).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+        </div>
+        <button class="icon-btn" onclick="delFxLog('${l.id}')" style="color:var(--text4);font-size:14px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>`).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+async function delFxLog(id){
+  if(!confirm('確定刪除此紀錄？'))return;
+  try{await sb(`/rest/v1/fx_exchange_logs?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadFxLog();}catch(e){}
+}
+// ─── END FX EXCHANGE LOG ──────────────────────────────────────
 
 // USERS
 async function loadAllUsers(){try{allUsers=await sb('/rest/v1/user_profiles?order=created_at.asc',{});}catch(e){}}
