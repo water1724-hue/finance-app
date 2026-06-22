@@ -2523,10 +2523,16 @@ async function renderAccAllTxns(id, isFxAcc, txEl, fromParam='', toParam=''){
       ...txns.map(t=>({...t,_type:'txn',_date:t.date})),
       ...trFrom.filter(t=>{
         // 排除已有換匯紀錄的跨幣別轉帳
-        return!fxTransferIds.has(id+'_'+t.date+'_'+t.amount);
+        if(fxTransferIds.has(id+'_'+t.date+'_'+t.amount))return false;
+        // 排除自己轉自己（to_account_id 也是同一帳戶）
+        if(t.to_account_id===id)return false;
+        return true;
       }).map(t=>({...t,_type:'tr_out',_date:t.date})),
       ...trTo.filter(t=>{
-        return!fxTransferIds.has(id+'_'+t.date+'_'+(t.to_amount||t.amount));
+        if(fxTransferIds.has(id+'_'+t.date+'_'+(t.to_amount||t.amount)))return false;
+        // 排除自己轉自己
+        if(t.from_account_id===id)return false;
+        return true;
       }).map(t=>({...t,_type:'tr_in',_date:t.date})),
       ...fxLogs.map(l=>({...l,_type:l.from_account_id===id?'fx_out':'fx_in',_date:l.date})),
     ].sort((a,b)=>b._date.localeCompare(a._date)||b.created_at?.localeCompare(a.created_at||'')||0);
