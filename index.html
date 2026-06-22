@@ -1624,7 +1624,7 @@ async function loadFinance(){
   try{
     const [cats,accounts,txns]=await Promise.all([
       sb('/rest/v1/account_categories?order=sort_order.asc',{}),
-      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{}),
+      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&order=sort_order.asc,created_at.asc`,{}),
       sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&order=date.desc,created_at.desc&limit=20`,{})
     ]);
     accCats=cats;
@@ -1633,10 +1633,11 @@ async function loadFinance(){
     const fxCurrencies=[...new Set(accounts.map(a=>(a.currency||'TWD').toUpperCase()).filter(c=>c!=='TWD'))];
     if(fxCurrencies.length&&!fxCurrencies.every(c=>fxRates[c])) await fetchFxRates(fxCurrencies);
 
-    // Net worth — 台幣與外幣分開
+    // Net worth — 台幣與外幣分開（隱藏帳戶不計入）
     let totalTWD=0,totalDebt=0;
     const fxMap={};
     accounts.forEach(a=>{
+      if(a.is_hidden)return;
       const cat=cats.find(c=>c.id===a.category_id);
       const cur=(a.currency||'TWD').toUpperCase();
       if(cat?.type==='credit'){ totalDebt+=Number(a.balance); }
@@ -1708,30 +1709,105 @@ async function loadFinance(){
 
 function renderAccounts(accounts,cats){
   const el=document.getElementById('account-list');
-  const filtered=finCatFilter==='all'?accounts:accounts.filter(a=>cats.find(c=>c.id===a.category_id)?.type===finCatFilter);
-  if(!filtered.length){el.innerHTML='<div class="empty"><i class="ti ti-wallet" aria-hidden="true"></i><p>尚無帳戶</p></div>';return;}
-  el.innerHTML=filtered.map(a=>{
+  const visible=accounts.filter(a=>!a.is_hidden);
+  const hidden=accounts.filter(a=>a.is_hidden);
+  let filtered=finCatFilter==='all'?visible:visible.filter(a=>cats.find(c=>c.id===a.category_id)?.type===finCatFilter);
+
+  if(!filtered.length&&!hidden.length){el.innerHTML='<div class="empty"><i class="ti ti-wallet" aria-hidden="true"></i><p>尚無帳戶</p></div>';return;}
+
+  // 依類別分組
+  const groups={};
+  filtered.forEach(a=>{
     const cat=cats.find(c=>c.id===a.category_id);
-    const isNeg=cat?.type==='credit';
-    const cur=(a.currency||'TWD').toUpperCase();
-    const isFx=cur!=='TWD';
-    const bal=Number(a.balance);
-    const amtStr=isFx?`${cur} ${bal.toLocaleString()}`:`NT$${bal.toLocaleString()}`;
-    const rate=isFx?fxRates[cur]:null;
-    const twdEquiv=rate?`<div style="font-size:10px;color:var(--text3);margin-top:1px;">≈ NT$${Math.round(bal*rate).toLocaleString()} (${rate.toFixed(2)})</div>`:'';
-    return`<div class="list-row" onclick="openAccDetail('${a.id}')" style="cursor:pointer;">
-      <div class="list-icon" style="background:${isNeg?'rgba(232,112,112,.1)':'rgba(212,170,106,.1)'}"><i class="ti ${cat?.icon||'ti-wallet'}" style="color:${isNeg?'var(--red)':'var(--gold)'}" aria-hidden="true"></i></div>
-      <div class="list-info">
-        <div class="list-title">${a.name}</div>
-        <div class="list-sub">${cat?.name||''}${isFx?` · <span style="color:var(--blue);font-size:10px;font-weight:600;">${cur}</span>`:''}</div>
+    const key=cat?.type||'other';
+    const label=cat?.name||'其他';
+    if(!groups[key])groups[key]={label,icon:cat?.icon||'ti-wallet',accounts:[]};
+    groups[key].accounts.push(a);
+  });
+
+  const catOrder=['bank','cash','securities','fund','credit','forex','other'];
+  const sortedGroups=catOrder.filter(k=>groups[k]).concat(Object.keys(groups).filter(k=>!catOrder.includes(k)));
+
+  let html='';
+  sortedGroups.forEach(key=>{
+    const g=groups[key];
+    const isNegGroup=key==='credit';
+    // 小計
+    const subtotal=g.accounts.reduce((s,a)=>{
+      const cur=(a.currency||'TWD').toUpperCase();
+      if(cur!=='TWD')return s;
+      return s+(isNegGroup?-1:1)*Number(a.balance);
+    },0);
+    html+=`<div style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <i class="ti ${g.icon}" style="font-size:13px;color:var(--text3);" aria-hidden="true"></i>
+          <span style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;">${g.label}</span>
+        </div>
+        <span style="font-size:11px;color:${isNegGroup?'var(--red)':'var(--text3)'};">${isNegGroup?'-':''}NT$${Math.abs(subtotal).toLocaleString()}</span>
       </div>
-      <div class="list-right">
-        <div class="list-amt ${isNeg?'amt-neg':'amt-gold'}">${amtStr}</div>
-        ${twdEquiv}
+      <div style="background:var(--bg2);border-radius:16px;overflow:hidden;">
+        ${g.accounts.map((a,i)=>{
+          const cat=cats.find(c=>c.id===a.category_id);
+          const isNeg=cat?.type==='credit';
+          const cur=(a.currency||'TWD').toUpperCase();
+          const isFx=cur!=='TWD';
+          const bal=Number(a.balance);
+          const amtStr=isFx?`${cur} ${bal.toLocaleString()}`:`NT$${bal.toLocaleString()}`;
+          const rate=isFx?fxRates[cur]:null;
+          const twdEquiv=rate?`<div style="font-size:10px;color:var(--text3);margin-top:1px;">≈ NT$${Math.round(bal*rate).toLocaleString()}</div>`:'';
+          const border=i>0?'border-top:0.5px solid var(--border);':'';
+          return`<div class="list-row" onclick="openAccDetail('${a.id}')" style="cursor:pointer;${border}padding:14px 16px;">
+            <div class="list-icon" style="background:${isNeg?'rgba(232,112,112,.1)':'rgba(212,170,106,.1)'}"><i class="ti ${cat?.icon||'ti-wallet'}" style="color:${isNeg?'var(--red)':'var(--gold)'}" aria-hidden="true"></i></div>
+            <div class="list-info">
+              <div class="list-title">${a.name}</div>
+              ${isFx?`<div class="list-sub"><span style="color:var(--blue);font-size:10px;font-weight:600;">${cur}</span></div>`:''}
+            </div>
+            <div class="list-right">
+              <div class="list-amt ${isNeg?'amt-neg':'amt-gold'}">${amtStr}</div>
+              ${twdEquiv}
+            </div>
+            <i class="ti ti-chevron-right arr" aria-hidden="true"></i>
+          </div>`;
+        }).join('')}
       </div>
-      <i class="ti ti-chevron-right arr" aria-hidden="true"></i>
     </div>`;
-  }).join('');
+  });
+
+  // 隱藏帳戶摺疊區
+  if(hidden.length){
+    html+=`<div style="margin-top:8px;">
+      <button onclick="toggleHiddenAccounts()" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;padding:4px 0;" id="hidden-acc-toggle">
+        <i class="ti ti-eye-off" aria-hidden="true"></i> 已隱藏的帳戶（${hidden.length}）<i class="ti ti-chevron-down" id="hidden-acc-chevron" aria-hidden="true"></i>
+      </button>
+      <div id="hidden-acc-list" style="display:none;margin-top:8px;background:var(--bg2);border-radius:16px;overflow:hidden;opacity:0.6;">
+        ${hidden.map((a,i)=>{
+          const cat=cats.find(c=>c.id===a.category_id);
+          const isNeg=cat?.type==='credit';
+          const cur=(a.currency||'TWD').toUpperCase();
+          const bal=Number(a.balance);
+          const amtStr=cur!=='TWD'?`${cur} ${bal.toLocaleString()}`:`NT$${bal.toLocaleString()}`;
+          const border=i>0?'border-top:0.5px solid var(--border);':'';
+          return`<div class="list-row" onclick="openAccDetail('${a.id}')" style="cursor:pointer;${border}padding:14px 16px;">
+            <div class="list-icon" style="background:var(--bg3)"><i class="ti ${cat?.icon||'ti-wallet'}" style="color:var(--text3)" aria-hidden="true"></i></div>
+            <div class="list-info"><div class="list-title" style="color:var(--text3);">${a.name}</div></div>
+            <div class="list-right"><div class="list-amt" style="color:var(--text3);">${amtStr}</div></div>
+            <i class="ti ti-chevron-right arr" aria-hidden="true"></i>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML=html;
+}
+
+function toggleHiddenAccounts(){
+  const list=document.getElementById('hidden-acc-list');
+  const chevron=document.getElementById('hidden-acc-chevron');
+  const isHidden=list.style.display==='none';
+  list.style.display=isHidden?'block':'none';
+  chevron.className=isHidden?'ti ti-chevron-up':'ti ti-chevron-down';
 }
 
 function renderFinTxns(txns,accounts){
@@ -1787,35 +1863,115 @@ async function loadAccManage(){
   try{
     const [cats,accounts]=await Promise.all([
       sb('/rest/v1/account_categories?order=sort_order.asc',{}),
-      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{})
+      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&order=sort_order.asc,created_at.asc`,{})
     ]);
     accCats=cats;
     const el=document.getElementById('acc-manage-list');
     if(!accounts.length){el.innerHTML='<div class="empty"><i class="ti ti-wallet" aria-hidden="true"></i><p>尚無帳戶，點上方新增</p></div>';return;}
-    el.innerHTML=accounts.map(a=>{
+
+    const catOrder=['bank','cash','securities','fund','credit','forex','other'];
+    const groups={};
+    accounts.forEach(a=>{
       const cat=cats.find(c=>c.id===a.category_id);
-      const isNeg=cat?.type==='credit';
-      const cur2=(a.currency||'TWD').toUpperCase();
-      const balStr2=cur2!=='TWD'?`${cur2} ${Number(a.balance).toLocaleString()}`:`NT$${Number(a.balance).toLocaleString()}`;
-      return`<div class="list-row">
-        <div class="list-icon" style="background:${isNeg?'rgba(232,112,112,.1)':'rgba(212,170,106,.1)'}">
-          <i class="ti ${cat?.icon||'ti-wallet'}" style="color:${isNeg?'var(--red)':'var(--gold)'}" aria-hidden="true"></i>
+      const key=cat?.type||'other';
+      if(!groups[key])groups[key]={label:cat?.name||'其他',icon:cat?.icon||'ti-wallet',accounts:[]};
+      groups[key].accounts.push(a);
+    });
+    const sortedKeys=catOrder.filter(k=>groups[k]).concat(Object.keys(groups).filter(k=>!catOrder.includes(k)));
+
+    let html='';
+    sortedKeys.forEach(key=>{
+      const g=groups[key];
+      html+=`<div style="margin-bottom:18px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          <i class="ti ${g.icon}" aria-hidden="true"></i> ${g.label}
         </div>
-        <div class="list-info">
-          <div class="list-title">${a.name}</div>
-          <div class="list-sub">${cat?.name||''} · ${balStr2}</div>
-        </div>
-        <div style="display:flex;gap:4px;">
-          <button class="icon-btn" onclick="editAccount('${a.id}','${a.name}',${a.balance},'${a.category_id}')" style="padding:4px 8px;">
-            <i class="ti ti-pencil" aria-hidden="true"></i>
-          </button>
-          <button class="icon-btn" onclick="delAccount('${a.id}')" style="padding:4px 8px;">
-            <i class="ti ti-trash" aria-hidden="true"></i>
-          </button>
+        <div style="background:var(--bg2);border-radius:14px;overflow:hidden;" id="acc-group-${key}">
+          ${g.accounts.map((a,i)=>{
+            const isNeg=key==='credit';
+            const cur=(a.currency||'TWD').toUpperCase();
+            const balStr=cur!=='TWD'?`${cur} ${Number(a.balance).toLocaleString()}`:`NT$${Number(a.balance).toLocaleString()}`;
+            const border=i>0?'border-top:0.5px solid var(--border);':'';
+            const hidden=a.is_hidden;
+            return`<div class="acc-manage-row" data-id="${a.id}" data-sort="${a.sort_order||0}" draggable="true"
+              style="${border}display:flex;align-items:center;gap:10px;padding:12px 14px;opacity:${hidden?'0.45':'1'};">
+              <i class="ti ti-grip-vertical" style="color:var(--text4);font-size:16px;cursor:grab;flex-shrink:0;" aria-hidden="true"></i>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:14px;font-weight:500;color:${hidden?'var(--text3)':'var(--text)'};">${a.name}${hidden?'<span style="font-size:10px;color:var(--text4);margin-left:6px;">已隱藏</span>':''}</div>
+                <div style="font-size:12px;color:var(--text3);">${balStr}</div>
+              </div>
+              <div style="display:flex;gap:4px;align-items:center;">
+                <button class="icon-btn" onclick="toggleAccHidden('${a.id}',${!!hidden})" title="${hidden?'顯示':'隱藏'}" style="font-size:15px;color:${hidden?'var(--gold)':'var(--text3)'};">
+                  <i class="ti ti-${hidden?'eye':'eye-off'}" aria-hidden="true"></i>
+                </button>
+                <button class="icon-btn" onclick="editAccount('${a.id}','${a.name}',${a.balance},'${a.category_id}')" style="font-size:14px;">
+                  <i class="ti ti-pencil" aria-hidden="true"></i>
+                </button>
+                <button class="icon-btn" onclick="delAccount('${a.id}')" style="font-size:14px;color:var(--red);">
+                  <i class="ti ti-trash" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>`;
+          }).join('')}
         </div>
       </div>`;
-    }).join('');
+    });
+    el.innerHTML=html;
+
+    // 拖曳排序
+    initAccDragSort();
   }catch(e){toast('載入失敗','err');}
+}
+
+async function toggleAccHidden(id, currentlyHidden){
+  try{
+    await sb(`/rest/v1/accounts?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_hidden:!currentlyHidden})});
+    toast(currentlyHidden?'已顯示':'已隱藏');
+    loadAccManage();
+    if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
+  }catch(e){toast('操作失敗','err');}
+}
+
+function initAccDragSort(){
+  let dragEl=null, dragOverEl=null;
+  document.querySelectorAll('.acc-manage-row').forEach(row=>{
+    row.addEventListener('dragstart',e=>{
+      dragEl=row;
+      row.style.opacity='0.4';
+      e.dataTransfer.effectAllowed='move';
+    });
+    row.addEventListener('dragend',()=>{
+      row.style.opacity='';
+      dragEl=null;
+      document.querySelectorAll('.acc-manage-row').forEach(r=>r.style.background='');
+    });
+    row.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(row===dragEl)return;
+      row.style.background='var(--bg3)';
+      dragOverEl=row;
+    });
+    row.addEventListener('dragleave',()=>row.style.background='');
+    row.addEventListener('drop',async e=>{
+      e.preventDefault();
+      row.style.background='';
+      if(!dragEl||dragEl===row)return;
+      // 同父容器才能排序
+      if(dragEl.parentElement!==row.parentElement)return;
+      const parent=row.parentElement;
+      const rows=[...parent.querySelectorAll('.acc-manage-row')];
+      const fromIdx=rows.indexOf(dragEl);
+      const toIdx=rows.indexOf(row);
+      if(fromIdx<toIdx) parent.insertBefore(dragEl,row.nextSibling);
+      else parent.insertBefore(dragEl,row);
+      // 儲存新順序
+      const newOrder=[...parent.querySelectorAll('.acc-manage-row')].map((r,i)=>({id:r.dataset.id,sort_order:i}));
+      for(const o of newOrder){
+        await sb(`/rest/v1/accounts?id=eq.${o.id}`,{method:'PATCH',body:JSON.stringify({sort_order:o.sort_order})});
+      }
+      if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
+    });
+  });
 }
 
 async function delAccount(id){
