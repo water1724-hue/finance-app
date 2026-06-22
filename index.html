@@ -2273,23 +2273,35 @@ async function saveTransfer(){
     const fromCur=(fromAcc[0].currency||'TWD').toUpperCase();
     const toCur=(toAcc[0].currency||'TWD').toUpperCase();
     const isCrossCur=fromCur!==toCur;
-
     let toAmt=amt;
+    let rate=1;
     if(isCrossCur){
-      const rate=parseFloat(document.getElementById('tr-fx-rate').value);
+      rate=parseFloat(document.getElementById('tr-fx-rate').value);
       if(!rate){toast('請填寫匯率','err');return;}
       toAmt=amt*rate;
     }
-
-    await sb('/rest/v1/transfers',{method:'POST',body:JSON.stringify({user_id:prof.id,from_account_id:fromId,to_account_id:toId,amount:amt,fee,note,date})});
+    // 儲存轉帳記錄
+    await sb('/rest/v1/transfers',{method:'POST',body:JSON.stringify({user_id:prof.id,from_account_id:fromId,to_account_id:toId,amount:amt,to_amount:toAmt,fee,note,date})});
+    // 跨幣別時同步寫入換匯紀錄
+    if(isCrossCur){
+      await sb('/rest/v1/fx_exchange_logs',{method:'POST',body:JSON.stringify({
+        user_id:prof.id,
+        from_currency:fromCur,to_currency:toCur,
+        from_amount:amt,to_amount:toAmt,
+        rate,fee,
+        from_account_id:fromId,to_account_id:toId,
+        date,note:note||null
+      })});
+    }
+    // 更新帳戶餘額
     await Promise.all([
       sb(`/rest/v1/accounts?id=eq.${fromId}`,{method:'PATCH',body:JSON.stringify({balance:Number(fromAcc[0].balance)-amt-fee})}),
       sb(`/rest/v1/accounts?id=eq.${toId}`,{method:'PATCH',body:JSON.stringify({balance:Number(toAcc[0].balance)+toAmt})})
     ]);
     closeSheet('sh-transfer');
-    toast('轉帳成功');
+    toast(isCrossCur?'轉帳成功，換匯紀錄已自動記錄':'轉帳成功');
     loadFinance();
-  }catch(e){toast('轉帳失敗','err');}
+  }catch(e){toast('轉帳失敗','err');console.error(e);}
 }
 
 async function loadAllTxns(){
@@ -2332,7 +2344,7 @@ async function openAccDetail(id){
     const addBtn=document.getElementById('det-acc-add-btn');
     if(addBtn){
       if(isInv) addBtn.innerHTML=`<button class="btn btn-gold btn-sm" onclick="showAddHolding()"><i class="ti ti-plus" aria-hidden="true"></i> 新增持股</button>`;
-      else if(isFxAcc) addBtn.innerHTML=`<button class="btn btn-gold btn-sm" onclick="openFxExchange('${id}')"><i class="ti ti-currency-exchange" aria-hidden="true"></i> 換匯</button>`;
+      else if(isFxAcc) addBtn.innerHTML=`<button class="btn btn-gold btn-sm" onclick="openTransfer()"><i class="ti ti-transfer" aria-hidden="true"></i> 換匯/轉帳</button>`;
       else addBtn.innerHTML='';
     }
 
