@@ -2196,10 +2196,13 @@ async function openTransfer(){
   try{
     const allAccounts=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{});
     const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
-    const accounts=allAccounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='credit';});
-    const opts=accounts.map(a=>{const cur=(a.currency||'TWD').toUpperCase();const balDisp=cur==='TWD'?`NT$${Number(a.balance).toLocaleString()}`:`${cur} ${Number(a.balance).toLocaleString()}`;return`<option value="${a.id}" data-cur="${cur}">${a.name} (${balDisp})</option>`;}).join('');
-    document.getElementById('tr-from').innerHTML=opts;
-    document.getElementById('tr-to').innerHTML=opts;
+    // 「從」排除信用卡和貸款；「到」排除信用卡但保留貸款（還款用）
+    const fromAccounts=allAccounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='credit'&&c?.type!=='loan';});
+    const toAccounts=allAccounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='credit';});
+    const fromOpts=fromAccounts.map(a=>{const cur=(a.currency||'TWD').toUpperCase();const balDisp=cur==='TWD'?`NT$${Number(a.balance).toLocaleString()}`:`${cur} ${Number(a.balance).toLocaleString()}`;return`<option value="${a.id}" data-cur="${cur}">${a.name} (${balDisp})</option>`;}).join('');
+    const toOpts=toAccounts.map(a=>{const cur=(a.currency||'TWD').toUpperCase();const cat=cats.find(x=>x.id===a.category_id);const balDisp=cur==='TWD'?`NT$${Number(a.balance).toLocaleString()}`:`${cur} ${Number(a.balance).toLocaleString()}`;const label=cat?.type==='loan'?` 🏦還款`:'';return`<option value="${a.id}" data-cur="${cur}">${a.name}${label} (${balDisp})</option>`;}).join('');
+    document.getElementById('tr-from').innerHTML=fromOpts;
+    document.getElementById('tr-to').innerHTML=toOpts;
     document.getElementById('tr-amt').value='';
     document.getElementById('tr-fee').value='0';
     const n=new Date();
