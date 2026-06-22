@@ -2503,25 +2503,31 @@ async function renderAccAllTxns(id, isFxAcc, txEl, fromParam='', toParam=''){
       sb(`/rest/v1/transfers?from_account_id=eq.${id}&order=date.desc&limit=100${fromParam}${toParam}`,{}),
       sb(`/rest/v1/transfers?to_account_id=eq.${id}&order=date.desc&limit=100${fromParam}${toParam}`,{})
     ]);
-    // 換匯記錄（只有外幣帳戶才顯示）
+    // 換匯記錄（外幣帳戶才顯示）
     let fxLogs=[];
+    let fxTransferIds=new Set();
     if(isFxAcc){
       const [fxFrom,fxTo]=await Promise.all([
         sb(`/rest/v1/fx_exchange_logs?from_account_id=eq.${id}&order=date.desc&limit=50${fromParam}${toParam}`,{}),
         sb(`/rest/v1/fx_exchange_logs?to_account_id=eq.${id}&order=date.desc&limit=50${fromParam}${toParam}`,{})
       ]);
-      // 去重複（轉帳時已同步記換匯，避免雙重顯示）
-      const transferIds=new Set([...trFrom,...trTo].map(t=>t.date+t.amount));
-      fxLogs=[...fxFrom,...fxTo].filter(l=>{
-        const key=l.date+(l.from_account_id===id?l.from_amount:l.to_amount);
-        return!transferIds.has(key);
+      fxLogs=[...fxFrom,...fxTo];
+      // 記錄有換匯紀錄的轉帳 id，避免重複顯示
+      fxLogs.forEach(l=>{
+        if(l.from_account_id) fxTransferIds.add(l.from_account_id+'_'+l.date+'_'+l.from_amount);
+        if(l.to_account_id) fxTransferIds.add(l.to_account_id+'_'+l.date+'_'+l.to_amount);
       });
     }
-    // 組合所有記錄並依日期排序
+    // 組合所有記錄：換匯轉帳只顯示換匯紀錄，不顯示轉帳記錄
     const allItems=[
       ...txns.map(t=>({...t,_type:'txn',_date:t.date})),
-      ...trFrom.map(t=>({...t,_type:'tr_out',_date:t.date})),
-      ...trTo.map(t=>({...t,_type:'tr_in',_date:t.date})),
+      ...trFrom.filter(t=>{
+        // 排除已有換匯紀錄的跨幣別轉帳
+        return!fxTransferIds.has(id+'_'+t.date+'_'+t.amount);
+      }).map(t=>({...t,_type:'tr_out',_date:t.date})),
+      ...trTo.filter(t=>{
+        return!fxTransferIds.has(id+'_'+t.date+'_'+(t.to_amount||t.amount));
+      }).map(t=>({...t,_type:'tr_in',_date:t.date})),
       ...fxLogs.map(l=>({...l,_type:l.from_account_id===id?'fx_out':'fx_in',_date:l.date})),
     ].sort((a,b)=>b._date.localeCompare(a._date)||b.created_at?.localeCompare(a.created_at||'')||0);
 
