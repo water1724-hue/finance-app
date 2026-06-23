@@ -625,7 +625,10 @@ select.inp option{background:var(--bg2);}
     <div class="page" id="pg-report">
       <div class="row-between" style="margin-bottom:16px;">
         <div class="pg-title" style="margin:0;">月結報告</div>
-        <button class="btn btn-ghost btn-sm" onclick="exportMonthReport()"><i class="ti ti-download" aria-hidden="true"></i> 匯出</button>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="exportMonthReport('txt')"><i class="ti ti-download" aria-hidden="true"></i> TXT</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportMonthReport('pdf')"><i class="ti ti-file-type-pdf" aria-hidden="true"></i> PDF</button>
+        </div>
       </div>
       <!-- Date selector -->
       <div class="card" style="margin-bottom:12px;">
@@ -7242,7 +7245,7 @@ async function loadReport(){
   }catch(e){console.error('Report error:',e);}
 }
 
-async function exportMonthReport(){
+async function exportMonthReport(format='txt'){
   const year=parseInt(document.getElementById('rpt-year').value);
   const month=parseInt(document.getElementById('rpt-month').value);
   const dateFrom=`${year}-${String(month).padStart(2,'0')}-01`;
@@ -7261,32 +7264,94 @@ async function exportMonthReport(){
       const name=cat?cat.name:'未分類';
       catMap[name]=(catMap[name]||0)+Number(t.amount);
     });
-    const lines=[
-      `Life OS 月結報告 ${year}年${month}月`,
-      `匯出時間：${new Date().toLocaleString('zh-TW')}`,
-      `使用者：${prof.display_name||prof.username}`,
-      '',
-      '═══ 收支摘要 ═══',
-      `收入：NT$${income.toLocaleString()}`,
-      `支出：NT$${expense.toLocaleString()}`,
-      `結餘：NT$${(income-expense).toLocaleString()}`,
-      '',
-      '═══ 支出分類 ═══',
-      ...Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([n,a])=>`${n}：NT$${a.toLocaleString()}`),
-      '',
-      '═══ 交易明細 ═══',
-      ...txns.map(t=>{
-        const cat=cats.find(c=>c.id===t.category_id);
-        return`${t.date} [${t.type==='income'?'收入':'支出'}] ${cat?.name||'未分類'} ${t.note||''} NT$${Number(t.amount).toLocaleString()}`;
-      })
-    ];
-    const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=`月結報告_${year}${String(month).padStart(2,'0')}.txt`;
-    document.body.appendChild(a);a.click();
-    document.body.removeChild(a);URL.revokeObjectURL(url);
-    toast('匯出完成 ✓');
+
+    if(format==='pdf'){
+      // PDF 匯出（用瀏覽器列印）
+      const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>Life OS 月結報告 ${year}年${month}月</title>
+<style>
+  body{font-family:'PingFang TC','Microsoft JhengHei',sans-serif;padding:30px;color:#1c1c1e;max-width:800px;margin:0 auto;}
+  h1{font-size:22px;font-weight:700;margin-bottom:4px;}
+  .sub{font-size:13px;color:#888;margin-bottom:24px;}
+  .section{margin-bottom:24px;}
+  .section-title{font-size:13px;font-weight:700;color:#888;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:6px;}
+  .stat-row{display:flex;justify-content:space-between;padding:6px 0;font-size:15px;border-bottom:0.5px solid #f0f0f0;}
+  .income{color:#34A36A;font-weight:700;}
+  .expense{color:#D94F4F;font-weight:700;}
+  .balance{color:#B8892A;font-weight:700;}
+  .cat-bar{margin-bottom:8px;}
+  .cat-name{font-size:13px;margin-bottom:3px;display:flex;justify-content:space-between;}
+  .bar-bg{height:6px;background:#f0f0f0;border-radius:3px;}
+  .bar-fill{height:100%;background:#B8892A;border-radius:3px;}
+  .txn-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:0.5px solid #f5f5f5;}
+  @media print{body{padding:20px;}}
+</style></head><body>
+<h1>Life OS 月結報告</h1>
+<div class="sub">${year}年${month}月　使用者：${prof.display_name||prof.username}　匯出：${new Date().toLocaleString('zh-TW')}</div>
+
+<div class="section">
+  <div class="section-title">收支摘要</div>
+  <div class="stat-row"><span>收入</span><span class="income">NT$${income.toLocaleString()}</span></div>
+  <div class="stat-row"><span>支出</span><span class="expense">NT$${expense.toLocaleString()}</span></div>
+  <div class="stat-row"><span>結餘</span><span class="balance">NT$${(income-expense).toLocaleString()}</span></div>
+</div>
+
+<div class="section">
+  <div class="section-title">支出分類</div>
+  ${Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([n,a])=>{
+    const pct=expense>0?Math.round(a/expense*100):0;
+    return`<div class="cat-bar">
+      <div class="cat-name"><span>${n}</span><span>NT$${a.toLocaleString()} (${pct}%)</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;"></div></div>
+    </div>`;
+  }).join('')}
+</div>
+
+<div class="section">
+  <div class="section-title">交易明細（${txns.length}筆）</div>
+  ${txns.map(t=>{
+    const cat=cats.find(c=>c.id===t.category_id);
+    return`<div class="txn-row">
+      <span>${t.date}　${cat?.name||'未分類'}　${t.note||'—'}</span>
+      <span style="color:${t.type==='income'?'#34A36A':'#D94F4F'};font-weight:600;">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</span>
+    </div>`;
+  }).join('')}
+</div>
+</body></html>`;
+      const win=window.open('','_blank');
+      win.document.write(html);
+      win.document.close();
+      setTimeout(()=>{win.print();},500);
+      toast('PDF 預覽已開啟，請選擇「另存為 PDF」');
+    } else {
+      // TXT 匯出
+      const lines=[
+        `Life OS 月結報告 ${year}年${month}月`,
+        `匯出時間：${new Date().toLocaleString('zh-TW')}`,
+        `使用者：${prof.display_name||prof.username}`,
+        '',
+        '═══ 收支摘要 ═══',
+        `收入：NT$${income.toLocaleString()}`,
+        `支出：NT$${expense.toLocaleString()}`,
+        `結餘：NT$${(income-expense).toLocaleString()}`,
+        '',
+        '═══ 支出分類 ═══',
+        ...Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([n,a])=>`${n}：NT$${a.toLocaleString()}`),
+        '',
+        '═══ 交易明細 ═══',
+        ...txns.map(t=>{
+          const cat=cats.find(c=>c.id===t.category_id);
+          return`${t.date} [${t.type==='income'?'收入':'支出'}] ${cat?.name||'未分類'} ${t.note||''} NT$${Number(t.amount).toLocaleString()}`;
+        })
+      ];
+      const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download=`月結報告_${year}${String(month).padStart(2,'0')}.txt`;
+      document.body.appendChild(a);a.click();
+      document.body.removeChild(a);URL.revokeObjectURL(url);
+      toast('匯出完成 ✓');
+    }
   }catch(e){toast('匯出失敗','err');}
 }
 
@@ -7465,15 +7530,55 @@ async function sendChat(){
     const _now=new Date();
     const today=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
     const mStart=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-01`;
-    const [todos,events,txns,accounts]=await Promise.all([
-      sb(`/rest/v1/todos?user_id=eq.${getViewAsId()}&completed=eq.false&limit=15`,{}),
-      sb(`/rest/v1/events?user_id=eq.${getViewAsId()}&start_date=gte.${today}&limit=10`,{}),
-      sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&date=gte.${mStart}&order=date.desc&limit=30`,{}),
-      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}`,{})
+    const mEnd=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(new Date(_now.getFullYear(),_now.getMonth()+1,0).getDate()).padStart(2,'0')}`;
+
+    const [todos,events,txns,accounts,habits,habitLogs,budgets,budgetTmpls,goals,holdings]=await Promise.all([
+      sb(`/rest/v1/todos?user_id=eq.${getViewAsId()}&completed=eq.false&order=priority.asc&limit=15`,{}),
+      sb(`/rest/v1/events?user_id=eq.${getViewAsId()}&start_date=gte.${today}&order=start_date.asc&limit=10`,{}),
+      sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&date=gte.${mStart}&date=lte.${mEnd}&order=date.desc&limit=50`,{}),
+      sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{}),
+      sb(`/rest/v1/habits?user_id=eq.${prof.id}&is_active=eq.true`,{}),
+      sb(`/rest/v1/habit_logs?user_id=eq.${prof.id}&date=gte.${mStart}&date=lte.${today}`,{}),
+      sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${_now.getFullYear()}&month=eq.${_now.getMonth()+1}`,{}),
+      sb('/rest/v1/budget_templates?order=sort_order.asc',{}),
+      sb(`/rest/v1/savings_goals?or=(user_id.eq.${prof.id},is_shared.eq.true)&is_active=eq.true`,{}),
+      sb(`/rest/v1/holdings?user_id=eq.${prof.id}`,{}).catch(()=>[])
     ]);
+
     let inc=0,exp=0;
     txns.forEach(t=>{if(t.type==='income')inc+=Number(t.amount);else exp+=Number(t.amount);});
     const totalAssets=accounts.filter(a=>!a.is_hidden&&(a.currency||'TWD').toUpperCase()==='TWD').reduce((s,a)=>s+Number(a.balance),0);
+
+    // 習慣統計
+    const habitStats=habits.map(h=>{
+      const logs=habitLogs.filter(l=>l.habit_id===h.id);
+      const daysInMonth=_now.getDate();
+      const pct=Math.round(logs.length/daysInMonth*100);
+      return`${h.name}：本月達成${pct}%（${logs.length}/${daysInMonth}天）`;
+    });
+
+    // 預算統計
+    const budgetStats=budgets.map(b=>{
+      const tmpl=budgetTmpls.find(t=>t.id===b.budget_template_id);
+      const spent=txns.filter(t=>t.type==='expense'&&t.category_id===tmpl?.category_id).reduce((s,t)=>s+Number(t.amount),0);
+      const pct=b.amount>0?Math.round(spent/b.amount*100):0;
+      return`${tmpl?.name||'預算'}：已用NT$${Math.round(spent).toLocaleString()}／上限NT$${Math.round(b.amount).toLocaleString()}（${pct}%）`;
+    });
+
+    // 持股
+    const holdingStats=holdings.filter(h=>Number(h.quantity)>0).map(h=>{
+      const cur=Number(h.current_price)||Number(h.avg_cost);
+      const val=Number(h.quantity)*cur;
+      const pnl=Number(h.quantity)*(cur-Number(h.avg_cost));
+      return`${h.symbol} ${h.name}：${h.quantity}股，市值NT$${Math.round(val).toLocaleString()}，損益${pnl>=0?'+':''}NT$${Math.round(pnl).toLocaleString()}`;
+    });
+
+    // 儲蓄目標
+    const goalStats=goals.map(g=>{
+      const pct=g.target_amount>0?Math.round(g.current_amount/g.target_amount*100):0;
+      return`${g.name}：NT$${Math.round(g.current_amount).toLocaleString()}／NT$${Math.round(g.target_amount).toLocaleString()}（${pct}%）`;
+    });
+
     const userName=prof.display_name||prof.username;
     const sysPrompt=`你是${userName}的私人生活助理「小晴」，個性活潑溫暖、聰明有趣，說話像朋友一樣自然親切，偶爾會用輕鬆的語氣開玩笑，但在財務和重要問題上會切換成專業模式給出精確建議。
 使用繁體中文回答，稱呼用戶為「${userName}」。
@@ -7481,12 +7586,16 @@ async function sendChat(){
 
 【${userName} 的個人資料 - 今日：${today}】
 待辦事項(${todos.length}項)：${todos.slice(0,8).map(t=>t.title+(t.priority==='high'?'（緊急）':'')).join('、')||'目前沒有待辦'}
-近期行程：${events.slice(0,5).map(e=>e.start_date+' '+e.title).join('、')||'近期沒有行程'}
+近期行程：${events.slice(0,5).map(e=>e.start_date+(e.start_time?' '+e.start_time.slice(0,5):'')+' '+e.title).join('、')||'近期沒有行程'}
 本月收入：NT$${Math.round(inc).toLocaleString()}
 本月支出：NT$${Math.round(exp).toLocaleString()}
 本月結餘：NT$${Math.round(inc-exp).toLocaleString()}${inc-exp<0?'（本月超支了！）':''}
 帳戶總額：NT$${Math.round(totalAssets).toLocaleString()}
-最近消費：${txns.filter(t=>t.type==='expense').slice(0,5).map(t=>(t.note||'支出')+' NT$'+t.amount).join('、')||'近期無消費記錄'}
+最近消費：${txns.filter(t=>t.type==='expense').slice(0,8).map(t=>(t.note||'支出')+' NT$'+t.amount).join('、')||'近期無消費記錄'}
+${habitStats.length?`\n習慣達成：${habitStats.join('、')}`:''}
+${budgetStats.length?`\n預算狀況：${budgetStats.join('、')}`:''}
+${holdingStats.length?`\n投資持股：${holdingStats.join('、')}`:''}
+${goalStats.length?`\n儲蓄目標：${goalStats.join('、')}`:''}
 
 根據以上資料給出個人化且有溫度的回答。`;
 
