@@ -288,6 +288,25 @@ select.inp option{background:var(--bg2);}
       <!-- 通知提醒 banner -->
       <div id="home-notify-banner" style="display:none;margin-bottom:12px;"></div>
 
+      <!-- 本月收支摘要 -->
+      <div class="card" id="hw-monthly" style="margin-bottom:12px;">
+        <div class="sec-label" style="margin-bottom:10px;">本月收支</div>
+        <div id="h-monthly-content"></div>
+      </div>
+
+      <!-- 淨資產 -->
+      <div class="card" id="hw-networth" style="display:none;margin-bottom:12px;cursor:pointer;" onclick="goPage('finance')">
+        <div class="sec-label" style="margin-bottom:6px;">淨資產</div>
+        <div id="h-networth-val" style="font-size:26px;font-weight:700;color:var(--gold);">—</div>
+        <div id="h-networth-sub" style="font-size:12px;color:var(--text3);margin-top:4px;"></div>
+      </div>
+
+      <!-- 天氣預報 -->
+      <div class="card" id="hw-weather" style="display:none;margin-bottom:12px;">
+        <div class="sec-label" style="margin-bottom:8px;">今日天氣</div>
+        <div id="h-weather-content"><div style="font-size:13px;color:var(--text3);">載入中...</div></div>
+      </div>
+
       <!-- 今日行程 -->
       <div class="card" id="hw-events" style="margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:12px;">
@@ -297,13 +316,87 @@ select.inp option{background:var(--bg2);}
         <div id="h-events"></div>
       </div>
 
-      <!-- 習慣打卡（有習慣才顯示） -->
+      <!-- 待辦清單 -->
+      <div class="card" id="hw-todos" style="display:none;margin-bottom:12px;">
+        <div class="row-between" style="margin-bottom:10px;">
+          <div class="sec-label" style="margin:0">待辦清單</div>
+          <span style="font-size:13px;color:var(--gold);cursor:pointer;" onclick="goPage('todo')">全部 →</span>
+        </div>
+        <div id="h-todos-widget"></div>
+      </div>
+
+      <!-- 習慣打卡 -->
       <div class="card" id="h-habits-card" style="display:none;margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:10px;">
           <div class="sec-label" style="margin:0">今日習慣</div>
           <span style="font-size:13px;color:var(--gold);cursor:pointer;" onclick="goPage('habits')">管理 →</span>
         </div>
         <div id="h-habits"></div>
+      </div>
+
+      <!-- 預算使用率 -->
+      <div class="card" id="hw-budget" style="display:none;margin-bottom:12px;">
+        <div class="row-between" style="margin-bottom:10px;">
+          <div class="sec-label" style="margin:0">本月預算</div>
+          <span style="font-size:13px;color:var(--gold);cursor:pointer;" onclick="showDet('det-budget')">設定 →</span>
+        </div>
+        <div id="h-budget-widget"></div>
+      </div>
+
+      <!-- 儲蓄目標 -->
+      <div class="card" id="hw-goals" style="display:none;margin-bottom:12px;">
+        <div class="row-between" style="margin-bottom:10px;">
+          <div class="sec-label" style="margin:0">儲蓄目標</div>
+          <span style="font-size:13px;color:var(--gold);cursor:pointer;" onclick="goPage('goals')">全部 →</span>
+        </div>
+        <div id="h-goals-widget"></div>
+      </div>
+
+      <!-- 投資組合快覽 -->
+      <div class="card" id="hw-portfolio" style="display:none;margin-bottom:12px;cursor:pointer;" onclick="setFinTab('inv',document.getElementById('fin-tab-inv'));goPage('finance')">
+        <div class="sec-label" style="margin-bottom:8px;">投資組合</div>
+        <div id="h-portfolio-widget"></div>
+      </div>
+
+      <!-- 外幣匯率 -->
+      <div class="card" id="hw-forex" style="display:none;margin-bottom:12px;">
+        <div class="sec-label" style="margin-bottom:8px;">外幣匯率</div>
+        <div id="h-forex-widget"></div>
+      </div>
+
+      <!-- 生日/紀念日 -->
+      <div class="card" id="hw-birthday" style="display:none;margin-bottom:12px;">
+        <div class="sec-label" style="margin-bottom:8px;">近期生日/紀念日</div>
+        <div id="h-birthday-widget"></div>
+      </div>
+
+      <!-- 回診提醒 -->
+      <div class="card" id="hw-medical" style="display:none;margin-bottom:12px;">
+        <div class="sec-label" style="margin-bottom:8px;">回診提醒</div>
+        <div id="h-medical-widget"></div>
+      </div>
+
+      <!-- 車輛保養 -->
+      <div class="card" id="hw-vehicle" style="display:none;margin-bottom:12px;">
+        <div class="sec-label" style="margin-bottom:8px;">車輛提醒</div>
+        <div id="h-vehicle-widget"></div>
+      </div>
+
+      <!-- 文件到期 -->
+      <div class="card" id="hw-docs" style="display:none;margin-bottom:12px;">
+        <div class="sec-label" style="margin-bottom:8px;">文件到期</div>
+        <div id="h-docs-widget"></div>
+      </div>
+
+      <!-- 信用卡帳單 -->
+      <div class="card" id="hw-creditcard" style="display:none;margin-bottom:12px;">
+        <div class="sec-label" style="margin-bottom:8px;">信用卡帳單</div>
+        <div id="h-creditcard-widget"></div>
+      </div>
+
+      <!-- 每日一句 -->
+      <div class="card" id="hw-quote" style="display:none;margin-bottom:12px;">
+        <div id="h-quote-widget" style="font-size:15px;color:var(--text2);line-height:1.7;text-align:center;padding:8px 0;"></div>
       </div>
 
       <!-- 公告 / 留言板 -->
@@ -1345,28 +1438,95 @@ select.inp option{background:var(--bg2);}
 
 <!-- Home Settings -->
 <div class="overlay" id="sh-home-settings">
-  <div class="sheet">
+  <div class="sheet" style="max-height:85vh;overflow-y:auto;">
     <div class="sheet-handle"></div>
     <h3>首頁自訂</h3>
-    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">選擇要在首頁顯示的卡片</div>
-    <div class="field">
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:15px;font-weight:500;">今日行程</div><div style="font-size:12px;color:var(--text3);">顯示當天的行程列表</div></div>
-        <input type="checkbox" id="hw-toggle-events" checked onchange="saveHomeSettings()" style="width:20px;height:20px;">
+    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">選擇要在首頁顯示的卡片，設定即時生效。</div>
+
+    <div style="font-size:11px;color:var(--text3);letter-spacing:1px;font-weight:700;margin-bottom:6px;margin-top:4px;">基本</div>
+    <div class="card" style="padding:0;margin-bottom:12px;">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">今日行程</div><div style="font-size:12px;color:var(--text3);">當天行程列表</div></div>
+        <input type="checkbox" id="hw-toggle-events" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
       </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:15px;font-weight:500;">今日習慣</div><div style="font-size:12px;color:var(--text3);">習慣打卡卡片</div></div>
-        <input type="checkbox" id="hw-toggle-habits" checked onchange="saveHomeSettings()" style="width:20px;height:20px;">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">今日習慣</div><div style="font-size:12px;color:var(--text3);">習慣打卡</div></div>
+        <input type="checkbox" id="hw-toggle-habits" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
       </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:15px;font-weight:500;">公告／留言板</div><div style="font-size:12px;color:var(--text3);">最新公告和家人留言</div></div>
-        <input type="checkbox" id="hw-toggle-announce" checked onchange="saveHomeSettings()" style="width:20px;height:20px;">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">待辦清單</div><div style="font-size:12px;color:var(--text3);">未完成待辦前幾筆</div></div>
+        <input type="checkbox" id="hw-toggle-todos" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
       </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;">
-        <div><div style="font-size:15px;font-weight:500;">快捷按鈕</div><div style="font-size:12px;color:var(--text3);">記帳、待辦、行程快捷鍵</div></div>
-        <input type="checkbox" id="hw-toggle-shortcuts" checked onchange="saveHomeSettings()" style="width:20px;height:20px;">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">公告／留言板</div><div style="font-size:12px;color:var(--text3);">最新公告和家人留言</div></div>
+        <input type="checkbox" id="hw-toggle-announce" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;">
+        <div><div style="font-size:14px;font-weight:500;">快捷按鈕</div><div style="font-size:12px;color:var(--text3);">記帳、待辦、行程快捷鍵</div></div>
+        <input type="checkbox" id="hw-toggle-shortcuts" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
       </label>
     </div>
+
+    <div style="font-size:11px;color:var(--text3);letter-spacing:1px;font-weight:700;margin-bottom:6px;">財務</div>
+    <div class="card" style="padding:0;margin-bottom:12px;">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">本月收支</div><div style="font-size:12px;color:var(--text3);">當月收入/支出/結餘</div></div>
+        <input type="checkbox" id="hw-toggle-monthly" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">淨資產</div><div style="font-size:12px;color:var(--text3);">總資產快速預覽</div></div>
+        <input type="checkbox" id="hw-toggle-networth" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">預算使用率</div><div style="font-size:12px;color:var(--text3);">本月預算剩餘</div></div>
+        <input type="checkbox" id="hw-toggle-budget" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">儲蓄目標</div><div style="font-size:12px;color:var(--text3);">目標達成進度</div></div>
+        <input type="checkbox" id="hw-toggle-goals" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">投資組合快覽</div><div style="font-size:12px;color:var(--text3);">總市值和損益</div></div>
+        <input type="checkbox" id="hw-toggle-portfolio" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">外幣匯率</div><div style="font-size:12px;color:var(--text3);">外幣帳戶即時匯率</div></div>
+        <input type="checkbox" id="hw-toggle-forex" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;">
+        <div><div style="font-size:14px;font-weight:500;">信用卡帳單</div><div style="font-size:12px;color:var(--text3);">近期帳單/繳款日</div></div>
+        <input type="checkbox" id="hw-toggle-creditcard" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+    </div>
+
+    <div style="font-size:11px;color:var(--text3);letter-spacing:1px;font-weight:700;margin-bottom:6px;">生活</div>
+    <div class="card" style="padding:0;margin-bottom:12px;">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">天氣</div><div style="font-size:12px;color:var(--text3);">當地即時天氣</div></div>
+        <input type="checkbox" id="hw-toggle-weather" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">生日/紀念日</div><div style="font-size:12px;color:var(--text3);">近7天內的生日</div></div>
+        <input type="checkbox" id="hw-toggle-birthday" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">回診提醒</div><div style="font-size:12px;color:var(--text3);">近期回診日期</div></div>
+        <input type="checkbox" id="hw-toggle-medical" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">車輛保養</div><div style="font-size:12px;color:var(--text3);">保養/保險到期提醒</div></div>
+        <input type="checkbox" id="hw-toggle-vehicle" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:14px;font-weight:500;">文件到期</div><div style="font-size:12px;color:var(--text3);">即將到期的文件</div></div>
+        <input type="checkbox" id="hw-toggle-docs" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;">
+        <div><div style="font-size:14px;font-weight:500;">每日一句</div><div style="font-size:12px;color:var(--text3);">每日勵志名言</div></div>
+        <input type="checkbox" id="hw-toggle-quote" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
+      </label>
+    </div>
+
     <div class="btn-row">
       <button class="btn btn-gold" style="width:100%;" onclick="closeSheet('sh-home-settings')">完成</button>
     </div>
@@ -2289,9 +2449,23 @@ async function loadHome(){
     }catch(e){}
   }catch(e){console.error(e);}
   updateHomeNotifyBadge();
-  const hwSettings=loadHomeSettings();
-  if(hwSettings.habits)loadHomeHabits();
+  const w=loadHomeSettings();
+  if(w.habits)loadHomeHabits();
   else{const c=document.getElementById('h-habits-card');if(c)c.style.display='none';}
+  if(w.todos)loadHomeTodos();
+  if(w.monthly)loadHomeMonthly();
+  if(w.networth)loadHomeNetworth();
+  if(w.budget)loadHomeBudget();
+  if(w.goals)loadHomeGoals();
+  if(w.portfolio)loadHomePortfolio();
+  if(w.forex)loadHomeForex();
+  if(w.creditcard)loadHomeCreditCard();
+  if(w.weather)loadHomeWeather();
+  if(w.birthday)loadHomeBirthday();
+  if(w.medical)loadHomeMedical();
+  if(w.vehicle)loadHomeVehicle();
+  if(w.docs)loadHomeDocs();
+  if(w.quote)loadHomeQuote();
 }
 
 async function quickDone(id){
@@ -4490,41 +4664,325 @@ async function openAddHoldingFromPortfolio(){
 }
 
 // ─── 首頁小工具自訂 ───────────────────────────────────────────
+const HW_DEFAULTS={
+  events:true, habits:true, todos:false, announce:true, shortcuts:true,
+  monthly:true, networth:false, budget:false, goals:false, portfolio:false,
+  forex:false, creditcard:false, weather:true, birthday:false,
+  medical:false, vehicle:false, docs:false, quote:false
+};
+
+function getHomeWidgets(){
+  const saved=JSON.parse(localStorage.getItem('lifeos_home_widgets')||'{}');
+  return{...HW_DEFAULTS,...saved};
+}
+
 function loadHomeSettings(){
-  const s=JSON.parse(localStorage.getItem('lifeos_home_widgets')||'{}');
-  const widgets={events:true,habits:true,announce:true,shortcuts:true,...s};
-  // 套用顯示/隱藏
-  const evCard=document.getElementById('hw-events');
-  const anCard=document.getElementById('hw-announce');
-  const scCard=document.getElementById('hw-shortcuts');
-  if(evCard)evCard.style.display=widgets.events?'':'none';
-  if(anCard)anCard.style.display=widgets.announce?'':'none';
-  if(scCard)scCard.style.display=widgets.shortcuts?'flex':'none';
-  // 習慣卡片由 loadHomeHabits 控制，這裡只記錄設定
-  return widgets;
+  const w=getHomeWidgets();
+  const show=(id,on,flex=false)=>{const el=document.getElementById(id);if(el)el.style.display=on?(flex?'flex':'block'):'none';};
+  show('hw-events',w.events);
+  show('hw-announce',w.announce);
+  show('hw-shortcuts',w.shortcuts,'flex');
+  show('hw-monthly',w.monthly);
+  show('hw-networth',w.networth);
+  show('hw-budget',w.budget);
+  show('hw-goals',w.goals);
+  show('hw-portfolio',w.portfolio);
+  show('hw-forex',w.forex);
+  show('hw-creditcard',w.creditcard);
+  show('hw-weather',w.weather);
+  show('hw-birthday',w.birthday);
+  show('hw-medical',w.medical);
+  show('hw-vehicle',w.vehicle);
+  show('hw-docs',w.docs);
+  show('hw-quote',w.quote);
+  show('hw-todos',w.todos);
+  return w;
 }
 
 function openHomeSettings(){
-  const s=JSON.parse(localStorage.getItem('lifeos_home_widgets')||'{}');
-  const widgets={events:true,habits:true,announce:true,shortcuts:true,...s};
-  document.getElementById('hw-toggle-events').checked=widgets.events;
-  document.getElementById('hw-toggle-habits').checked=widgets.habits;
-  document.getElementById('hw-toggle-announce').checked=widgets.announce;
-  document.getElementById('hw-toggle-shortcuts').checked=widgets.shortcuts;
+  const w=getHomeWidgets();
+  Object.keys(HW_DEFAULTS).forEach(k=>{
+    const el=document.getElementById(`hw-toggle-${k}`);
+    if(el)el.checked=w[k];
+  });
   openSheet('sh-home-settings');
 }
 
 function saveHomeSettings(){
-  const widgets={
-    events:document.getElementById('hw-toggle-events').checked,
-    habits:document.getElementById('hw-toggle-habits').checked,
-    announce:document.getElementById('hw-toggle-announce').checked,
-    shortcuts:document.getElementById('hw-toggle-shortcuts').checked,
-  };
-  localStorage.setItem('lifeos_home_widgets',JSON.stringify(widgets));
+  const w={};
+  Object.keys(HW_DEFAULTS).forEach(k=>{
+    const el=document.getElementById(`hw-toggle-${k}`);
+    if(el)w[k]=el.checked;
+  });
+  localStorage.setItem('lifeos_home_widgets',JSON.stringify(w));
   loadHomeSettings();
+  // 載入新開啟的小工具資料
+  if(w.todos)loadHomeTodos();
+  if(w.monthly)loadHomeMonthly();
+  if(w.networth)loadHomeNetworth();
+  if(w.budget)loadHomeBudget();
+  if(w.goals)loadHomeGoals();
+  if(w.portfolio)loadHomePortfolio();
+  if(w.forex)loadHomeForex();
+  if(w.creditcard)loadHomeCreditCard();
+  if(w.weather)loadHomeWeather();
+  if(w.birthday)loadHomeBirthday();
+  if(w.medical)loadHomeMedical();
+  if(w.vehicle)loadHomeVehicle();
+  if(w.docs)loadHomeDocs();
+  if(w.quote)loadHomeQuote();
 }
 // ─── END 首頁小工具自訂 ───────────────────────────────────────
+
+// ─── 首頁小工具資料載入 ───────────────────────────────────────
+async function loadHomeTodos(){
+  const el=document.getElementById('h-todos-widget');if(!el)return;
+  try{
+    const todos=await sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false&order=priority.asc,created_at.desc&limit=4`,{});
+    if(!todos.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:4px 0;">沒有未完成待辦</div>';return;}
+    el.innerHTML=todos.map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--border);">
+      <div onclick="quickDone('${t.id}')" style="width:20px;height:20px;border-radius:6px;border:1.5px solid var(--text3);flex-shrink:0;cursor:pointer;"></div>
+      <div style="flex:1;font-size:13px;">${t.title}</div>
+      <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${t.priority==='high'?'rgba(232,112,112,0.15)':'var(--bg4)'};color:${t.priority==='high'?'var(--red)':'var(--text3)'};">${{high:'高',normal:'一般',low:'低'}[t.priority]||''}</span>
+    </div>`).join('');
+  }catch(e){}
+}
+
+async function loadHomeMonthly(){
+  const el=document.getElementById('h-monthly-content');if(!el)return;
+  try{
+    const now=new Date();
+    const y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0');
+    const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+    const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${y}-${m}-01&date=lte.${y}-${m}-${String(lastDay).padStart(2,'0')}`,{});
+    const income=txns.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+    const expense=txns.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+    const balance=income-expense;
+    el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:10px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">收入</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green);">NT$${Math.round(income).toLocaleString()}</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:10px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">支出</div>
+        <div style="font-size:14px;font-weight:700;color:var(--red);">NT$${Math.round(expense).toLocaleString()}</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:10px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">結餘</div>
+        <div style="font-size:14px;font-weight:700;color:${balance>=0?'var(--gold)':'var(--red)'};">NT$${Math.round(balance).toLocaleString()}</div>
+      </div>
+    </div>`;
+  }catch(e){}
+}
+
+async function loadHomeNetworth(){
+  const el=document.getElementById('h-networth-val');const sub=document.getElementById('h-networth-sub');if(!el)return;
+  try{
+    const [cats,accs]=await Promise.all([sb('/rest/v1/account_categories?order=sort_order.asc',{}),sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{})]);
+    let total=0,debt=0;
+    accs.filter(a=>!a.is_hidden).forEach(a=>{const c=cats.find(x=>x.id===a.category_id);if(c?.type==='credit'||c?.type==='loan')debt+=Number(a.balance);else total+=Number(a.balance);});
+    el.textContent=`NT$ ${Math.round(total-debt).toLocaleString()}`;
+    sub.textContent=`資產 NT$${Math.round(total).toLocaleString()}　負債 NT$${Math.round(debt).toLocaleString()}`;
+  }catch(e){}
+}
+
+async function loadHomeBudget(){
+  const el=document.getElementById('h-budget-widget');if(!el)return;
+  try{
+    const now=new Date();const y=now.getFullYear(),m=now.getMonth()+1;
+    const budgets=await sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${y}&month=eq.${m}&order=sort_order.asc&limit=4`,{});
+    if(!budgets.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚未設定預算</div>';return;}
+    const templates=await sb('/rest/v1/budget_templates?order=sort_order.asc',{});
+    el.innerHTML=budgets.map(b=>{
+      const t=templates.find(x=>x.id===b.budget_template_id);
+      const pct=b.limit_amount>0?Math.min(100,Math.round(b.spent_amount/b.limit_amount*100)):0;
+      return`<div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+          <span>${t?.name||'預算'}</span>
+          <span style="color:${pct>=90?'var(--red)':'var(--text3)'};">NT$${Math.round(b.spent_amount||0).toLocaleString()} / NT$${Math.round(b.limit_amount).toLocaleString()}</span>
+        </div>
+        <div style="height:4px;background:var(--bg4);border-radius:2px;"><div style="height:100%;width:${pct}%;background:${pct>=90?'var(--red)':pct>=70?'var(--orange)':'var(--gold)'};border-radius:2px;"></div></div>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function loadHomeGoals(){
+  const el=document.getElementById('h-goals-widget');if(!el)return;
+  try{
+    const goals=await sb(`/rest/v1/savings_goals?or=(user_id.eq.${prof.id},is_shared.eq.true)&is_active=eq.true&order=created_at.desc&limit=3`,{});
+    if(!goals.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚無儲蓄目標</div>';return;}
+    el.innerHTML=goals.map(g=>{const pct=g.target_amount>0?Math.min(100,Math.round(g.current_amount/g.target_amount*100)):0;
+      return`<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span>${g.name}</span><span style="color:var(--gold);">${pct}%</span></div>
+      <div style="height:4px;background:var(--bg4);border-radius:2px;"><div style="height:100%;width:${pct}%;background:var(--gold);border-radius:2px;"></div></div></div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function loadHomePortfolio(){
+  const el=document.getElementById('h-portfolio-widget');if(!el)return;
+  try{
+    const invCatsLocal=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
+    const allAccs=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{});
+    const invAccIds=allAccs.filter(a=>['securities','fund'].includes(invCatsLocal.find(c=>c.id===a.category_id)?.type)).map(a=>a.id);
+    if(!invAccIds.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚無投資帳戶</div>';return;}
+    const holdings=await sb(`/rest/v1/holdings?account_id=in.(${invAccIds.join(',')})`,{});
+    let totalVal=0,totalCost=0;
+    holdings.forEach(h=>{const qty=Number(h.quantity);const cur=Number(h.current_price)||Number(h.avg_cost);totalVal+=qty*cur;totalCost+=qty*Number(h.avg_cost);});
+    const pnl=totalVal-totalCost;const pct=totalCost>0?(pnl/totalCost*100).toFixed(1):0;
+    el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;">
+      <div><div style="font-size:18px;font-weight:700;color:var(--gold);">NT$${Math.round(totalVal).toLocaleString()}</div><div style="font-size:11px;color:var(--text3);">總市值・${holdings.filter(h=>Number(h.quantity)>0).length} 檔持股</div></div>
+      <div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}NT$${Math.round(pnl).toLocaleString()}</div><div style="font-size:11px;color:${pnl>=0?'var(--green)':'var(--red)'};">${pct>=0?'+':''}${pct}%</div></div>
+    </div>`;
+  }catch(e){}
+}
+
+async function loadHomeForex(){
+  const el=document.getElementById('h-forex-widget');if(!el)return;
+  try{
+    const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
+    const accs=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{});
+    const fxAccs=accs.filter(a=>cats.find(c=>c.id===a.category_id)?.type==='forex');
+    if(!fxAccs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚無外幣帳戶</div>';return;}
+    const currencies=[...new Set(fxAccs.map(a=>(a.currency||'USD').toUpperCase()))];
+    if(currencies.length&&!currencies.every(c=>fxRates[c]))await fetchFxRates(currencies);
+    el.innerHTML=fxAccs.map(a=>{const cur=(a.currency||'USD').toUpperCase();const rate=fxRates[cur]||0;
+      return`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+        <span style="color:var(--blue);font-weight:600;">${cur}</span>
+        <span>${Number(a.balance).toLocaleString()}</span>
+        <span style="color:var(--text3);">${rate?`≈ NT$${Math.round(Number(a.balance)*rate).toLocaleString()}`:''}</span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function loadHomeCreditCard(){
+  const el=document.getElementById('h-creditcard-widget');if(!el)return;
+  try{
+    const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
+    const accs=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{});
+    const creditAccs=accs.filter(a=>cats.find(c=>c.id===a.category_id)?.type==='credit');
+    if(!creditAccs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚無信用卡</div>';return;}
+    const today=new Date().getDate();
+    const items=creditAccs.map(a=>{
+      const items=[];
+      if(a.statement_day){const d=a.statement_day-today;if(d>=0&&d<=7)items.push({name:a.name,type:'帳單日',diff:d});}
+      if(a.payment_day){const d=a.payment_day-today;if(d>=0&&d<=7)items.push({name:a.name,type:'繳款日',diff:d});}
+      return items;
+    }).flat();
+    if(!items.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">近7天無帳單/繳款日</div>';return;}
+    el.innerHTML=items.map(i=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+      <span>${i.name} ${i.type}</span><span style="color:${i.diff<=2?'var(--red)':'var(--orange)'};">${i.diff===0?'今天':'還有'+i.diff+'天'}</span>
+    </div>`).join('');
+  }catch(e){}
+}
+
+async function loadHomeWeather(){
+  const el=document.getElementById('h-weather-content');if(!el)return;
+  try{
+    const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:5000}));
+    const r=await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&appid=${OWM_KEY}&units=metric&lang=zh_tw`);
+    const d=await r.json();
+    const temp=Math.round(d.main?.temp||0);const desc=d.weather?.[0]?.description||'';
+    const feels=Math.round(d.main?.feels_like||0);const humidity=d.main?.humidity||0;
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:12px;">
+      <div style="font-size:36px;font-weight:700;color:var(--gold);">${temp}°</div>
+      <div><div style="font-size:14px;font-weight:600;">${desc}</div><div style="font-size:12px;color:var(--text3);">體感 ${feels}°・濕度 ${humidity}%</div></div>
+    </div>`;
+  }catch(e){el.innerHTML='<div style="font-size:13px;color:var(--text3);">天氣資料取得失敗</div>';}
+}
+
+async function loadHomeBirthday(){
+  const el=document.getElementById('h-birthday-widget');if(!el)return;
+  try{
+    const contacts=await sb(`/rest/v1/contacts?user_id=eq.${prof.id}&birthday=not.is.null`,{});
+    const today=new Date();const mm=String(today.getMonth()+1).padStart(2,'0');const dd=String(today.getDate()).padStart(2,'0');
+    const upcoming=contacts.filter(c=>{
+      if(!c.birthday)return false;
+      const parts=c.birthday.split('-');if(parts.length<2)return false;
+      const bMm=parts[1],bDd=parts[2]||'01';
+      const bDate=new Date(today.getFullYear(),parseInt(bMm)-1,parseInt(bDd));
+      const diff=Math.round((bDate-today)/86400000);
+      return diff>=0&&diff<=30;
+    }).sort((a,b)=>{
+      const da=new Date(today.getFullYear(),parseInt(a.birthday.split('-')[1])-1,parseInt(a.birthday.split('-')[2]||1));
+      const db=new Date(today.getFullYear(),parseInt(b.birthday.split('-')[1])-1,parseInt(b.birthday.split('-')[2]||1));
+      return da-db;
+    }).slice(0,3);
+    if(!upcoming.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">30天內無生日</div>';return;}
+    el.innerHTML=upcoming.map(c=>{
+      const parts=c.birthday.split('-');
+      const bDate=new Date(today.getFullYear(),parseInt(parts[1])-1,parseInt(parts[2]||1));
+      const diff=Math.round((bDate-today)/86400000);
+      return`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+        <span>🎂 ${c.name}</span><span style="color:${diff<=3?'var(--red)':'var(--gold)'};">${diff===0?'今天！':'還有'+diff+'天'}</span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function loadHomeMedical(){
+  const el=document.getElementById('h-medical-widget');if(!el)return;
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const in30=new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+    const visits=await sb(`/rest/v1/medical_visits?user_id=eq.${prof.id}&next_date=gte.${today}&next_date=lte.${in30}&order=next_date.asc&limit=3`,{});
+    if(!visits.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">30天內無回診</div>';return;}
+    el.innerHTML=visits.map(v=>{const diff=Math.round((new Date(v.next_date)-new Date())/86400000);
+      return`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+        <span>🏥 ${v.hospital||v.doctor||'回診'}</span><span style="color:${diff<=7?'var(--orange)':'var(--text3)'};">${v.next_date}</span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function loadHomeVehicle(){
+  const el=document.getElementById('h-vehicle-widget');if(!el)return;
+  try{
+    const vehicles=await sb(`/rest/v1/vehicles?user_id=eq.${prof.id}&is_active=eq.true`,{});
+    if(!vehicles.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚無車輛</div>';return;}
+    const today=new Date().toISOString().slice(0,10);
+    const in30=new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+    const vIds=vehicles.map(v=>v.id);
+    const recs=vIds.length===1
+      ?await sb(`/rest/v1/vehicle_records?vehicle_id=eq.${vIds[0]}&next_date=gte.${today}&next_date=lte.${in30}&order=next_date.asc&limit=3`,{})
+      :await sb(`/rest/v1/vehicle_records?or=(${vIds.map(id=>`vehicle_id.eq.${id}`).join(',')})&next_date=gte.${today}&next_date=lte.${in30}&order=next_date.asc&limit=3`,{});
+    if(!recs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">30天內無保養/到期</div>';return;}
+    el.innerHTML=recs.map(r=>{const diff=Math.round((new Date(r.next_date)-new Date())/86400000);const v=vehicles.find(x=>x.id===r.vehicle_id);
+      return`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+        <span>🚗 ${v?.name||''} ${r.type}</span><span style="color:${diff<=7?'var(--orange)':'var(--text3)'};">${r.next_date}</span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function loadHomeDocs(){
+  const el=document.getElementById('h-docs-widget');if(!el)return;
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const in30=new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+    const docs=await sb(`/rest/v1/documents?user_id=eq.${prof.id}&expiry_date=gte.${today}&expiry_date=lte.${in30}&order=expiry_date.asc&limit=3`,{});
+    if(!docs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">30天內無文件到期</div>';return;}
+    el.innerHTML=docs.map(d=>{const diff=Math.round((new Date(d.expiry_date)-new Date())/86400000);
+      return`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+        <span>📄 ${d.title}</span><span style="color:${diff<=7?'var(--red)':'var(--orange)'};">${d.expiry_date}</span>
+      </div>`;
+    }).join('');
+  }catch(e){}
+}
+
+function loadHomeQuote(){
+  const el=document.getElementById('h-quote-widget');if(!el)return;
+  const quotes=[
+    '每一天都是新的開始。','計畫未來，活在當下。','小事成就大事。',
+    '紀律是自由的基礎。','儲蓄是給未來的禮物。','健康是最大的財富。',
+    '家人是最好的後盾。','習慣決定命運。','每一筆記錄都是進步。',
+    '時間是最公平的資源。','生活的品質在於選擇。','今日事今日畢。'
+  ];
+  const idx=new Date().getDate()%quotes.length;
+  el.innerHTML=`<div style="font-size:13px;color:var(--text3);">每日一句</div><div style="margin-top:8px;">"${quotes[idx]}"</div>`;
+}
+// ─── END 首頁小工具資料載入 ───────────────────────────────────
 let inOutType='in';
 
 function setInOutType(type){
