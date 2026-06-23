@@ -359,14 +359,61 @@ select.inp option{background:var(--bg2);}
           <button class="btn btn-ghost btn-sm" onclick="openTransfer()"><i class="ti ti-transfer" aria-hidden="true"></i> 轉帳</button>
         </div>
       </div>
-      <div class="card"><div id="account-list"></div></div>
-
-      <!-- 最近交易 -->
-      <div class="row-between" style="margin-bottom:10px;">
-        <div class="sec-label" style="margin:0">最近交易</div>
-        <button class="btn btn-ghost btn-sm" onclick="openAllTxns()">全部 →</button>
+      <!-- Tab: 帳戶 / 投資 -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button class="ftab on" id="fin-tab-acc" onclick="setFinTab('acc',this)">帳戶</button>
+        <button class="ftab" id="fin-tab-inv" onclick="setFinTab('inv',this)">投資組合</button>
       </div>
-      <div class="card"><div id="fin-txns"></div></div>
+
+      <!-- 帳戶 Tab -->
+      <div id="fin-acc-wrap">
+        <div class="card" style="margin-bottom:12px;"><div id="account-list"></div></div>
+        <!-- 交易入口 -->
+        <div class="card" style="cursor:pointer;padding:14px 16px;" onclick="openAllTxns()">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:36px;height:36px;border-radius:10px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;">
+                <i class="ti ti-list" style="color:var(--gold);font-size:18px;" aria-hidden="true"></i>
+              </div>
+              <div>
+                <div style="font-weight:600;font-size:15px;">所有交易明細</div>
+                <div style="font-size:13px;color:var(--text3);">查詢、篩選完整收支記錄</div>
+              </div>
+            </div>
+            <i class="ti ti-chevron-right" style="color:var(--text3);" aria-hidden="true"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- 投資組合 Tab -->
+      <div id="fin-inv-wrap" style="display:none;">
+        <div class="card card-gold" style="margin-bottom:12px;">
+          <div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">總市值（台幣）</div>
+          <div style="font-size:26px;font-weight:700;color:var(--gold);" id="port-total-val">—</div>
+          <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
+            <div><div style="font-size:11px;color:var(--text3);">未實現損益</div><div id="port-unrealized" style="font-size:15px;font-weight:700;">—</div></div>
+            <div><div style="font-size:11px;color:var(--text3);">已實現損益</div><div id="port-realized" style="font-size:15px;font-weight:700;">—</div></div>
+            <div><div style="font-size:11px;color:var(--text3);">報酬率</div><div id="port-return-pct" style="font-size:15px;font-weight:700;">—</div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="sec-label">資產配置</div>
+          <canvas id="port-pie" height="160"></canvas>
+          <div id="port-alloc-list" style="margin-top:10px;"></div>
+        </div>
+        <div class="card">
+          <div class="sec-label">持倉列表</div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+            <button class="ftab on" onclick="setPortTab('all',this)">全部</button>
+            <button class="ftab" onclick="setPortTab('tw_stock',this)">台股</button>
+            <button class="ftab" onclick="setPortTab('us_stock',this)">美股</button>
+            <button class="ftab" onclick="setPortTab('bond',this)">債券</button>
+            <button class="ftab" onclick="setPortTab('futures',this)">期貨</button>
+            <button class="ftab" onclick="setPortTab('fund',this)">基金</button>
+          </div>
+          <div id="port-holdings-list"></div>
+        </div>
+      </div>
     </div>
 
     <!-- CALENDAR -->
@@ -987,14 +1034,26 @@ select.inp option{background:var(--bg2);}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <h3 id="sh-holding-title">新增持股</h3>
-    <div class="field"><label>代號</label><input class="inp" type="text" id="h-symbol" placeholder="例如：2330"></div>
-    <div class="field"><label>名稱</label><input class="inp" type="text" id="h-name" placeholder="例如：台積電"></div>
-    <div class="field"><label>類型</label><select class="inp" id="h-type">
-      <option value="tw_stock">台股</option>
-      <option value="us_stock">美股</option>
-      <option value="fund">基金</option>
-      <option value="forex">外幣</option>
+    <div class="field"><label>代號</label><input class="inp" type="text" id="h-symbol" placeholder="例如：2330、AAPL、00878"></div>
+    <div class="field"><label>名稱</label><input class="inp" type="text" id="h-name" placeholder="例如：台積電、Apple"></div>
+    <div class="field"><label>資產類型</label><select class="inp" id="h-type" onchange="onHoldingTypeChange()">
+      <option value="tw_stock">🇹🇼 台股</option>
+      <option value="us_stock">🇺🇸 美股</option>
+      <option value="bond">📄 債券</option>
+      <option value="futures">📈 期貨</option>
+      <option value="fund">💼 基金/ETF</option>
+      <option value="crypto">🪙 加密貨幣</option>
+      <option value="other">📦 其他</option>
     </select></div>
+    <div class="field" id="h-currency-field" style="display:none;"><label>計價幣別</label>
+      <select class="inp" id="h-currency">
+        <option value="USD">USD 美元</option>
+        <option value="JPY">JPY 日圓</option>
+        <option value="EUR">EUR 歐元</option>
+        <option value="HKD">HKD 港幣</option>
+      </select>
+    </div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="h-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-holding')">取消</button>
       <button class="btn btn-gold" onclick="saveHolding()">新增</button>
@@ -1965,6 +2024,7 @@ function goPage(p){
   if(p==='vehicle')loadVehicles();
   if(p==='vehicle-det')loadVehicleDetail();
   if(p==='search')initSearch();
+  if(p==='portfolio')loadPortfolio();
 }
 function showDet(id){
   // 管理員限定功能
@@ -2270,6 +2330,14 @@ function buildAccOptgroup(accounts, cats){
   return html;
 }
 
+function setFinTab(tab,btn){
+  document.querySelectorAll('#pg-finance .ftab[id^="fin-tab"]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('fin-acc-wrap').style.display=tab==='acc'?'':'none';
+  document.getElementById('fin-inv-wrap').style.display=tab==='inv'?'':'none';
+  if(tab==='inv')loadPortfolio();
+}
+
 function renderAccounts(accounts,cats){
   const el=document.getElementById('account-list');
   const visible=accounts.filter(a=>!a.is_hidden);
@@ -2375,6 +2443,7 @@ function toggleHiddenAccounts(){
 
 function renderFinTxns(txns,accounts){
   const el=document.getElementById('fin-txns');
+  if(!el)return;
   if(!txns.length){el.innerHTML='<div class="empty"><p>尚無交易記錄</p></div>';return;}
   window._finTxns=txns;window._finAccounts=accounts;
   el.innerHTML=txns.map((t,i)=>{
@@ -3063,11 +3132,31 @@ function renderRegTxns(txns,txEl){
 function showAddHolding(){
   document.getElementById('h-symbol').value='';
   document.getElementById('h-name').value='';
+  document.getElementById('h-type').value='tw_stock';
+  document.getElementById('h-note').value='';
+  document.getElementById('h-currency-field').style.display='none';
+  document.getElementById('sh-holding-title').textContent='新增持股';
   openSheet('sh-holding');
 }
 
+function onHoldingTypeChange(){
+  const t=document.getElementById('h-type').value;
+  const needCurrency=['us_stock','bond','futures','crypto','other'];
+  document.getElementById('h-currency-field').style.display=needCurrency.includes(t)?'':'none';
+}
+
 async function saveHolding(){
-  const body={user_id:prof.id,account_id:currentHoldingAccId,symbol:document.getElementById('h-symbol').value.trim(),name:document.getElementById('h-name').value.trim(),type:document.getElementById('h-type').value,quantity:0,avg_cost:0,current_price:0};
+  const type=document.getElementById('h-type').value;
+  const needCurrency=['us_stock','bond','futures','crypto','other'];
+  const currency=needCurrency.includes(type)?document.getElementById('h-currency').value:'TWD';
+  const body={
+    user_id:prof.id,account_id:currentHoldingAccId,
+    symbol:document.getElementById('h-symbol').value.trim().toUpperCase(),
+    name:document.getElementById('h-name').value.trim(),
+    type,asset_type:type,currency,
+    note:document.getElementById('h-note').value.trim()||null,
+    quantity:0,avg_cost:0,current_price:0
+  };
   if(!body.symbol||!body.name){toast('請填寫代號和名稱','err');return;}
   try{await sb('/rest/v1/holdings',{method:'POST',body:JSON.stringify(body)});closeSheet('sh-holding');toast('已新增');openAccDetail(currentHoldingAccId);}
   catch(e){toast('儲存失敗','err');}
@@ -4131,7 +4220,104 @@ async function doSearch(){
 }
 // ─── END GLOBAL SEARCH ────────────────────────────────────────
 
-// ─── SAVINGS GOALS（儲蓄目標） ────────────────────────────────
+// ─── PORTFOLIO（投資組合總覽） ────────────────────────────────
+let portTab='all';
+let portPieChart=null;
+let _portHoldings=[];
+
+const assetTypeLabel={tw_stock:'台股',us_stock:'美股',bond:'債券',futures:'期貨',fund:'基金/ETF',crypto:'加密',other:'其他'};
+const assetTypeColor={tw_stock:'#E87070',us_stock:'#6B9EF0',bond:'#5DBD8A',futures:'#E8894A',fund:'#D4AA6A',crypto:'#9C6BFF',other:'#888'};
+
+async function loadPortfolio(){
+  try{
+    const invCatsLocal=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
+    const invTypes=['securities','fund'];
+    const allAccs=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{});
+    const invAccIds=allAccs.filter(a=>invTypes.includes(invCatsLocal.find(c=>c.id===a.category_id)?.type)).map(a=>a.id);
+    if(!invAccIds.length){
+      document.getElementById('port-total-val').textContent='NT$ 0';
+      document.getElementById('port-holdings-list').innerHTML='<div class="empty"><p>尚無投資帳戶</p></div>';
+      return;
+    }
+    const holdings=await sb(`/rest/v1/holdings?account_id=in.(${invAccIds.join(',')})&order=created_at.asc`,{});
+    _portHoldings=holdings;
+
+    // 更新台股報價
+    for(const h of holdings.filter(h=>(h.asset_type||h.type)==='tw_stock'&&h.symbol)){
+      try{const p=await fetchTwStockPrice(h.symbol);if(p&&p>0){await sb(`/rest/v1/holdings?id=eq.${h.id}`,{method:'PATCH',body:JSON.stringify({current_price:p})});h.current_price=p;}}catch(e){}
+    }
+
+    // 已實現損益
+    const holdingIds=holdings.map(h=>h.id);
+    let realizedTotal=0;
+    if(holdingIds.length){
+      try{const sells=await sb(`/rest/v1/investment_txns?holding_id=in.(${holdingIds.join(',')})&type=eq.sell`,{});sells.forEach(t=>{realizedTotal+=Number(t.realized_pnl||0);});}catch(e){}
+    }
+
+    // 計算總覽
+    let totalVal=0,totalCost=0;
+    holdings.forEach(h=>{
+      const qty=Number(h.quantity);const cur=Number(h.current_price)||Number(h.avg_cost);
+      const currency=(h.currency||'TWD').toUpperCase();const rate=currency==='TWD'?1:(fxRates[currency]||1);
+      totalVal+=qty*cur*rate;totalCost+=qty*Number(h.avg_cost)*rate;
+    });
+    const unrealized=totalVal-totalCost;
+    const returnPct=totalCost>0?(unrealized/totalCost*100).toFixed(1):0;
+
+    document.getElementById('port-total-val').textContent=`NT$ ${Math.round(totalVal).toLocaleString()}`;
+    const unEl=document.getElementById('port-unrealized');unEl.textContent=`${unrealized>=0?'+':''}NT$${Math.round(unrealized).toLocaleString()}`;unEl.style.color=unrealized>=0?'var(--green)':'var(--red)';
+    const rlEl=document.getElementById('port-realized');rlEl.textContent=`${realizedTotal>=0?'+':''}NT$${Math.round(realizedTotal).toLocaleString()}`;rlEl.style.color=realizedTotal>=0?'var(--green)':'var(--red)';
+    const rpEl=document.getElementById('port-return-pct');rpEl.textContent=`${returnPct>=0?'+':''}${returnPct}%`;rpEl.style.color=returnPct>=0?'var(--green)':'var(--red)';
+
+    // 配置圓餅
+    const typeMap={};
+    holdings.forEach(h=>{const t=h.asset_type||h.type||'other';const qty=Number(h.quantity);const cur=Number(h.current_price)||Number(h.avg_cost);const currency=(h.currency||'TWD').toUpperCase();const rate=currency==='TWD'?1:(fxRates[currency]||1);typeMap[t]=(typeMap[t]||0)+qty*cur*rate;});
+    const typeKeys=Object.keys(typeMap).filter(k=>typeMap[k]>0);
+    const pieCtx=document.getElementById('port-pie').getContext('2d');
+    if(portPieChart)portPieChart.destroy();
+    portPieChart=new Chart(pieCtx,{type:'doughnut',data:{labels:typeKeys.map(k=>assetTypeLabel[k]||k),datasets:[{data:typeKeys.map(k=>Math.round(typeMap[k])),backgroundColor:typeKeys.map(k=>assetTypeColor[k]||'#888'),borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#aaa',font:{size:12},padding:10}}}}});
+    document.getElementById('port-alloc-list').innerHTML=typeKeys.map(k=>{const pct=totalVal>0?(typeMap[k]/totalVal*100).toFixed(1):0;return`<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:13px;"><div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:${assetTypeColor[k]||'#888'};"></div>${assetTypeLabel[k]||k}</div><div style="color:var(--text3);">${pct}%　NT$${Math.round(typeMap[k]).toLocaleString()}</div></div>`;}).join('');
+
+    renderPortHoldings(portTab);
+  }catch(e){console.error('loadPortfolio:',e);}
+}
+
+function setPortTab(tab,btn){
+  portTab=tab;
+  document.querySelectorAll('#fin-inv-wrap .ftab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderPortHoldings(tab);
+}
+
+function renderPortHoldings(tab){
+  const el=document.getElementById('port-holdings-list');
+  const list=tab==='all'?_portHoldings:_portHoldings.filter(h=>(h.asset_type||h.type)===tab);
+  if(!list.length){el.innerHTML='<div class="empty"><p>此類別無持倉</p></div>';return;}
+  el.innerHTML=list.filter(h=>Number(h.quantity)>0).map(h=>{
+    const qty=Number(h.quantity);const cur=Number(h.current_price)||Number(h.avg_cost);
+    const cost=qty*Number(h.avg_cost);const val=qty*cur;const pnl=val-cost;
+    const pct=cost>0?(pnl/cost*100).toFixed(1):0;
+    const t=h.asset_type||h.type||'other';const currency=(h.currency||'TWD').toUpperCase();
+    return`<div style="padding:12px 0;border-bottom:0.5px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:15px;font-weight:700;">${h.symbol}</span>
+            <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${assetTypeColor[t]||'#888'}22;color:${assetTypeColor[t]||'#888'};">${assetTypeLabel[t]||t}</span>
+          </div>
+          <div style="font-size:13px;color:var(--text3);margin-top:2px;">${h.name}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">${qty.toLocaleString()} 股 · 均價 ${Number(h.avg_cost).toLocaleString()} ${currency}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:15px;font-weight:700;color:var(--gold);">NT$${Math.round(val).toLocaleString()}</div>
+          ${Number(h.current_price)>0?`<div style="font-size:13px;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}NT$${Math.round(pnl).toLocaleString()} (${pct}%)</div>`:''}
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">現價 ${Number(h.current_price)>0?Number(h.current_price).toLocaleString():'—'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+// ─── END PORTFOLIO ─────────────────────────────────────────────
 async function loadGoals(){
   const el=document.getElementById('goals-list');
   el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
