@@ -650,6 +650,41 @@ select.inp option{background:var(--bg2);}
       </div>
     </div>
 
+    <!-- VEHICLE -->
+    <div class="page" id="pg-vehicle">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">車輛管理</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddVehicle()"><i class="ti ti-plus" aria-hidden="true"></i> 新增車輛</button>
+      </div>
+      <div id="vehicle-list"></div>
+    </div>
+
+    <!-- VEHICLE DETAIL -->
+    <div class="page" id="pg-vehicle-det">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('vehicle')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 車輛列表</div>
+      <div class="row-between" style="margin-bottom:4px;">
+        <div class="pg-title" style="margin:0" id="vdet-title">車輛名稱</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" id="vdet-edit-btn">編輯</button>
+          <button class="btn btn-gold btn-sm" onclick="openAddRecord()"><i class="ti ti-plus" aria-hidden="true"></i> 新增記錄</button>
+        </div>
+      </div>
+      <div id="vdet-info" style="margin-bottom:16px;"></div>
+      <!-- 提醒卡 -->
+      <div id="vdet-alerts" style="margin-bottom:12px;"></div>
+      <!-- Tab -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="ftab on" onclick="setVehicleTab('all',this)">全部</button>
+        <button class="ftab" onclick="setVehicleTab('maintenance',this)">保養</button>
+        <button class="ftab" onclick="setVehicleTab('insurance',this)">保險</button>
+        <button class="ftab" onclick="setVehicleTab('inspection',this)">檢驗</button>
+        <button class="ftab" onclick="setVehicleTab('repair',this)">維修</button>
+        <button class="ftab" onclick="setVehicleTab('fuel',this)">加油</button>
+      </div>
+      <div class="card"><div id="vdet-records"></div></div>
+    </div>
+
     <!-- MORE -->
     <div class="page" id="pg-more">
       <div class="pg-title">更多</div>
@@ -1192,6 +1227,62 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Vehicle -->
+<div class="overlay" id="sh-vehicle">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-vehicle-title">新增車輛</h3>
+    <input type="hidden" id="vehicle-id">
+    <div class="field"><label>車輛名稱</label><input class="inp" type="text" id="vehicle-name" placeholder="例如：我的愛車、公司車"></div>
+    <div class="field"><label>車牌號碼</label><input class="inp" type="text" id="vehicle-plate" placeholder="例如：ABC-1234"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div class="field" style="flex:1;"><label>廠牌</label><input class="inp" type="text" id="vehicle-brand" placeholder="例如：Toyota"></div>
+      <div class="field" style="flex:1;"><label>型號</label><input class="inp" type="text" id="vehicle-model" placeholder="例如：Corolla"></div>
+    </div>
+    <div class="field"><label>出廠年份</label><input class="inp" type="number" id="vehicle-year" placeholder="例如：2020" min="1990" max="2030"></div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="vehicle-note" placeholder="選填"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-vehicle')">取消</button>
+      <button class="btn btn-gold" onclick="saveVehicle()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vehicle Record -->
+<div class="overlay" id="sh-vehicle-rec">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-vehicle-rec-title">新增記錄</h3>
+    <input type="hidden" id="vrec-id">
+    <div class="field"><label>類型</label>
+      <select class="inp" id="vrec-type" onchange="onVrecTypeChange()">
+        <option value="maintenance">🔧 定期保養</option>
+        <option value="insurance">🛡️ 保險</option>
+        <option value="inspection">📋 定期檢驗</option>
+        <option value="repair">🔨 維修</option>
+        <option value="fuel">⛽ 加油</option>
+        <option value="other">📝 其他</option>
+      </select>
+    </div>
+    <div class="field"><label>日期</label><input class="inp" type="date" id="vrec-date"></div>
+    <div class="field"><label>當前里程 (km)</label><input class="inp" type="number" id="vrec-mileage" placeholder="選填"></div>
+    <div class="field"><label>費用 (NT$)</label><input class="inp" type="number" id="vrec-cost" placeholder="選填"></div>
+    <div class="field"><label>下次提醒日期</label><input class="inp" type="date" id="vrec-next-date"></div>
+    <div class="field"><label>下次提醒里程 (km)</label><input class="inp" type="number" id="vrec-next-mileage" placeholder="選填"></div>
+    <div class="field" id="vrec-doc-field" style="display:none;">
+      <label>連結保單文件</label>
+      <select class="inp" id="vrec-doc">
+        <option value="">不連結</option>
+      </select>
+    </div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="vrec-note" placeholder="選填"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-vehicle-rec')">取消</button>
+      <button class="btn btn-gold" onclick="saveRecord()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Medical - Medication -->
 <div class="overlay" id="sh-med-med">
   <div class="sheet">
@@ -1720,6 +1811,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">醫療記錄</div><div class="mi-sub">用藥管理、回診提醒、身體數據</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="goPage('vehicle')">
+        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-car" style="color:var(--blue)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">車輛管理</div><div class="mi-sub">保養記錄、保險到期、定期檢查提醒</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="goPage('ai')">
         <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
@@ -1827,6 +1923,8 @@ function goPage(p){
   if(p==='contacts')loadContacts();
   if(p==='fxlog')loadFxLog();
   if(p==='medical')initMedical();
+  if(p==='vehicle')loadVehicles();
+  if(p==='vehicle-det')loadVehicleDetail();
 }
 function showDet(id){
   // 管理員限定功能
@@ -3575,6 +3673,24 @@ async function getAllAlerts(){
       });
     }catch(e){}
 
+    // 8. 車輛到期提醒
+    try{
+      const vehicles=await sb(`/rest/v1/vehicles?user_id=eq.${prof.id}`,{});
+      if(vehicles.length){
+        const vIds=vehicles.map(v=>`vehicle_id=eq.${v.id}`).join(',');
+        const recs=await sb(`/rest/v1/vehicle_records?or=(${vIds})&next_date=not.is.null`,{});
+        const vMap=Object.fromEntries(vehicles.map(v=>[v.id,v.name]));
+        recs.forEach(r=>{
+          if(!r.next_date)return;
+          const diff=Math.ceil((new Date(r.next_date)-today)/(1000*60*60*24));
+          const t=vehicleTypeMap?.[r.type]||{label:r.type,icon:'🚗'};
+          const vName=vMap[r.vehicle_id]||'車輛';
+          if(diff<0)alerts.push({level:'red',icon:'ti-car',title:`${vName} ${t.label}已過期`,sub:`過期 ${Math.abs(diff)} 天（${r.next_date}）`,page:'vehicle'});
+          else if(diff<=30)alerts.push({level:diff<=7?'orange':'gold',icon:'ti-car',title:`${vName} ${t.label}提醒`,sub:`${diff===0?'今天':diff+' 天後'}（${r.next_date}）`,page:'vehicle'});
+        });
+      }
+    }catch(e){}
+
   }catch(e){console.error('getAllAlerts',e);}
 
   // 排序：red > orange > gold
@@ -4444,6 +4560,229 @@ async function delBody(id){
   if(!confirm('確定刪除此記錄？'))return;
   try{await sb(`/rest/v1/medical_body?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadBody();}catch(e){toast('刪除失敗','err');}
 }
+// ─── VEHICLE（車輛管理） ───────────────────────────────────────
+let currentVehicleId=null;
+let currentVehicleTab='all';
+
+const vehicleTypeMap={
+  maintenance:{label:'定期保養',icon:'🔧'},
+  insurance:{label:'保險',icon:'🛡️'},
+  inspection:{label:'定期檢驗',icon:'📋'},
+  repair:{label:'維修',icon:'🔨'},
+  fuel:{label:'加油',icon:'⛽'},
+  other:{label:'其他',icon:'📝'},
+};
+
+async function loadVehicles(){
+  const el=document.getElementById('vehicle-list');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
+  try{
+    const vehicles=await sb(`/rest/v1/vehicles?user_id=eq.${prof.id}&order=created_at.asc`,{});
+    if(!vehicles.length){
+      el.innerHTML='<div class="empty"><i class="ti ti-car" aria-hidden="true"></i><p>尚無車輛，點右上角新增</p></div>';
+      return;
+    }
+    // 撈最近一筆記錄
+    const recs=await sb(`/rest/v1/vehicle_records?user_id=eq.${prof.id}&order=date.desc`,{});
+    const today=new Date().toISOString().slice(0,10);
+    el.innerHTML=vehicles.map(v=>{
+      const vRecs=recs.filter(r=>r.vehicle_id===v.id);
+      // 找最近的提醒
+      const upcoming=vRecs.filter(r=>r.next_date&&r.next_date>=today).sort((a,b)=>a.next_date.localeCompare(b.next_date))[0];
+      const overdue=vRecs.filter(r=>r.next_date&&r.next_date<today).sort((a,b)=>b.next_date.localeCompare(a.next_date))[0];
+      const alertEl=overdue
+        ?`<div style="font-size:11px;color:var(--red);">⚠️ ${vehicleTypeMap[overdue.type]?.label||overdue.type} 已過期（${overdue.next_date}）</div>`
+        :upcoming
+        ?`<div style="font-size:11px;color:var(--orange);">🔔 ${vehicleTypeMap[upcoming.type]?.label||upcoming.type} 提醒（${upcoming.next_date}）</div>`
+        :'';
+      return`<div class="card" style="cursor:pointer;margin-bottom:10px;" onclick="openVehicleDet('${v.id}')">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:rgba(107,158,240,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="ti ti-car" style="font-size:22px;color:var(--blue);" aria-hidden="true"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:15px;">${v.name}</div>
+            <div style="font-size:12px;color:var(--text3);">${[v.plate,v.brand&&v.model?`${v.brand} ${v.model}`:'',v.year?`${v.year}年`:''].filter(Boolean).join(' · ')}</div>
+            ${alertEl}
+          </div>
+          <i class="ti ti-chevron-right" style="color:var(--text3);" aria-hidden="true"></i>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+
+function openVehicleDet(id){
+  currentVehicleId=id;
+  currentVehicleTab='all';
+  goPage('vehicle-det');
+}
+
+async function loadVehicleDetail(){
+  if(!currentVehicleId)return;
+  try{
+    const [vehicles,recs]=await Promise.all([
+      sb(`/rest/v1/vehicles?id=eq.${currentVehicleId}`,{}),
+      sb(`/rest/v1/vehicle_records?vehicle_id=eq.${currentVehicleId}&order=date.desc`,{})
+    ]);
+    if(!vehicles.length)return;
+    const v=vehicles[0];
+    document.getElementById('vdet-title').textContent=v.name;
+    document.getElementById('vdet-edit-btn').onclick=()=>openEditVehicle(v);
+    document.getElementById('vdet-info').innerHTML=`
+      <div style="font-size:13px;color:var(--text3);">${[v.plate,v.brand&&v.model?`${v.brand} ${v.model}`:'',v.year?`${v.year}年`:'',v.note?v.note:''].filter(Boolean).join(' · ')}</div>`;
+    // 提醒
+    const today=new Date().toISOString().slice(0,10);
+    const alerts=recs.filter(r=>r.next_date);
+    const alertHtml=alerts.map(r=>{
+      const diff=Math.ceil((new Date(r.next_date)-new Date())/(1000*60*60*24));
+      const over=diff<0;const soon=diff<=30&&!over;
+      if(!over&&!soon)return'';
+      const t=vehicleTypeMap[r.type]||{label:r.type,icon:'📝'};
+      return`<div class="card" style="background:${over?'rgba(232,112,112,0.1)':'rgba(232,137,74,0.1)'};border-color:${over?'var(--red)':'var(--orange)'};margin-bottom:8px;padding:10px 14px;">
+        <div style="font-size:13px;font-weight:600;color:${over?'var(--red)':'var(--orange)'};">${t.icon} ${t.label}${over?` 已過期 ${Math.abs(diff)} 天`:`還有 ${diff} 天`}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">提醒日：${r.next_date}${r.next_mileage?` · ${r.next_mileage.toLocaleString()} km`:''}</div>
+      </div>`;
+    }).filter(Boolean).join('');
+    document.getElementById('vdet-alerts').innerHTML=alertHtml;
+    renderVehicleRecords(recs,currentVehicleTab);
+  }catch(e){console.error(e);}
+}
+
+function setVehicleTab(tab,btn){
+  currentVehicleTab=tab;
+  document.querySelectorAll('#pg-vehicle-det .ftab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  // 重新渲染
+  sb(`/rest/v1/vehicle_records?vehicle_id=eq.${currentVehicleId}&order=date.desc`,{}).then(recs=>renderVehicleRecords(recs,tab));
+}
+
+function renderVehicleRecords(recs,tab){
+  const el=document.getElementById('vdet-records');
+  const filtered=tab==='all'?recs:recs.filter(r=>r.type===tab);
+  if(!filtered.length){el.innerHTML='<div class="empty"><p>尚無記錄</p></div>';return;}
+  el.innerHTML=filtered.map(r=>{
+    const t=vehicleTypeMap[r.type]||{label:r.type,icon:'📝'};
+    return`<div class="list-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:12px 0;">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+        <div style="font-weight:600;font-size:14px;">${t.icon} ${t.label}</div>
+        <div style="font-size:12px;color:var(--text3);">${r.date||''}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);">${[r.mileage?`里程 ${r.mileage.toLocaleString()} km`:'',r.cost?`費用 NT$${Number(r.cost).toLocaleString()}`:''].filter(Boolean).join(' · ')}</div>
+      ${r.next_date||r.next_mileage?`<div style="font-size:12px;color:var(--gold);">下次：${[r.next_date||'',r.next_mileage?`${r.next_mileage.toLocaleString()} km`:''].filter(Boolean).join(' / ')}</div>`:''}
+      ${r.note?`<div style="font-size:12px;color:var(--text3);">${r.note}</div>`:''}
+      <div style="display:flex;gap:6px;justify-content:flex-end;width:100%;flex-wrap:wrap;">
+        ${r.type==='insurance'&&r.document_id?`<button class="btn btn-ghost btn-sm" style="color:var(--gold)" onclick="viewLinkedDoc('${r.document_id}')"><i class="ti ti-file-text" aria-hidden="true"></i> 查看保單</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="openEditRecord(${JSON.stringify(r).replace(/"/g,'&quot;')})">編輯</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="delRecord('${r.id}')">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddVehicle(){
+  document.getElementById('sh-vehicle-title').textContent='新增車輛';
+  ['vehicle-id','vehicle-name','vehicle-plate','vehicle-brand','vehicle-model','vehicle-year','vehicle-note'].forEach(id=>document.getElementById(id).value='');
+  openSheet('sh-vehicle');
+}
+
+function openEditVehicle(v){
+  document.getElementById('sh-vehicle-title').textContent='編輯車輛';
+  document.getElementById('vehicle-id').value=v.id;
+  document.getElementById('vehicle-name').value=v.name||'';
+  document.getElementById('vehicle-plate').value=v.plate||'';
+  document.getElementById('vehicle-brand').value=v.brand||'';
+  document.getElementById('vehicle-model').value=v.model||'';
+  document.getElementById('vehicle-year').value=v.year||'';
+  document.getElementById('vehicle-note').value=v.note||'';
+  openSheet('sh-vehicle');
+}
+
+async function saveVehicle(){
+  const id=document.getElementById('vehicle-id').value;
+  const name=document.getElementById('vehicle-name').value.trim();
+  if(!name){toast('請填寫車輛名稱','err');return;}
+  const body={user_id:prof.id,name,plate:document.getElementById('vehicle-plate').value.trim()||null,brand:document.getElementById('vehicle-brand').value.trim()||null,model:document.getElementById('vehicle-model').value.trim()||null,year:parseInt(document.getElementById('vehicle-year').value)||null,note:document.getElementById('vehicle-note').value.trim()||null};
+  try{
+    if(id)await sb(`/rest/v1/vehicles?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    else await sb('/rest/v1/vehicles',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-vehicle');toast('已儲存');
+    if(currentVehicleId)loadVehicleDetail();else loadVehicles();
+  }catch(e){toast('儲存失敗','err');}
+}
+
+async function onVrecTypeChange(){
+  const type=document.getElementById('vrec-type').value;
+  const docField=document.getElementById('vrec-doc-field');
+  if(type==='insurance'){
+    docField.style.display='';
+    // 撈文件中心的保險類文件
+    try{
+      const docs=await sb(`/rest/v1/documents?user_id=eq.${prof.id}&category=eq.保險&order=created_at.desc`,{});
+      const sel=document.getElementById('vrec-doc');
+      sel.innerHTML='<option value="">不連結</option>'+docs.map(d=>`<option value="${d.id}">${d.title}${d.expiry_date?` (到期:${d.expiry_date})`:''}</option>`).join('');
+    }catch(e){}
+  } else {
+    docField.style.display='none';
+    document.getElementById('vrec-doc').value='';
+  }
+}
+
+function openAddRecord(){
+  document.getElementById('sh-vehicle-rec-title').textContent='新增記錄';
+  ['vrec-id','vrec-mileage','vrec-cost','vrec-next-date','vrec-next-mileage','vrec-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('vrec-type').value='maintenance';
+  document.getElementById('vrec-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('vrec-doc-field').style.display='none';
+  document.getElementById('vrec-doc').value='';
+  openSheet('sh-vehicle-rec');
+}
+
+function openEditRecord(r){
+  document.getElementById('sh-vehicle-rec-title').textContent='編輯記錄';
+  document.getElementById('vrec-id').value=r.id;
+  document.getElementById('vrec-type').value=r.type||'maintenance';
+  document.getElementById('vrec-date').value=r.date||'';
+  document.getElementById('vrec-mileage').value=r.mileage||'';
+  document.getElementById('vrec-cost').value=r.cost||'';
+  document.getElementById('vrec-next-date').value=r.next_date||'';
+  document.getElementById('vrec-next-mileage').value=r.next_mileage||'';
+  document.getElementById('vrec-note').value=r.note||'';
+  document.getElementById('vrec-doc').value=r.document_id||'';
+  if(r.type==='insurance'){
+    onVrecTypeChange().then(()=>{document.getElementById('vrec-doc').value=r.document_id||'';});
+  } else {
+    document.getElementById('vrec-doc-field').style.display='none';
+  }
+  openSheet('sh-vehicle-rec');
+}
+
+async function saveRecord(){
+  const id=document.getElementById('vrec-id').value;
+  const docId=document.getElementById('vrec-doc').value||null;
+  const body={user_id:prof.id,vehicle_id:currentVehicleId,type:document.getElementById('vrec-type').value,date:document.getElementById('vrec-date').value||null,mileage:parseInt(document.getElementById('vrec-mileage').value)||null,cost:parseFloat(document.getElementById('vrec-cost').value)||null,next_date:document.getElementById('vrec-next-date').value||null,next_mileage:parseInt(document.getElementById('vrec-next-mileage').value)||null,note:document.getElementById('vrec-note').value.trim()||null,document_id:docId};
+  try{
+    if(id)await sb(`/rest/v1/vehicle_records?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    else await sb('/rest/v1/vehicle_records',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-vehicle-rec');toast('已儲存');loadVehicleDetail();
+  }catch(e){toast('儲存失敗','err');}
+}
+
+async function delRecord(id){
+  if(!confirm('確定刪除此記錄？'))return;
+  try{await sb(`/rest/v1/vehicle_records?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadVehicleDetail();}catch(e){toast('刪除失敗','err');}
+}
+
+async function viewLinkedDoc(docId){
+  try{
+    const docs=await sb(`/rest/v1/documents?id=eq.${docId}`,{});
+    if(!docs.length){toast('找不到文件','err');return;}
+    goPage('report');
+    setTimeout(()=>viewDoc(docs[0]),300);
+  }catch(e){toast('載入失敗','err');}
+}
+// ─── END VEHICLE ───────────────────────────────────────────────
+
 // ─── END MEDICAL ───────────────────────────────────────────────
 
 
