@@ -11,7 +11,8 @@
 <meta name="apple-mobile-web-app-title" content="Life OS">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon-512.png">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231c1c1e'/><text y='.9em' font-size='80' x='10'>🏠</text></svg>">
+<link rel="icon" type="image/png" href="/icon-512.png">
+<link rel="shortcut icon" href="/icon-512.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -27,10 +28,10 @@
 }
 body.light-mode{
   --bg:#f2f2f7;--bg2:#ffffff;--bg3:#ffffff;--bg4:#e5e5ea;
-  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.12);
+  --border:rgba(0,0,0,0.15);--border2:rgba(0,0,0,0.22);
   --gold:#B8892A;--gold2:#c99a3a;--gold-dim:rgba(184,137,42,0.1);
-  --gold-border:rgba(184,137,42,0.25);
-  --text:#1c1c1e;--text2:#555;--text3:#999;--text4:#ccc;
+  --gold-border:rgba(184,137,42,0.35);
+  --text:#1c1c1e;--text2:#555;--text3:#888;--text4:#bbb;
   --green:#34A36A;--red:#D94F4F;--orange:#D4722A;--blue:#4A7ED4;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;transition:background-color .2s,color .2s,border-color .2s;}
@@ -70,6 +71,11 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 .card{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;}
 .card-gold{background:var(--gold-dim);border-color:var(--gold-border);}
 body.light-mode .card-gold{background:rgba(184,137,42,0.08);}
+body.light-mode .card{box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+body.light-mode .inp{background:#f8f8f8;}
+body.light-mode .btn-ghost{background:#ebebf0;}
+body.light-mode .sheet{box-shadow:0 -4px 20px rgba(0,0,0,0.12);}
+body.light-mode .bnav{box-shadow:0 -1px 0 rgba(0,0,0,0.15);}
 .pg-title{font-size:23px;font-weight:700;margin-bottom:18px;}
 .sec-label{font-size:14px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
 .home-tab{font-size:14px;font-weight:600;color:var(--text3);cursor:pointer;padding-bottom:2px;border-bottom:2px solid transparent;transition:all .15s;}
