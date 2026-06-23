@@ -7403,7 +7403,6 @@ async function sendChat(){
   const msg=ta.value.trim();if(!msg)return;
   ta.value='';ta.style.height='auto';
   appendMsg(msg,'user');chatHistory.push({role:'user',parts:[{text:msg}]});
-  if(!GEMINI_KEY){appendMsg('AI 秘書尚未啟用。','ai');return;}
   const btn=document.getElementById('chat-send');btn.disabled=true;
   const tid='t'+Date.now();appendTyping(tid);
   // 即時讀取 Key
