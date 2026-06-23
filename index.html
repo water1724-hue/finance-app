@@ -280,22 +280,13 @@ select.inp option{background:var(--bg2);}
         <i class="ti ti-plus" style="font-size:20px;color:var(--gold);" aria-hidden="true"></i>
       </div>
 
-      <!-- 今日摘要 -->
+      <!-- 今日重點 -->
       <div class="card">
         <div class="row-between" style="margin-bottom:12px;">
-          <div class="sec-label" style="margin:0">今日摘要</div>
-          <div id="home-date" style="font-size:11px;color:var(--text3);"></div>
+          <div class="sec-label" style="margin:0">今日重點</div>
+          <div id="home-date" style="font-size:13px;color:var(--text3);"></div>
         </div>
-        <div class="stat-grid">
-          <div class="stat-card">
-            <div class="stat-val" id="h-todo-count">—</div>
-            <div class="stat-lbl">未完成待辦</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-val" id="h-event-count">—</div>
-            <div class="stat-lbl">今日行程</div>
-          </div>
-        </div>
+        <div id="h-highlights"></div>
       </div>
 
       <!-- 今日行程 -->
@@ -2000,8 +1991,63 @@ async function loadHome(){
       sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{}),
       sb('/rest/v1/memos?order=created_at.desc&limit=3',{})
     ]);
-    document.getElementById('h-todo-count').textContent=todos.length;
-    document.getElementById('h-event-count').textContent=events.length;
+    document.getElementById('h-todo-count')&&(document.getElementById('h-todo-count').textContent=todos.length);
+    document.getElementById('h-event-count')&&(document.getElementById('h-event-count').textContent=events.length);
+
+    // 今日重點
+    const hlEl=document.getElementById('h-highlights');
+    if(hlEl){
+      const highlights=[];
+
+      // 最近一筆行程
+      const nextEvent=events.find(e=>e.start_time>=now.toTimeString().slice(0,5))||events[0];
+      if(nextEvent){
+        highlights.push(`<div class="list-row" style="padding:8px 0;cursor:pointer;" onclick="goPage('cal')">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(107,158,240,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="ti ti-calendar" style="color:var(--blue);font-size:18px;" aria-hidden="true"></i>
+          </div>
+          <div class="list-info" style="flex:1;">
+            <div class="list-title">${nextEvent.title}</div>
+            <div class="list-sub">${nextEvent.start_time?nextEvent.start_time.slice(0,5):'全天'}${events.length>1?` · 共 ${events.length} 個行程`:''}</div>
+          </div>
+          <i class="ti ti-chevron-right" style="color:var(--text3);" aria-hidden="true"></i>
+        </div>`);
+      } else {
+        highlights.push(`<div class="list-row" style="padding:8px 0;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="ti ti-calendar" style="color:var(--text3);font-size:18px;" aria-hidden="true"></i>
+          </div>
+          <div class="list-info"><div class="list-title" style="color:var(--text3);">今日無行程</div></div>
+        </div>`);
+      }
+
+      // 最高優先待辦
+      const urgentTodo=todos.find(t=>t.priority==='high')||todos[0];
+      if(urgentTodo){
+        const priorityColor={high:'var(--red)',normal:'var(--gold)',low:'var(--text3)'};
+        highlights.push(`<div class="list-row" style="padding:8px 0;cursor:pointer;border-top:0.5px solid var(--border);" onclick="goPage('todo')">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(232,112,112,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="ti ti-checklist" style="color:${priorityColor[urgentTodo.priority]||'var(--gold)'};font-size:18px;" aria-hidden="true"></i>
+          </div>
+          <div class="list-info" style="flex:1;">
+            <div class="list-title">${urgentTodo.title}</div>
+            <div class="list-sub">${todos.length>1?`還有 ${todos.length-1} 項未完成`:'僅此一項'}${urgentTodo.due_date?` · 截止 ${urgentTodo.due_date}`:''}</div>
+          </div>
+          <i class="ti ti-chevron-right" style="color:var(--text3);" aria-hidden="true"></i>
+        </div>`);
+      } else {
+        highlights.push(`<div class="list-row" style="padding:8px 0;border-top:0.5px solid var(--border);">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="ti ti-checklist" style="color:var(--text3);font-size:18px;" aria-hidden="true"></i>
+          </div>
+          <div class="list-info"><div class="list-title" style="color:var(--text3);">無待辦事項</div></div>
+        </div>`);
+      }
+
+      // 習慣完成率（從 loadHomeHabits 載入後更新，先佔位）
+      highlights.push(`<div id="h-habit-highlight" style="border-top:0.5px solid var(--border);"></div>`);
+      hlEl.innerHTML=highlights.join('');
+    }
     // Events
     const evEl=document.getElementById('h-events');
     if(!events.length){evEl.innerHTML='<div class="empty"><i class="ti ti-calendar" aria-hidden="true"></i><p>今日無行程</p></div>';}
@@ -4178,6 +4224,27 @@ async function loadHomeHabits(){
         <div class="list-info"><div class="list-title" style="${done?'color:var(--text3);text-decoration:line-through;':''}">${h.icon||'🎯'} ${h.name}</div></div>
       </div>`;
     }).join('');
+
+    // 更新今日重點的習慣完成率
+    const hlHabit=document.getElementById('h-habit-highlight');
+    if(hlHabit){
+      const doneCount=habits.filter(h=>doneSet.has(h.id)).length;
+      const total=habits.length;
+      const pct=Math.round(doneCount/total*100);
+      const color=pct===100?'var(--green)':pct>=50?'var(--gold)':'var(--text3)';
+      hlHabit.innerHTML=`<div class="list-row" style="padding:8px 0;cursor:pointer;" onclick="goPage('habits')">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(93,189,138,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="ti ti-checkbox" style="color:var(--green);font-size:18px;" aria-hidden="true"></i>
+        </div>
+        <div class="list-info" style="flex:1;">
+          <div class="list-title">今日習慣 ${doneCount}/${total} 完成</div>
+          <div style="margin-top:5px;height:5px;background:var(--bg4);border-radius:3px;">
+            <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .3s;"></div>
+          </div>
+        </div>
+        <i class="ti ti-chevron-right" style="color:var(--text3);" aria-hidden="true"></i>
+      </div>`;
+    }
   }catch(e){}
 }
 // ─── END HABIT TRACKER ────────────────────────────────────────
