@@ -1709,7 +1709,7 @@ async function exportBackup(){
   try{
     const uid=prof.id;
     const fetchSafe=async(url)=>{try{return await sb(url,{});}catch(e){return[];}};
-    const [accounts,transactions,budgets,habits,habitLogs,goals,contacts,shopping,regTxns,docs]=await Promise.all([
+    const [accounts,transactions,budgets,habits,habitLogs,goals,contacts,shopping,regTxns,docs,meds,visits,body,vehicles,vRecs]=await Promise.all([
       fetchSafe(`/rest/v1/accounts?user_id=eq.${uid}`),
       fetchSafe(`/rest/v1/transactions?user_id=eq.${uid}&order=date.desc`),
       fetchSafe(`/rest/v1/budgets?user_id=eq.${uid}`),
@@ -1720,12 +1720,17 @@ async function exportBackup(){
       fetchSafe(`/rest/v1/shopping_items?user_id=eq.${uid}`),
       fetchSafe(`/rest/v1/recurring_transactions?user_id=eq.${uid}`),
       fetchSafe(`/rest/v1/documents?user_id=eq.${uid}`),
+      fetchSafe(`/rest/v1/medical_medications?user_id=eq.${uid}`),
+      fetchSafe(`/rest/v1/medical_visits?user_id=eq.${uid}`),
+      fetchSafe(`/rest/v1/medical_body?user_id=eq.${uid}`),
+      fetchSafe(`/rest/v1/vehicles?user_id=eq.${uid}`),
+      fetchSafe(`/rest/v1/vehicle_records?user_id=eq.${uid}`),
     ]);
     const backup={
-      version:'1.0',
+      version:'1.1',
       exported_at:new Date().toISOString(),
       user:{id:uid,username:prof.username,display_name:prof.display_name},
-      data:{accounts,transactions,budgets,habits,habit_logs:habitLogs,savings_goals:goals,contacts,shopping_items:shopping,recurring_transactions:regTxns,documents:docs}
+      data:{accounts,transactions,budgets,habits,habit_logs:habitLogs,savings_goals:goals,contacts,shopping_items:shopping,recurring_transactions:regTxns,documents:docs,medical_medications:meds,medical_visits:visits,medical_body:body,vehicles,vehicle_records:vRecs}
     };
     const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
@@ -1760,7 +1765,12 @@ async function importBackup(input){
       ['contacts',d.contacts],
       ['shopping_items',d.shopping_items],
       ['recurring_transactions',d.recurring_transactions],
-      ['investment_transactions',d.investment_transactions],
+      ['documents',d.documents],
+      ['medical_medications',d.medical_medications],
+      ['medical_visits',d.medical_visits],
+      ['medical_body',d.medical_body],
+      ['vehicles',d.vehicles],
+      ['vehicle_records',d.vehicle_records],
     ];
     for(const [table,rows] of tables){
       if(!rows?.length)continue;
@@ -4791,10 +4801,8 @@ async function delRecord(id){
 
 async function viewLinkedDoc(docId){
   try{
-    const docs=await sb(`/rest/v1/documents?id=eq.${docId}`,{});
-    if(!docs.length){toast('找不到文件','err');return;}
     goPage('report');
-    setTimeout(()=>viewDoc(docs[0]),300);
+    setTimeout(()=>openDocDetail(docId),300);
   }catch(e){toast('載入失敗','err');}
 }
 // ─── END VEHICLE ───────────────────────────────────────────────
