@@ -4498,9 +4498,9 @@ async function loadBudget(){
   const el=document.getElementById('budget-list');
   el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
   try{
-    // 1. 撈 in_budget=true 的消費類別（管理員設定的預算架構）
-    const budgetCats=await sb(`/rest/v1/expense_categories?in_budget=eq.true&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
-    if(!budgetCats.length){
+    // 1. 撈預算項目（獨立架構）
+    const templates=await sb(`/rest/v1/budget_templates?order=sort_order.asc,created_at.asc`,{});
+    if(!templates.length){
       el.innerHTML='<div class="empty"><i class="ti ti-target" aria-hidden="true"></i><p>管理員尚未設定預算項目</p></div>';
       return;
     }
@@ -4512,20 +4512,22 @@ async function loadBudget(){
     const dateTo=`${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
     const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${dateFrom}&date=lte.${dateTo}&type=eq.expense`,{});
 
-    el.innerHTML=budgetCats.map(c=>{
-      const bgt=userBudgets.find(b=>b.category_id===c.id);
+    el.innerHTML=templates.map(tmpl=>{
+      const bgt=userBudgets.find(b=>b.budget_template_id===tmpl.id);
       const limit=bgt?Number(bgt.amount):0;
-      // 計算此類別已花金額（含子類別）
-      const spent=txns.filter(t=>t.category_id===c.id).reduce((s,t)=>s+Number(t.amount),0);
+      // 計算此模板對應類別的已花金額
+      const spent=tmpl.category_id
+        ?txns.filter(t=>t.category_id===tmpl.category_id).reduce((s,t)=>s+Number(t.amount),0)
+        :0;
       const pct=limit>0?Math.min(Math.round(spent/limit*100),100):0;
       const over=limit>0&&spent>limit;
       const warn=limit>0&&spent/limit>=0.8&&!over;
       const barColor=over?'var(--red)':warn?'var(--orange)':'var(--green)';
       return`<div style="padding:14px 0;border-bottom:0.5px solid var(--border);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="font-weight:600;font-size:14px;">${c.name}</div>
+          <div style="font-weight:600;font-size:14px;">${tmpl.name}</div>
           <div style="font-size:12px;color:${over?'var(--red)':warn?'var(--orange)':'var(--text2)'};">
-            ${limit>0?`NT$${Math.round(spent).toLocaleString()} / NT$${limit.toLocaleString()}`:'未設定上限'}
+            ${limit>0?`NT$${Math.round(spent).toLocaleString()} / NT$${limit.toLocaleString()}`:`已花 NT$${Math.round(spent).toLocaleString()}`}
             ${over?' ⚠️ 超支':warn?' 接近上限':''}
           </div>
         </div>
@@ -4535,8 +4537,8 @@ async function loadBudget(){
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:12px;color:var(--text3);">上限 NT$</span>
           <input class="inp" type="number" placeholder="不設定" value="${limit||''}"
-            id="bgt-${c.id}" style="flex:1;padding:7px 10px;font-size:14px;">
-          <button class="btn btn-gold btn-sm" onclick="saveBudget('${c.id}','${bgt?.id||''}',${year},${month})">儲存</button>
+            id="bgt-${tmpl.id}" style="flex:1;padding:7px 10px;font-size:14px;">
+          <button class="btn btn-gold btn-sm" onclick="saveBudget('${tmpl.id}','${bgt?.id||''}',${year},${month})">儲存</button>
           ${bgt?`<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="clearBudget('${bgt.id}')">清除</button>`:''}
         </div>
       </div>`;
@@ -4544,15 +4546,15 @@ async function loadBudget(){
   }catch(e){console.error('loadBudget:',e);el.innerHTML=`<div class="empty"><p>載入失敗</p></div>`;}
 }
 
-async function saveBudget(catId, budgetId, year, month){
-  const amt=parseFloat(document.getElementById(`bgt-${catId}`).value)||0;
+async function saveBudget(tmplId, budgetId, year, month){
+  const amt=parseFloat(document.getElementById(`bgt-${tmplId}`).value)||0;
   if(amt<=0){toast('請輸入有效金額','err');return;}
   try{
     if(budgetId){
       await sb(`/rest/v1/budgets?id=eq.${budgetId}`,{method:'PATCH',body:JSON.stringify({amount:amt})});
       toast('預算已更新');
     } else {
-      await sb('/rest/v1/budgets',{method:'POST',body:JSON.stringify({user_id:prof.id,category_id:catId,amount:amt,year,month})});
+      await sb('/rest/v1/budgets',{method:'POST',body:JSON.stringify({user_id:prof.id,budget_template_id:tmplId,amount:amt,year,month})});
       toast('預算已設定');
     }
     loadBudget();
@@ -4573,72 +4575,71 @@ async function loadBudgetItems(){
   if(!el)return;
   el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
   try{
-    const items=await sb(`/rest/v1/expense_categories?in_budget=eq.true&parent_id=is.null&order=sort_order.asc`,{});
-    if(!items.length){el.innerHTML='<div class="empty"><p>尚未設定任何預算項目</p></div>';return;}
-    el.innerHTML=items.map(it=>`
+    const items=await sb(`/rest/v1/budget_templates?order=sort_order.asc,created_at.asc`,{});
+    // 撈消費類別名稱對應
+    const cats=await sb(`/rest/v1/expense_categories?select=id,name`,{});
+    const catMap=Object.fromEntries(cats.map(c=>[c.id,c.name]));
+    if(!items.length){el.innerHTML='<div class="empty"><i class="ti ti-target" aria-hidden="true"></i><p>尚未設定任何預算項目</p></div>';return;}
+    el.innerHTML=items.map((it,i)=>`
       <div class="list-row">
         <div class="list-info" style="flex:1;">
           <div class="list-title">${it.name}</div>
-          <div class="list-sub">${it.type==='expense'?'支出':it.type==='income'?'收入':'兩者'}</div>
+          <div class="list-sub">連結：${it.category_id?catMap[it.category_id]||'（已刪除）':'未連結消費類別'}</div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="editBudgetItem('${it.id}','${it.name}')">改名</button>
+        <button class="btn btn-ghost btn-sm" onclick="editBudgetItem('${it.id}','${it.name}','${it.category_id||''}')">編輯</button>
         <button class="icon-btn" onclick="removeBudgetItem('${it.id}')" style="color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
       </div>`).join('');
-  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+  }catch(e){console.error(e);el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
 }
 
 async function openAddBudgetItem(){
-  // 撈所有支出類別，排除已在預算中的
-  const [all,inBgt]=await Promise.all([
-    sb(`/rest/v1/expense_categories?parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{}),
-    sb(`/rest/v1/expense_categories?in_budget=eq.true&parent_id=is.null`,{})
-  ]);
-  const inBgtIds=new Set(inBgt.map(c=>c.id));
-  const available=all.filter(c=>!inBgtIds.has(c.id)&&(c.type==='expense'||c.type==='both'));
-  if(!available.length){toast('所有支出類別已加入預算','err');return;}
+  const cats=await sb(`/rest/v1/expense_categories?parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
+  const expCats=cats.filter(c=>c.type==='expense'||c.type==='both');
   const sel=document.getElementById('bitem-cat');
-  sel.innerHTML=available.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  sel.innerHTML=`<option value="">（不連結，僅手動記錄）</option>`+expCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   document.getElementById('bitem-id').value='';
   document.getElementById('bitem-name').value='';
+  document.getElementById('bitem-cat').closest('.field').style.display='';
   document.getElementById('sh-budget-item-title').textContent='新增預算項目';
   openSheet('sh-budget-item');
 }
 
-async function editBudgetItem(id, name){
+async function editBudgetItem(id, name, catId){
+  const cats=await sb(`/rest/v1/expense_categories?parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
+  const expCats=cats.filter(c=>c.type==='expense'||c.type==='both');
+  const sel=document.getElementById('bitem-cat');
+  sel.innerHTML=`<option value="">（不連結，僅手動記錄）</option>`+expCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  sel.value=catId||'';
   document.getElementById('bitem-id').value=id;
   document.getElementById('bitem-name').value=name;
-  document.getElementById('sh-budget-item-title').textContent='修改項目名稱';
-  // 編輯只改名稱，隱藏類別選單
-  document.getElementById('bitem-cat').closest('.field').style.display='none';
+  document.getElementById('bitem-cat').closest('.field').style.display='';
+  document.getElementById('sh-budget-item-title').textContent='編輯預算項目';
   openSheet('sh-budget-item');
 }
 
 async function saveBudgetItem(){
   const id=document.getElementById('bitem-id').value;
   const name=document.getElementById('bitem-name').value.trim();
+  const catId=document.getElementById('bitem-cat').value||null;
   if(!name){toast('請填寫名稱','err');return;}
   try{
     if(id){
-      // 只改名稱
-      await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({name})});
+      await sb(`/rest/v1/budget_templates?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({name,category_id:catId})});
       toast('已更新');
     } else {
-      // 把選到的消費類別標記 in_budget=true
-      const catId=document.getElementById('bitem-cat').value;
-      await sb(`/rest/v1/expense_categories?id=eq.${catId}`,{method:'PATCH',body:JSON.stringify({in_budget:true,name})});
-      toast('已加入預算');
+      await sb('/rest/v1/budget_templates',{method:'POST',body:JSON.stringify({name,category_id:catId,sort_order:0})});
+      toast('已新增');
     }
-    document.getElementById('bitem-cat').closest('.field').style.display='';
     closeSheet('sh-budget-item');
     loadBudgetItems();
   }catch(e){toast('儲存失敗','err');}
 }
 
 async function removeBudgetItem(id){
-  if(!confirm('確定從預算清單移除？（類別本身不會被刪除）'))return;
+  if(!confirm('確定刪除此預算項目？'))return;
   try{
-    await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({in_budget:false})});
-    toast('已移除');loadBudgetItems();
+    await sb(`/rest/v1/budget_templates?id=eq.${id}`,{method:'DELETE'});
+    toast('已刪除');loadBudgetItems();
   }catch(e){toast('操作失敗','err');}
 }
 
