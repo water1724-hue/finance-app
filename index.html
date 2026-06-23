@@ -5226,7 +5226,8 @@ async function saveMyProfile(){
     session.prof=prof;
     localStorage.setItem('lifeos_session',JSON.stringify(session));
     // Update display
-    document.getElementById('more-display').textContent=displayName;
+    const moreNameEl=document.getElementById('more-name');
+    if(moreNameEl)moreNameEl.textContent=displayName;
     // Update password if needed - use Supabase Auth directly
     if(newPwd){
       const token=session.token||'';
@@ -5236,7 +5237,7 @@ async function saveMyProfile(){
     }
     closeSheet('sh-edit-profile');
     toast('已更新');
-  }catch(e){toast('更新失敗','err');}
+  }catch(e){console.error('saveMyProfile error:',e);toast('更新失敗','err');}
 }
 
 function editUser(userId, displayName, role){
