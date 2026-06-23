@@ -977,12 +977,18 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>數量／股數</label><input class="inp" type="number" id="inv-qty" placeholder="0" oninput="calcInvTotal()"></div>
     <div class="field"><label>單價</label><input class="inp" type="number" id="inv-price" placeholder="0" oninput="calcInvTotal()"></div>
     <div class="field"><label>手續費</label><input class="inp" type="number" id="inv-fee" placeholder="0" oninput="calcInvTotal()"></div>
-    <div class="field"><label>扣款／入款銀行帳戶</label><select class="inp" id="inv-bank"></select></div>
     <div style="background:var(--bg4);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
       <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">交易總金額</div>
       <div style="font-size:20px;font-weight:700;color:var(--gold);" id="inv-total">NT$ 0</div>
     </div>
     <div class="field"><label>日期</label><input class="inp" type="date" id="inv-date"></div>
+    <div class="field">
+      <label>連結銀行交割帳戶（選填）</label>
+      <select class="inp" id="inv-bank">
+        <option value="">不連結</option>
+      </select>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">選填：同步更新銀行帳戶餘額</div>
+    </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-inv-txn')">取消</button>
       <button class="btn btn-gold" onclick="saveInvTxn()">確認</button>
@@ -3179,38 +3185,61 @@ async function saveInvTxn(){
   const qty=parseFloat(document.getElementById('inv-qty').value);
   const price=parseFloat(document.getElementById('inv-price').value);
   const fee=parseFloat(document.getElementById('inv-fee').value)||0;
-  const bankAccId=document.getElementById('inv-bank').value;
+  const bankAccId=document.getElementById('inv-bank').value||null;
   const date=document.getElementById('inv-date').value;
   if(!qty||!price){toast('請填寫數量和單價','err');return;}
   const total=Math.round(qty*price+(invType==='buy'?fee:-fee));
   try{
-    // Save investment txn
-    await sb('/rest/v1/investment_txns',{method:'POST',body:JSON.stringify({user_id:prof.id,holding_id:currentHoldingId,bank_account_id:bankAccId||null,type:invType,quantity:qty,price,fee,total,date})});
-    // Update holding avg_cost & quantity
+    // 1. 記錄投資交易
+    await sb('/rest/v1/investment_txns',{method:'POST',body:JSON.stringify({
+      user_id:prof.id,holding_id:currentHoldingId,bank_account_id:bankAccId,
+      type:invType,quantity:qty,price,fee,total,date
+    })});
+
+    // 2. 更新持股數量和均價
     const holdings=await sb(`/rest/v1/holdings?id=eq.${currentHoldingId}`,{});
     if(holdings.length){
       const h=holdings[0];
-      let newQty,newAvg;
-      if(invType==='buy'){newQty=Number(h.quantity)+qty;newAvg=newQty>0?(Number(h.quantity)*Number(h.avg_cost)+qty*price)/newQty:0;}
-      else{newQty=Math.max(0,Number(h.quantity)-qty);newAvg=Number(h.avg_cost);}
+      let newQty,newAvg,realizedPnl=0;
+      if(invType==='buy'){
+        newQty=Number(h.quantity)+qty;
+        newAvg=newQty>0?(Number(h.quantity)*Number(h.avg_cost)+qty*price)/newQty:0;
+      } else {
+        newQty=Math.max(0,Number(h.quantity)-qty);
+        newAvg=Number(h.avg_cost);
+        realizedPnl=(price-Number(h.avg_cost))*qty-fee; // 已實現損益
+      }
       await sb(`/rest/v1/holdings?id=eq.${currentHoldingId}`,{method:'PATCH',body:JSON.stringify({quantity:newQty,avg_cost:newAvg})});
+      // 更新已實現損益到交易記錄
+      if(realizedPnl!==0){
+        const txns=await sb(`/rest/v1/investment_txns?holding_id=eq.${currentHoldingId}&type=eq.sell&date=eq.${date}&order=created_at.desc&limit=1`,{});
+        if(txns.length)await sb(`/rest/v1/investment_txns?id=eq.${txns[0].id}`,{method:'PATCH',body:JSON.stringify({realized_pnl:realizedPnl})});
+      }
+
+      // 3. 更新證券帳戶餘額（主要）
+      const secAcc=await sb(`/rest/v1/accounts?id=eq.${h.account_id}`,{});
+      if(secAcc.length){
+        const delta=invType==='buy'?-total:total;
+        await sb(`/rest/v1/accounts?id=eq.${h.account_id}`,{method:'PATCH',body:JSON.stringify({balance:Number(secAcc[0].balance)+delta})});
+      }
     }
-    // Update bank balance
+
+    // 4. 選填：同步更新銀行交割帳戶
     if(bankAccId){
       const bankAccs=await sb(`/rest/v1/accounts?id=eq.${bankAccId}`,{});
       if(bankAccs.length){
-        const newBal=Number(bankAccs[0].balance)+(invType==='buy'?-total:total);
-        await sb(`/rest/v1/accounts?id=eq.${bankAccId}`,{method:'PATCH',body:JSON.stringify({balance:newBal})});
+        const delta=invType==='buy'?-total:total;
+        await sb(`/rest/v1/accounts?id=eq.${bankAccId}`,{method:'PATCH',body:JSON.stringify({balance:Number(bankAccs[0].balance)+delta})});
       }
     }
+
     closeSheet('sh-inv-txn');toast('交易完成');
-    // 若在投資組合 Tab 就更新，否則更新帳戶頁
     if(document.getElementById('fin-inv-wrap')?.style.display!=='none'){
       loadPortfolio();
     } else {
       openAccDetail(currentHoldingAccId);
     }
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){console.error(e);toast('儲存失敗','err');}
 }
 
 // Account
