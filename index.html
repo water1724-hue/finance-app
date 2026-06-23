@@ -387,6 +387,13 @@ select.inp option{background:var(--bg2);}
 
       <!-- 投資組合 Tab -->
       <div id="fin-inv-wrap" style="display:none;">
+        <div class="row-between" style="margin-bottom:12px;">
+          <div style="font-size:13px;color:var(--text3);">跨帳戶投資總覽</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="loadPortfolio()"><i class="ti ti-refresh" aria-hidden="true"></i> 更新</button>
+            <button class="btn btn-gold btn-sm" onclick="openAddHoldingFromPortfolio()"><i class="ti ti-plus" aria-hidden="true"></i> 新增持股</button>
+          </div>
+        </div>
         <div class="card card-gold" style="margin-bottom:12px;">
           <div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">總市值（台幣）</div>
           <div style="font-size:26px;font-weight:700;color:var(--gold);" id="port-total-val">—</div>
@@ -3196,7 +3203,13 @@ async function saveInvTxn(){
         await sb(`/rest/v1/accounts?id=eq.${bankAccId}`,{method:'PATCH',body:JSON.stringify({balance:newBal})});
       }
     }
-    closeSheet('sh-inv-txn');toast('交易完成');openAccDetail(currentHoldingAccId);
+    closeSheet('sh-inv-txn');toast('交易完成');
+    // 若在投資組合 Tab 就更新，否則更新帳戶頁
+    if(document.getElementById('fin-inv-wrap')?.style.display!=='none'){
+      loadPortfolio();
+    } else {
+      openAccDetail(currentHoldingAccId);
+    }
   }catch(e){toast('儲存失敗','err');}
 }
 
@@ -4293,30 +4306,82 @@ function renderPortHoldings(tab){
   const el=document.getElementById('port-holdings-list');
   const list=tab==='all'?_portHoldings:_portHoldings.filter(h=>(h.asset_type||h.type)===tab);
   if(!list.length){el.innerHTML='<div class="empty"><p>此類別無持倉</p></div>';return;}
-  el.innerHTML=list.filter(h=>Number(h.quantity)>0).map(h=>{
-    const qty=Number(h.quantity);const cur=Number(h.current_price)||Number(h.avg_cost);
-    const cost=qty*Number(h.avg_cost);const val=qty*cur;const pnl=val-cost;
+  el.innerHTML=list.map(h=>{
+    const qty=Number(h.quantity);
+    const cur=Number(h.current_price)||Number(h.avg_cost);
+    const cost=qty*Number(h.avg_cost);
+    const val=qty*cur;
+    const pnl=val-cost;
     const pct=cost>0?(pnl/cost*100).toFixed(1):0;
-    const t=h.asset_type||h.type||'other';const currency=(h.currency||'TWD').toUpperCase();
+    const t=h.asset_type||h.type||'other';
+    const currency=(h.currency||'TWD').toUpperCase();
     return`<div style="padding:12px 0;border-bottom:0.5px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
         <div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span style="font-size:15px;font-weight:700;">${h.symbol}</span>
             <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${assetTypeColor[t]||'#888'}22;color:${assetTypeColor[t]||'#888'};">${assetTypeLabel[t]||t}</span>
+            ${qty===0?'<span style="font-size:10px;color:var(--text3);">已清倉</span>':''}
           </div>
           <div style="font-size:13px;color:var(--text3);margin-top:2px;">${h.name}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px;">${qty.toLocaleString()} 股 · 均價 ${Number(h.avg_cost).toLocaleString()} ${currency}</div>
+          ${qty>0?`<div style="font-size:12px;color:var(--text3);margin-top:2px;">${qty.toLocaleString()} 股 · 均價 ${Number(h.avg_cost).toLocaleString()} ${currency}</div>`:''}
         </div>
         <div style="text-align:right;">
-          <div style="font-size:15px;font-weight:700;color:var(--gold);">NT$${Math.round(val).toLocaleString()}</div>
-          ${Number(h.current_price)>0?`<div style="font-size:13px;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}NT$${Math.round(pnl).toLocaleString()} (${pct}%)</div>`:''}
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">現價 ${Number(h.current_price)>0?Number(h.current_price).toLocaleString():'—'}</div>
+          ${qty>0?`<div style="font-size:15px;font-weight:700;color:var(--gold);">NT$${Math.round(val).toLocaleString()}</div>`:''}
+          ${qty>0&&Number(h.current_price)>0?`<div style="font-size:13px;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}NT$${Math.round(pnl).toLocaleString()} (${pct}%)</div>`:''}
+          ${qty>0?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">現價 ${Number(h.current_price)>0?Number(h.current_price).toLocaleString():'—'}</div>`:''}
         </div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-gold btn-sm" style="flex:1;" onclick="openPortTxn('${h.id}','buy')">買入</button>
+        ${qty>0?`<button class="btn btn-ghost btn-sm" style="flex:1;color:var(--red);" onclick="openPortTxn('${h.id}','sell')">賣出</button>`:''}
+        <button class="icon-btn" onclick="delPortHolding('${h.id}')" style="color:var(--text4);font-size:15px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
       </div>
     </div>`;
   }).join('');
 }
+
+async function openAddHoldingFromPortfolio(){
+  // 撈投資帳戶讓使用者選
+  const invCatsLocal=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
+  const allAccs=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{});
+  const invAccs=allAccs.filter(a=>['securities','fund'].includes(invCatsLocal.find(c=>c.id===a.category_id)?.type));
+  if(!invAccs.length){toast('請先建立證券帳戶','err');return;}
+  // 如果只有一個帳戶直接用，多個讓使用者選
+  if(invAccs.length===1){
+    currentHoldingAccId=invAccs[0].id;
+  } else {
+    const accName=invAccs.map((a,i)=>`${i+1}. ${a.name}`).join('\n');
+    const idx=parseInt(prompt(`選擇帳戶：\n${accName}\n輸入數字`));
+    if(!idx||idx<1||idx>invAccs.length)return;
+    currentHoldingAccId=invAccs[idx-1].id;
+  }
+  showAddHolding();
+}
+
+function openPortTxn(holdingId, type){
+  currentHoldingId=holdingId;
+  setInvType(type);
+  document.getElementById('inv-qty').value='';
+  document.getElementById('inv-price').value='';
+  document.getElementById('inv-fee').value='0';
+  document.getElementById('inv-date').value=new Date().toISOString().slice(0,10);
+  calcInvTotal();
+  // 找這個持股的帳戶，填入銀行帳戶
+  const h=_portHoldings.find(x=>x.id===holdingId);
+  if(h){currentHoldingAccId=h.account_id;}
+  openSheet('sh-inv-txn');
+}
+
+async function delPortHolding(id){
+  if(!confirm('確定刪除此持股？（交易記錄不會被刪除）'))return;
+  try{
+    await sb(`/rest/v1/holdings?id=eq.${id}`,{method:'DELETE'});
+    toast('已刪除');
+    loadPortfolio();
+  }catch(e){toast('刪除失敗','err');}
+}
+
 // ─── END PORTFOLIO ─────────────────────────────────────────────
 async function loadGoals(){
   const el=document.getElementById('goals-list');
