@@ -4465,18 +4465,30 @@ async function loadBudget(){
   el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
   try{
     const isAdminView=prof.role==='admin';
-    // 撈類別（自己的 + 預設）
-    const cats=await sb(`/rest/v1/expense_categories?or=(user_id.eq.${getViewAsId()},is_default.eq.true)&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
-    // 管理員撈：自己設的預設預算（user_id=null 或 is_default=true）+ 使用者自己的覆蓋
-    const queries=[
-      sb(`/rest/v1/budgets?is_default=eq.true&year=eq.${year}&month=eq.${month}`,{}), // 管理員預設
-    ];
+    // 撈類別：管理員標記 in_budget=true 的 + 使用者自己新增且 in_budget=true 的
+    const cats=await sb(`/rest/v1/expense_categories?or=(in_budget.eq.true)&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
+
+    // 撈管理員預設預算（is_default=true），失敗不中斷
+    let defaultBudgets=[];
+    try{
+      defaultBudgets=await sb(`/rest/v1/budgets?is_default=eq.true&year=eq.${year}&month=eq.${month}`,{});
+    }catch(e){console.warn('defaultBudgets query failed, is_default column may not exist:',e);}
+
+    // 撈使用者自訂預算
+    let userBudgets=[];
     if(!isAdminView){
-      queries.push(sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${year}&month=eq.${month}`,{})); // 使用者覆蓋
+      try{
+        userBudgets=await sb(`/rest/v1/budgets?user_id=eq.${prof.id}&is_default=eq.false&year=eq.${year}&month=eq.${month}`,{});
+      }catch(e){
+        // 相容舊版（沒有 is_default 欄位）
+        userBudgets=await sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${year}&month=eq.${month}`,{});
+      }
+    } else {
+      // 管理員查自己的也撈一份（不管是否有 is_default）
+      try{
+        userBudgets=await sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${year}&month=eq.${month}`,{});
+      }catch(e){}
     }
-    const results=await Promise.all(queries);
-    const defaultBudgets=results[0];
-    const userBudgets=isAdminView?[]:results[1];
 
     const expCats=cats.filter(c=>c.type==='expense'||c.type==='both');
     if(!expCats.length){el.innerHTML='<div class="empty"><p>尚無消費類別</p></div>';return;}
@@ -4502,7 +4514,7 @@ async function loadBudget(){
         </div>
       </div>`;
     }).join('');
-  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+  }catch(e){console.error('loadBudget error:',JSON.stringify(e),e);el.innerHTML=`<div class="empty"><p>載入失敗：${e?.message||JSON.stringify(e)}</p></div>`;}
 }
 
 async function saveBudget(catId, budgetId, year, month, isDefaultBudget=false){
@@ -4518,7 +4530,7 @@ async function saveBudget(catId, budgetId, year, month, isDefaultBudget=false){
       }
     } else if(amt>0){
       const body=isDefaultBudget
-        ?{is_default:true,category_id:catId,amount:amt,year,month} // 管理員設預設，不帶 user_id
+        ?{is_default:true,user_id:prof.id,category_id:catId,amount:amt,year,month} // 管理員設預設
         :{user_id:prof.id,category_id:catId,amount:amt,year,month}; // 使用者自訂
       await sb('/rest/v1/budgets',{method:'POST',body:JSON.stringify(body)});
       toast(isDefaultBudget?'預設預算已設定':'預算已設定');
@@ -4868,12 +4880,15 @@ async function loadExpCats(){
           <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             ${p.name}
             ${isDefault?'<span class="tag tag-gold" style="font-size:10px;">預設</span>':''}
+            ${p.in_budget?'<span class="tag" style="background:rgba(93,189,138,.15);color:var(--green);font-size:10px;">預算</span>':''}
             ${!isActive?'<span class="tag" style="background:rgba(136,136,136,.15);color:var(--text3);font-size:10px;">已停用</span>':''}
           </div>
           <div style="font-size:12px;color:var(--text3);margin-top:2px;">${typeLabel[p.type]||''}</div>
         </div>
         <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0;">
           ${isAdmin?`<button class="btn btn-ghost btn-sm" onclick="toggleDefault('${p.id}',${isDefault})">${isDefault?'取消預設':'設預設'}</button>`:''}
+          ${isAdmin?`<button class="btn btn-ghost btn-sm" style="color:${p.in_budget?'var(--green)':'var(--text3)'}" onclick="toggleInBudget('${p.id}',${!!p.in_budget})">${p.in_budget?'✓ 預算中':'＋ 預算'}</button>`:''}
+          ${!isProtected?`<button class="btn btn-ghost btn-sm" style="color:${p.in_budget?'var(--green)':'var(--text3)'}" onclick="toggleInBudget('${p.id}',${!!p.in_budget})">${p.in_budget?'✓ 預算中':'＋ 預算'}</button>`:''}
           ${!isProtected?`<button class="btn btn-ghost btn-sm" onclick="editExpCat('${p.id}','${p.name}','${p.type}',${isActive})">編輯</button>`:''}
           <button class="btn btn-ghost btn-sm" onclick="openAddSubCat('${p.id}','${p.name}')">＋ 細項</button>
           ${!isProtected
@@ -4930,6 +4945,14 @@ async function toggleDefault(id, current){
   try{
     await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_default:!current})});
     toast(!current?'已設為預設':'已取消預設');
+    loadExpCats();
+  }catch(e){toast('操作失敗','err');}
+}
+
+async function toggleInBudget(id, current){
+  try{
+    await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({in_budget:!current})});
+    toast(!current?'已加入預算清單':'已從預算清單移除');
     loadExpCats();
   }catch(e){toast('操作失敗','err');}
 }
