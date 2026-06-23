@@ -2210,6 +2210,8 @@ async function loadFinance(){
     document.getElementById('acc-cat').innerHTML=cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   }catch(e){console.error('loadFinance error:',e);toast('載入失敗','err');}
 }
+
+function buildAccOptgroup(accounts, cats){
   const groups=[
     {types:['cash'],label:'現金'},
     {types:['bank'],label:'銀行帳戶'},
