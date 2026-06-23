@@ -7406,7 +7406,16 @@ async function sendChat(){
   if(!GEMINI_KEY){appendMsg('AI 秘書尚未啟用。','ai');return;}
   const btn=document.getElementById('chat-send');btn.disabled=true;
   const tid='t'+Date.now();appendTyping(tid);
-  const GEMINI_KEY_NOW=GEMINI_KEY_GLOBAL||localStorage.getItem('lifeos_gemini_key')||GEMINI_KEY;
+  // 即時讀取 Key
+  let GEMINI_KEY_NOW=GEMINI_KEY_GLOBAL;
+  if(!GEMINI_KEY_NOW){
+    try{
+      const token=JSON.parse(localStorage.getItem('lifeos_session')||'{}').token||'';
+      const res=await fetch(`${SB}/rest/v1/app_settings?key=eq.gemini_key`,{headers:{'apikey':PUB,'Authorization':`Bearer ${token}`}});
+      const data=await res.json();
+      if(Array.isArray(data)&&data.length&&data[0].value){GEMINI_KEY_NOW=data[0].value;GEMINI_KEY_GLOBAL=GEMINI_KEY_NOW;}
+    }catch(e){}
+  }
   if(!GEMINI_KEY_NOW){removeTyping(tid);appendMsg('AI 助手尚未設定。請聯絡管理員啟用 AI 功能。','ai');btn.disabled=false;return;}
   try{
     const _now=new Date();
