@@ -1950,11 +1950,15 @@ let GEMINI_KEY_GLOBAL=''; // 從 Supabase 讀取的共用 Key
 
 async function loadAppSettings(){
   try{
-    const settings=await sb('/rest/v1/app_settings?key=eq.gemini_key',{});
-    if(settings.length&&settings[0].value){
+    const token=JSON.parse(localStorage.getItem('lifeos_session')||'{}').token||'';
+    const res=await fetch(`${SUPA}/rest/v1/app_settings?key=eq.gemini_key`,{
+      headers:{'apikey':PUB,'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}
+    });
+    const settings=await res.json();
+    if(Array.isArray(settings)&&settings.length&&settings[0].value){
       GEMINI_KEY_GLOBAL=settings[0].value;
     }
-  }catch(e){}
+  }catch(e){console.error('loadAppSettings:',e);}
 }
 
 // STATE
