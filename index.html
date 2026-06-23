@@ -4373,9 +4373,21 @@ async function loadPortfolio(){
     const holdings=await sb(`/rest/v1/holdings?account_id=in.(${invAccIds.join(',')})&order=created_at.asc`,{});
     _portHoldings=holdings;
 
-    // 更新台股報價
-    for(const h of holdings.filter(h=>(h.asset_type||h.type)==='tw_stock'&&h.symbol)){
-      try{const p=await fetchTwStockPrice(h.symbol);if(p&&p>0){await sb(`/rest/v1/holdings?id=eq.${h.id}`,{method:'PATCH',body:JSON.stringify({current_price:p})});h.current_price=p;}}catch(e){}
+    // 更新報價（透過 Edge Function 避免 CORS）
+    const token=JSON.parse(localStorage.getItem('lifeos_session')||'{}').token||'';
+    for(const h of holdings){
+      try{
+        const res=await fetch('https://twejdabdhuohfyylsprn.supabase.co/functions/v1/get-prices',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body:JSON.stringify({type:h.asset_type||h.type||'tw_stock',symbol:h.symbol})
+        });
+        const data=await res.json();
+        if(data.price&&data.price>0){
+          await sb(`/rest/v1/holdings?id=eq.${h.id}`,{method:'PATCH',body:JSON.stringify({current_price:data.price})});
+          h.current_price=data.price;
+        }
+      }catch(e){console.warn('報價更新失敗:',h.symbol,e);}
     }
 
     // 已實現損益
