@@ -403,6 +403,7 @@ select.inp option{background:var(--bg2);}
         <div class="row-between" style="margin-bottom:12px;">
           <div style="font-size:13px;color:var(--text3);">跨帳戶投資總覽</div>
           <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="openInOutFund()"><i class="ti ti-transfer" aria-hidden="true"></i> 出入金</button>
             <button class="btn btn-ghost btn-sm" onclick="loadPortfolio()"><i class="ti ti-refresh" aria-hidden="true"></i> 更新</button>
             <button class="btn btn-gold btn-sm" onclick="openAddHoldingFromPortfolio()"><i class="ti ti-plus" aria-hidden="true"></i> 新增持股</button>
           </div>
@@ -1338,6 +1339,30 @@ select.inp option{background:var(--bg2);}
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-budget-item')">取消</button>
       <button class="btn btn-gold" onclick="saveBudgetItem()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 出入金 -->
+<div class="overlay" id="sh-inout-fund">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-inout-title">出入金</h3>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button class="btn btn-gold" id="inout-type-in" onclick="setInOutType('in')" style="flex:1;">入金</button>
+      <button class="btn btn-ghost" id="inout-type-out" onclick="setInOutType('out')" style="flex:1;opacity:.4;">出金</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);background:var(--bg4);border-radius:10px;padding:8px 12px;margin-bottom:14px;" id="inout-desc">
+      入金：銀行帳戶 → 證券帳戶
+    </div>
+    <div class="field"><label>銀行帳戶</label><select class="inp" id="inout-bank"></select></div>
+    <div class="field"><label>證券帳戶</label><select class="inp" id="inout-sec"></select></div>
+    <div class="field"><label>金額 (NT$)</label><input class="inp" type="number" id="inout-amt" placeholder="0"></div>
+    <div class="field"><label>日期</label><input class="inp" type="date" id="inout-date"></div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="inout-note" placeholder="選填"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-inout-fund')">取消</button>
+      <button class="btn btn-gold" onclick="saveInOutFund()">確認</button>
     </div>
   </div>
 </div>
@@ -4413,6 +4438,69 @@ async function openAddHoldingFromPortfolio(){
     // 多個證券帳戶，用 Sheet 選擇
     openAccSelectForHolding(invAccs);
   }
+}
+
+// ─── 出入金 ───────────────────────────────────────────────────
+let inOutType='in';
+
+function setInOutType(type){
+  inOutType=type;
+  document.getElementById('inout-type-in').className=type==='in'?'btn btn-gold':'btn btn-ghost';
+  document.getElementById('inout-type-in').style.opacity=type==='in'?'1':'.4';
+  document.getElementById('inout-type-out').className=type==='out'?'btn btn-gold':'btn btn-ghost';
+  document.getElementById('inout-type-out').style.opacity=type==='out'?'1':'.4';
+  document.getElementById('inout-desc').textContent=type==='in'?'入金：銀行帳戶 → 證券帳戶':'出金：證券帳戶 → 銀行帳戶';
+}
+
+async function openInOutFund(){
+  const invCatsLocal=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
+  const allAccs=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true&order=sort_order.asc`,{});
+  const bankAccs=allAccs.filter(a=>['bank','cash'].includes(invCatsLocal.find(c=>c.id===a.category_id)?.type));
+  const secAccs=allAccs.filter(a=>['securities','fund'].includes(invCatsLocal.find(c=>c.id===a.category_id)?.type));
+  if(!bankAccs.length){toast('請先建立銀行帳戶','err');return;}
+  if(!secAccs.length){toast('請先建立證券帳戶','err');return;}
+  document.getElementById('inout-bank').innerHTML=bankAccs.map(a=>`<option value="${a.id}">${a.name}（NT$${Number(a.balance).toLocaleString()}）</option>`).join('');
+  document.getElementById('inout-sec').innerHTML=secAccs.map(a=>`<option value="${a.id}">${a.name}（NT$${Number(a.balance).toLocaleString()}）</option>`).join('');
+  document.getElementById('inout-amt').value='';
+  document.getElementById('inout-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('inout-note').value='';
+  setInOutType('in');
+  openSheet('sh-inout-fund');
+}
+
+async function saveInOutFund(){
+  const amt=parseFloat(document.getElementById('inout-amt').value);
+  if(!amt||amt<=0){toast('請填寫金額','err');return;}
+  const bankId=document.getElementById('inout-bank').value;
+  const secId=document.getElementById('inout-sec').value;
+  const date=document.getElementById('inout-date').value;
+  const note=document.getElementById('inout-note').value.trim()||(inOutType==='in'?'入金':'出金');
+  const fromId=inOutType==='in'?bankId:secId;
+  const toId=inOutType==='in'?secId:bankId;
+  try{
+    // 撈兩個帳戶
+    const [fromAccs,toAccs]=await Promise.all([
+      sb(`/rest/v1/accounts?id=eq.${fromId}`,{}),
+      sb(`/rest/v1/accounts?id=eq.${toId}`,{})
+    ]);
+    if(!fromAccs.length||!toAccs.length){toast('帳戶不存在','err');return;}
+    const fromAcc=fromAccs[0];const toAcc=toAccs[0];
+    if(Number(fromAcc.balance)<amt){toast('餘額不足','err');return;}
+    // 建立轉帳記錄
+    await sb('/rest/v1/transfers',{method:'POST',body:JSON.stringify({
+      user_id:prof.id,from_account_id:fromId,to_account_id:toId,
+      amount:amt,from_amount:amt,to_amount:amt,rate:1,
+      date,note:note||(inOutType==='in'?'入金':'出金')
+    })});
+    // 更新兩邊餘額
+    await Promise.all([
+      sb(`/rest/v1/accounts?id=eq.${fromId}`,{method:'PATCH',body:JSON.stringify({balance:Number(fromAcc.balance)-amt})}),
+      sb(`/rest/v1/accounts?id=eq.${toId}`,{method:'PATCH',body:JSON.stringify({balance:Number(toAcc.balance)+amt})})
+    ]);
+    closeSheet('sh-inout-fund');
+    toast(`${inOutType==='in'?'入金':'出金'} NT$${amt.toLocaleString()} 完成`);
+    loadPortfolio();
+  }catch(e){console.error(e);toast('操作失敗','err');}
 }
 
 function openAccSelectForHolding(invAccs){
