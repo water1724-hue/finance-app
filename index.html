@@ -4465,8 +4465,8 @@ async function loadBudget(){
   el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
   try{
     const isAdminView=prof.role==='admin';
-    // 撈類別：管理員標記 in_budget=true 的 + 使用者自己新增且 in_budget=true 的
-    const cats=await sb(`/rest/v1/expense_categories?or=(in_budget.eq.true)&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
+    // 撈類別：管理員預設(is_default=true) + 使用者自己建的
+    const cats=await sb(`/rest/v1/expense_categories?or=(is_default.eq.true,user_id.eq.${getViewAsId()})&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
 
     // 撈管理員預設預算（is_default=true），失敗不中斷
     let defaultBudgets=[];
