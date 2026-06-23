@@ -289,7 +289,7 @@ select.inp option{background:var(--bg2);}
       <div id="home-notify-banner" style="display:none;margin-bottom:12px;"></div>
 
       <!-- 今日行程 -->
-      <div class="card" style="margin-bottom:12px;">
+      <div class="card" id="hw-events" style="margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:12px;">
           <div class="sec-label" style="margin:0">今日行程</div>
           <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-event')"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
@@ -307,7 +307,7 @@ select.inp option{background:var(--bg2);}
       </div>
 
       <!-- 公告 / 留言板 -->
-      <div class="card" style="margin-bottom:12px;">
+      <div class="card" id="hw-announce" style="margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:12px;">
           <div style="display:flex;gap:14px;">
             <div class="home-tab on" id="home-tab-announce" onclick="switchHomeTab('announce')">公告</div>
@@ -326,7 +326,7 @@ select.inp option{background:var(--bg2);}
       </div>
 
       <!-- 底部快捷列 -->
-      <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <div id="hw-shortcuts" style="display:flex;gap:8px;margin-bottom:8px;">
         <button class="btn btn-ghost" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;" onclick="openSheet('sh-txn')">
           <i class="ti ti-wallet" style="color:var(--gold);" aria-hidden="true"></i><span style="font-size:14px;">記帳</span>
         </button>
@@ -1343,6 +1343,36 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Home Settings -->
+<div class="overlay" id="sh-home-settings">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>首頁自訂</h3>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">選擇要在首頁顯示的卡片</div>
+    <div class="field">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:15px;font-weight:500;">今日行程</div><div style="font-size:12px;color:var(--text3);">顯示當天的行程列表</div></div>
+        <input type="checkbox" id="hw-toggle-events" checked onchange="saveHomeSettings()" style="width:20px;height:20px;">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:15px;font-weight:500;">今日習慣</div><div style="font-size:12px;color:var(--text3);">習慣打卡卡片</div></div>
+        <input type="checkbox" id="hw-toggle-habits" checked onchange="saveHomeSettings()" style="width:20px;height:20px;">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;border-bottom:0.5px solid var(--border);">
+        <div><div style="font-size:15px;font-weight:500;">公告／留言板</div><div style="font-size:12px;color:var(--text3);">最新公告和家人留言</div></div>
+        <input type="checkbox" id="hw-toggle-announce" checked onchange="saveHomeSettings()" style="width:20px;height:20px;">
+      </label>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;">
+        <div><div style="font-size:15px;font-weight:500;">快捷按鈕</div><div style="font-size:12px;color:var(--text3);">記帳、待辦、行程快捷鍵</div></div>
+        <input type="checkbox" id="hw-toggle-shortcuts" checked onchange="saveHomeSettings()" style="width:20px;height:20px;">
+      </label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" style="width:100%;" onclick="closeSheet('sh-home-settings')">完成</button>
+    </div>
+  </div>
+</div>
+
 <!-- 出入金 -->
 <div class="overlay" id="sh-inout-fund">
   <div class="sheet">
@@ -2034,6 +2064,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">消費類別</div><div class="mi-sub">管理我的收支分類</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>`:''}
+      <div class="menu-item" onclick="openHomeSettings()">
+        <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-layout-dashboard" style="color:#9C6BFF" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">首頁自訂</div><div class="mi-sub">選擇首頁顯示的卡片</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="toggleTheme()">
         <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-sun-moon" style="color:var(--blue)" aria-hidden="true" id="theme-icon"></i></div>
         <div class="mi-info"><div class="mi-title" id="theme-label">切換淺色模式</div><div class="mi-sub">目前：深色模式</div></div>
@@ -2254,7 +2289,9 @@ async function loadHome(){
     }catch(e){}
   }catch(e){console.error(e);}
   updateHomeNotifyBadge();
-  loadHomeHabits();
+  const hwSettings=loadHomeSettings();
+  if(hwSettings.habits)loadHomeHabits();
+  else{const c=document.getElementById('h-habits-card');if(c)c.style.display='none';}
 }
 
 async function quickDone(id){
@@ -4440,7 +4477,42 @@ async function openAddHoldingFromPortfolio(){
   }
 }
 
-// ─── 出入金 ───────────────────────────────────────────────────
+// ─── 首頁小工具自訂 ───────────────────────────────────────────
+function loadHomeSettings(){
+  const s=JSON.parse(localStorage.getItem('lifeos_home_widgets')||'{}');
+  const widgets={events:true,habits:true,announce:true,shortcuts:true,...s};
+  // 套用顯示/隱藏
+  const evCard=document.getElementById('hw-events');
+  const anCard=document.getElementById('hw-announce');
+  const scCard=document.getElementById('hw-shortcuts');
+  if(evCard)evCard.style.display=widgets.events?'':'none';
+  if(anCard)anCard.style.display=widgets.announce?'':'none';
+  if(scCard)scCard.style.display=widgets.shortcuts?'flex':'none';
+  // 習慣卡片由 loadHomeHabits 控制，這裡只記錄設定
+  return widgets;
+}
+
+function openHomeSettings(){
+  const s=JSON.parse(localStorage.getItem('lifeos_home_widgets')||'{}');
+  const widgets={events:true,habits:true,announce:true,shortcuts:true,...s};
+  document.getElementById('hw-toggle-events').checked=widgets.events;
+  document.getElementById('hw-toggle-habits').checked=widgets.habits;
+  document.getElementById('hw-toggle-announce').checked=widgets.announce;
+  document.getElementById('hw-toggle-shortcuts').checked=widgets.shortcuts;
+  openSheet('sh-home-settings');
+}
+
+function saveHomeSettings(){
+  const widgets={
+    events:document.getElementById('hw-toggle-events').checked,
+    habits:document.getElementById('hw-toggle-habits').checked,
+    announce:document.getElementById('hw-toggle-announce').checked,
+    shortcuts:document.getElementById('hw-toggle-shortcuts').checked,
+  };
+  localStorage.setItem('lifeos_home_widgets',JSON.stringify(widgets));
+  loadHomeSettings();
+}
+// ─── END 首頁小工具自訂 ───────────────────────────────────────
 let inOutType='in';
 
 function setInOutType(type){
@@ -4489,7 +4561,7 @@ async function saveInOutFund(){
     // 建立轉帳記錄
     await sb('/rest/v1/transfers',{method:'POST',body:JSON.stringify({
       user_id:prof.id,from_account_id:fromId,to_account_id:toId,
-      amount:amt,from_amount:amt,to_amount:amt,rate:1,
+      amount:amt,to_amount:amt,fee:0,
       date,note:note||(inOutType==='in'?'入金':'出金')
     })});
     // 更新兩邊餘額
@@ -6120,22 +6192,16 @@ async function removeBudgetItem(id){
 
 async function fetchTwStockPrice(symbol){
   try{
-    // TWSE real-time API
-    const res=await fetch(`https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_${symbol}.tw&json=1&delay=0`,{mode:'cors'});
+    // Yahoo Finance 支援台股（加 .TW 或 .TWO）
+    const res=await fetch(`https://query2.finance.yahoo.com/v8/finance/chart/${symbol}.TW?interval=1d&range=1d`);
     const data=await res.json();
-    const item=data?.msgArray?.[0];
-    if(item){
-      const price=parseFloat(item.z!=='-'?item.z:item.y);
-      if(!isNaN(price)&&price>0)return price;
-    }
-    // Try OTC (上櫃)
-    const res2=await fetch(`https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=otc_${symbol}.tw&json=1&delay=0`,{mode:'cors'});
+    const price=data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+    if(price&&price>0)return price;
+    // 試上櫃（.TWO）
+    const res2=await fetch(`https://query2.finance.yahoo.com/v8/finance/chart/${symbol}.TWO?interval=1d&range=1d`);
     const data2=await res2.json();
-    const item2=data2?.msgArray?.[0];
-    if(item2){
-      const price2=parseFloat(item2.z!=='-'?item2.z:item2.y);
-      if(!isNaN(price2)&&price2>0)return price2;
-    }
+    const price2=data2?.chart?.result?.[0]?.meta?.regularMarketPrice;
+    if(price2&&price2>0)return price2;
     return null;
   }catch(e){console.error('TW stock error:',e);return null;}
 }
@@ -7100,6 +7166,7 @@ window.openSheet=async function(id){
 // Restore session on load
 (async()=>{
   initTheme();
+  loadHomeSettings();
   const ok=await restoreSession();
   if(ok)initApp();
 })();
