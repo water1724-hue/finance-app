@@ -2107,10 +2107,15 @@ let fxRateTime=null;
 async function fetchFxRates(currencies){
   if(!currencies.length)return;
   try{
-    const syms=currencies.join(',');
-    const r=await fetch(`https://api.frankfurter.app/latest?from=TWD&to=${syms}`);
+    // 改成從 USD 基準，再換算 TWD
+    const r=await fetch(`https://api.frankfurter.app/latest?to=${currencies.concat('TWD').join(',')}`);
     const d=await r.json();
-    currencies.forEach(c=>{ if(d.rates&&d.rates[c]) fxRates[c]=1/d.rates[c]; });
+    if(d.rates&&d.rates.TWD){
+      const twdRate=d.rates.TWD;
+      currencies.forEach(c=>{
+        if(d.rates[c]) fxRates[c]=twdRate/d.rates[c];
+      });
+    }
     fxRateTime=new Date();
   }catch(e){
     try{
@@ -3710,8 +3715,10 @@ async function getAllAlerts(){
     try{
       const vehicles=await sb(`/rest/v1/vehicles?user_id=eq.${prof.id}`,{});
       if(vehicles.length){
-        const vIds=vehicles.map(v=>`vehicle_id=eq.${v.id}`).join(',');
-        const recs=await sb(`/rest/v1/vehicle_records?or=(${vIds})&next_date=not.is.null`,{});
+        const vIds=vehicles.map(v=>v.id);
+        const recs=vIds.length===1
+          ?await sb(`/rest/v1/vehicle_records?vehicle_id=eq.${vIds[0]}&next_date=not.is.null`,{})
+          :await sb(`/rest/v1/vehicle_records?or=(${vIds.map(id=>`vehicle_id.eq.${id}`).join(',')})&next_date=not.is.null`,{});
         const vMap=Object.fromEntries(vehicles.map(v=>[v.id,v.name]));
         recs.forEach(r=>{
           if(!r.next_date)return;
