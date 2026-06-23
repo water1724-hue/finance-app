@@ -2107,24 +2107,11 @@ let fxRateTime=null;
 async function fetchFxRates(currencies){
   if(!currencies.length)return;
   try{
-    // 改成從 USD 基準，再換算 TWD
-    const r=await fetch(`https://api.frankfurter.app/latest?to=${currencies.concat('TWD').join(',')}`);
+    const r=await fetch(`https://open.er-api.com/v6/latest/TWD`);
     const d=await r.json();
-    if(d.rates&&d.rates.TWD){
-      const twdRate=d.rates.TWD;
-      currencies.forEach(c=>{
-        if(d.rates[c]) fxRates[c]=twdRate/d.rates[c];
-      });
-    }
+    currencies.forEach(c=>{ if(d.rates&&d.rates[c]) fxRates[c]=1/d.rates[c]; });
     fxRateTime=new Date();
-  }catch(e){
-    try{
-      const r2=await fetch(`https://open.er-api.com/v6/latest/TWD`);
-      const d2=await r2.json();
-      currencies.forEach(c=>{ if(d2.rates&&d2.rates[c]) fxRates[c]=1/d2.rates[c]; });
-      fxRateTime=new Date();
-    }catch(e2){console.warn('匯率取得失敗',e2);}
-  }
+  }catch(e){console.warn('匯率取得失敗',e);}
 }
 
 async function refreshFxRates(){
@@ -2195,7 +2182,7 @@ async function loadFinance(){
       if(fxRateTime){
         const h=fxRateTime.getHours().toString().padStart(2,'0');
         const m=fxRateTime.getMinutes().toString().padStart(2,'0');
-        fxTimeEl.textContent=`匯率更新於 ${h}:${m}，來源：Frankfurter / ECB`;
+        fxTimeEl.textContent=`匯率更新於 ${h}:${m}，來源：ExchangeRate-API`;
       }
     } else {
       fxSummaryEl.style.display='none';
@@ -2221,10 +2208,8 @@ async function loadFinance(){
 
     // Acc cat select
     document.getElementById('acc-cat').innerHTML=cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-  }catch(e){toast('載入失敗','err');}
+  }catch(e){console.error('loadFinance error:',e);toast('載入失敗','err');}
 }
-
-function buildAccOptgroup(accounts, cats){
   const groups=[
     {types:['cash'],label:'現金'},
     {types:['bank'],label:'銀行帳戶'},
