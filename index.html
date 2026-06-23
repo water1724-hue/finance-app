@@ -4417,6 +4417,8 @@ function selectHoldingAcc(accId){
   closeSheet('sh-holding-acc');
   showAddHolding();
 }
+
+function openPortTxn(holdingId, type){
   currentHoldingId=holdingId;
   setInvType(type);
   document.getElementById('inv-qty').value='';
