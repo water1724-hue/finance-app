@@ -2006,9 +2006,16 @@ async function loadHome(){
   const now=new Date();
   const wds=['日','一','二','三','四','五','六'];
   const hours=now.getHours();
-  const greeting=hours<12?'早安 ☀️':hours<18?'午安 🌤️':'晚安 🌙';
   const greetEl=document.getElementById('home-greeting');
-  if(greetEl)greetEl.textContent=`${greeting}，${prof.display_name||prof.username}`;
+  if(greetEl){
+    const name=prof.display_name||prof.username;
+    const greetText=hours<12?'早安':hours<18?'午安':'晚安';
+    // 先顯示時間預設
+    const defaultIcon=hours<12?'ti-sun':hours<18?'ti-cloud-sun':'ti-moon';
+    greetEl.innerHTML=`<i class="ti ${defaultIcon}" style="font-size:20px;vertical-align:middle;margin-right:6px;color:var(--gold);" aria-hidden="true"></i>${greetText}，${name}`;
+    // 背景取得天氣
+    fetchWeatherGreeting(greetText, name);
+  }
   document.getElementById('home-date').textContent=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 週${wds[now.getDay()]}`;
   const today=now.toISOString().slice(0,10);
   try{
@@ -3996,7 +4003,47 @@ async function processRecurringTxns(){
 }
 // ─── END RECURRING TRANSACTIONS ──────────────────────────────
 
-// ─── GLOBAL SEARCH（全局搜尋） ────────────────────────────────
+// ─── WEATHER GREETING ─────────────────────────────────────────
+const OWM_KEY='81bac32c8fe705105696d13144601765';
+
+async function fetchWeatherGreeting(greetText, name){
+  try{
+    // 取得使用者位置
+    const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:5000}));
+    const {latitude:lat,longitude:lon}=pos.coords;
+    const r=await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OWM_KEY}&units=metric&lang=zh_tw`);
+    const d=await r.json();
+    const code=d.weather?.[0]?.id||800;
+    const temp=Math.round(d.main?.temp||0);
+    const desc=d.weather?.[0]?.description||'';
+    const city=d.name||'';
+
+    // 依天氣代碼選圖示
+    let icon,color;
+    if(code>=200&&code<300){icon='ti-cloud-storm';color='var(--blue)';}       // 雷雨
+    else if(code>=300&&code<400){icon='ti-cloud-drizzle';color='var(--blue)';} // 毛毛雨
+    else if(code>=500&&code<600){icon='ti-cloud-rain';color='var(--blue)';}    // 雨
+    else if(code>=600&&code<700){icon='ti-snowflake';color='#a0c4ff';}         // 雪
+    else if(code>=700&&code<800){icon='ti-wind';color='var(--text3)';}         // 霧/霾
+    else if(code===800){                                                         // 晴
+      const h=new Date().getHours();
+      icon=h>=6&&h<18?'ti-sun':'ti-moon';
+      color='var(--gold)';
+    }
+    else if(code===801||code===802){icon='ti-cloud-sun';color='var(--gold)';} // 少雲
+    else{icon='ti-cloud';color='var(--text3)';}                                // 多雲
+
+    const greetEl=document.getElementById('home-greeting');
+    if(greetEl){
+      greetEl.innerHTML=`<i class="ti ${icon}" style="font-size:20px;vertical-align:middle;margin-right:6px;color:${color};" aria-hidden="true"></i>${greetText}，${name}
+        <div style="font-size:13px;font-weight:400;color:var(--text3);margin-top:2px;">${city} ${temp}°C　${desc}</div>`;
+    }
+  }catch(e){
+    // 位置取得失敗或 API 失敗，保留預設圖示不做任何事
+    console.warn('天氣取得失敗:',e);
+  }
+}
+// ─── END WEATHER GREETING ─────────────────────────────────────
 let searchType='all';
 let searchTimer=null;
 
