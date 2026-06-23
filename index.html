@@ -3737,8 +3737,8 @@ async function loadNotifyCenter(){
       <div style="display:flex;gap:10px;align-items:flex-start;">
         <div class="list-icon" style="background:${bgMap[a.level]};flex-shrink:0;"><i class="ti ${a.icon}" style="color:${colorMap[a.level]}" aria-hidden="true"></i></div>
         <div style="flex:1;">
-          <div style="font-size:13px;font-weight:600;color:var(--text);">${a.title}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px;">${a.sub}</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text);">${a.title}</div>
+          <div style="font-size:13px;color:var(--text3);margin-top:2px;">${a.sub}</div>
         </div>
       </div>
     </div>`).join('');
@@ -3761,10 +3761,10 @@ async function updateHomeNotifyBadge(){
         <div style="display:flex;align-items:center;gap:10px;">
           <i class="ti ${top.icon}" style="color:${colorMap[top.level]};font-size:18px;" aria-hidden="true"></i>
           <div style="flex:1;">
-            <div style="font-size:13px;font-weight:600;color:var(--text);">${top.title}</div>
-            <div style="font-size:11px;color:var(--text3);">${top.sub}</div>
+            <div style="font-size:15px;font-weight:600;color:var(--text);">${top.title}</div>
+            <div style="font-size:13px;color:var(--text3);">${top.sub}</div>
           </div>
-          ${alerts.length>1?`<div style="font-size:11px;color:${colorMap[top.level]};font-weight:600;">+${alerts.length-1} 則</div>`:''}
+          ${alerts.length>1?`<div style="font-size:13px;color:${colorMap[top.level]};font-weight:600;">+${alerts.length-1} 則</div>`:''}
         </div>
       </div>`;
     } else {
