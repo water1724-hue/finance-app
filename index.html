@@ -448,6 +448,13 @@ select.inp option{background:var(--bg2);}
           <div id="fx-rows"></div>
           <div style="font-size:10px;color:var(--text3);margin-top:6px;" id="fx-rate-time"></div>
         </div>
+        <div id="fin-stock-val" style="display:none;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--gold-border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;">持股市值</div>
+            <div style="font-size:16px;font-weight:700;color:var(--gold);" id="fin-stock-num">NT$ —</div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;">不含於淨資產，另計</div>
+        </div>
       </div>
 
       <!-- 大項 tabs -->
@@ -2566,6 +2573,28 @@ async function loadFinance(){
 
     document.getElementById('fin-net').textContent='NT$ '+Math.round(netWorth).toLocaleString();
     document.getElementById('fin-sub').textContent=`台幣 NT$${Math.round(totalTWD).toLocaleString()}${fxTWDTotal>0?` ＋ 外幣折合 NT$${Math.round(fxTWDTotal).toLocaleString()}`:''}　信用卡負債 NT$${Math.round(totalDebt).toLocaleString()}　淨值 NT$${Math.round(netWorth).toLocaleString()}`;
+
+    // 持股市值（分開顯示）
+    try{
+      const invTypes=['securities','fund'];
+      const invAccIds=accounts.filter(a=>invTypes.includes(cats.find(c=>c.id===a.category_id)?.type)).map(a=>a.id);
+      if(invAccIds.length){
+        const holdings=await sb(`/rest/v1/holdings?account_id=in.(${invAccIds.join(',')})`,{});
+        let stockVal=0;
+        holdings.forEach(h=>{
+          const qty=Number(h.quantity);
+          const price=Number(h.current_price)||Number(h.avg_cost);
+          const currency=(h.currency||'TWD').toUpperCase();
+          const rate=currency==='TWD'?1:(fxRates[currency]||1);
+          stockVal+=qty*price*rate;
+        });
+        const stockEl=document.getElementById('fin-stock-val');
+        if(stockEl){
+          stockEl.style.display=stockVal>0?'':'none';
+          document.getElementById('fin-stock-num').textContent=`NT$ ${Math.round(stockVal).toLocaleString()}`;
+        }
+      }
+    }catch(e){}
 
     // 外幣摘要區塊
     const fxKeys=Object.keys(fxMap);
