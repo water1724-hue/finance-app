@@ -260,37 +260,23 @@ select.inp option{background:var(--bg2);}
 
     <!-- HOME -->
     <div class="page on" id="pg-home">
-      <div class="row-between" style="margin-bottom:18px;">
-        <div class="pg-title" style="margin:0">首頁</div>
-        <button onclick="goPage('notify')" style="position:relative;background:none;border:none;cursor:pointer;color:var(--text2);font-size:20px;padding:4px;">
+      <!-- 頂部：日期＋鈴鐺 -->
+      <div class="row-between" style="margin-bottom:14px;">
+        <div>
+          <div class="pg-title" style="margin:0;font-size:22px;" id="home-greeting"></div>
+          <div id="home-date" style="font-size:13px;color:var(--text3);margin-top:2px;"></div>
+        </div>
+        <button onclick="goPage('notify')" style="position:relative;background:none;border:none;cursor:pointer;color:var(--text2);font-size:22px;padding:4px;">
           <i class="ti ti-bell" aria-hidden="true"></i>
           <span id="notify-badge" style="display:none;position:absolute;top:0;right:0;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:8px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;">0</span>
         </button>
       </div>
 
-      <!-- 通知摘要橫幅 -->
+      <!-- 通知提醒 banner -->
       <div id="home-notify-banner" style="display:none;margin-bottom:12px;"></div>
 
-      <!-- 快速記帳 -->
-      <div class="card card-gold" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:12px;" onclick="openSheet('sh-txn')">
-        <div>
-          <div style="font-size:12px;color:var(--gold);letter-spacing:1px;font-weight:600;text-transform:uppercase;">快速記帳</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px;">記錄一筆收支</div>
-        </div>
-        <i class="ti ti-plus" style="font-size:20px;color:var(--gold);" aria-hidden="true"></i>
-      </div>
-
-      <!-- 今日重點 -->
-      <div class="card">
-        <div class="row-between" style="margin-bottom:12px;">
-          <div class="sec-label" style="margin:0">今日重點</div>
-          <div id="home-date" style="font-size:13px;color:var(--text3);"></div>
-        </div>
-        <div id="h-highlights"></div>
-      </div>
-
       <!-- 今日行程 -->
-      <div class="card">
+      <div class="card" style="margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:12px;">
           <div class="sec-label" style="margin:0">今日行程</div>
           <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-event')"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
@@ -298,32 +284,23 @@ select.inp option{background:var(--bg2);}
         <div id="h-events"></div>
       </div>
 
-      <!-- 待辦 -->
-      <div class="card">
-        <div class="row-between" style="margin-bottom:12px;">
-          <div class="sec-label" style="margin:0">待辦清單</div>
-          <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-todo')"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
-        </div>
-        <div id="h-todos"></div>
-      </div>
-
-      <!-- 今日習慣 -->
-      <div class="card" id="h-habits-card" style="display:none;">
-        <div class="row-between" style="margin-bottom:12px;">
+      <!-- 習慣打卡（有習慣才顯示） -->
+      <div class="card" id="h-habits-card" style="display:none;margin-bottom:12px;">
+        <div class="row-between" style="margin-bottom:10px;">
           <div class="sec-label" style="margin:0">今日習慣</div>
-          <span style="font-size:11px;color:var(--gold);cursor:pointer;" onclick="goPage('habits')">管理 →</span>
+          <span style="font-size:13px;color:var(--gold);cursor:pointer;" onclick="goPage('habits')">管理 →</span>
         </div>
         <div id="h-habits"></div>
       </div>
 
       <!-- 公告 / 留言板 -->
-      <div class="card">
+      <div class="card" style="margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:12px;">
           <div style="display:flex;gap:14px;">
             <div class="home-tab on" id="home-tab-announce" onclick="switchHomeTab('announce')">公告</div>
             <div class="home-tab" id="home-tab-memo" onclick="switchHomeTab('memo')">留言板</div>
           </div>
-          <span style="font-size:11px;color:var(--gold);cursor:pointer;" id="home-tab-more" onclick="goPage('announce')">全部</span>
+          <span style="font-size:13px;color:var(--gold);cursor:pointer;" id="home-tab-more" onclick="goPage('announce')">全部</span>
         </div>
         <div id="h-announce"></div>
         <div id="h-memo" style="display:none;">
@@ -334,6 +311,20 @@ select.inp option{background:var(--bg2);}
           <div id="h-memo-list"></div>
         </div>
       </div>
+
+      <!-- 底部快捷列 -->
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button class="btn btn-ghost" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;" onclick="openSheet('sh-txn')">
+          <i class="ti ti-wallet" style="color:var(--gold);" aria-hidden="true"></i><span style="font-size:14px;">記帳</span>
+        </button>
+        <button class="btn btn-ghost" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;" onclick="openSheet('sh-todo')">
+          <i class="ti ti-checklist" style="color:var(--blue);" aria-hidden="true"></i><span style="font-size:14px;">待辦</span>
+        </button>
+        <button class="btn btn-ghost" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;" onclick="openSheet('sh-event')">
+          <i class="ti ti-calendar-plus" style="color:var(--green);" aria-hidden="true"></i><span style="font-size:14px;">行程</span>
+        </button>
+      </div>
+
     </div>
 
     <!-- FINANCE -->
@@ -1982,7 +1973,11 @@ function toast(msg,type='ok'){
 async function loadHome(){
   const now=new Date();
   const wds=['日','一','二','三','四','五','六'];
-  document.getElementById('home-date').textContent=`${now.getMonth()+1}月${now.getDate()}日 週${wds[now.getDay()]}`;
+  const hours=now.getHours();
+  const greeting=hours<12?'早安 ☀️':hours<18?'午安 🌤️':'晚安 🌙';
+  const greetEl=document.getElementById('home-greeting');
+  if(greetEl)greetEl.textContent=`${greeting}，${prof.display_name||prof.username}`;
+  document.getElementById('home-date').textContent=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 週${wds[now.getDay()]}`;
   const today=now.toISOString().slice(0,10);
   try{
     const [todos,events,announces,memos]=await Promise.all([
@@ -1998,8 +1993,6 @@ async function loadHome(){
     const hlEl=document.getElementById('h-highlights');
     if(hlEl){
       const highlights=[];
-
-      // 最近一筆行程
       const nextEvent=events.find(e=>e.start_time>=now.toTimeString().slice(0,5))||events[0];
       if(nextEvent){
         highlights.push(`<div class="list-row" style="padding:8px 0;cursor:pointer;" onclick="goPage('cal')">
@@ -2012,40 +2005,21 @@ async function loadHome(){
           </div>
           <i class="ti ti-chevron-right" style="color:var(--text3);" aria-hidden="true"></i>
         </div>`);
-      } else {
-        highlights.push(`<div class="list-row" style="padding:8px 0;">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="ti ti-calendar" style="color:var(--text3);font-size:18px;" aria-hidden="true"></i>
-          </div>
-          <div class="list-info"><div class="list-title" style="color:var(--text3);">今日無行程</div></div>
-        </div>`);
       }
-
-      // 最高優先待辦
       const urgentTodo=todos.find(t=>t.priority==='high')||todos[0];
       if(urgentTodo){
-        const priorityColor={high:'var(--red)',normal:'var(--gold)',low:'var(--text3)'};
         highlights.push(`<div class="list-row" style="padding:8px 0;cursor:pointer;border-top:0.5px solid var(--border);" onclick="goPage('todo')">
           <div style="width:36px;height:36px;border-radius:10px;background:rgba(232,112,112,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="ti ti-checklist" style="color:${priorityColor[urgentTodo.priority]||'var(--gold)'};font-size:18px;" aria-hidden="true"></i>
+            <i class="ti ti-checklist" style="color:var(--red);font-size:18px;" aria-hidden="true"></i>
           </div>
           <div class="list-info" style="flex:1;">
             <div class="list-title">${urgentTodo.title}</div>
-            <div class="list-sub">${todos.length>1?`還有 ${todos.length-1} 項未完成`:'僅此一項'}${urgentTodo.due_date?` · 截止 ${urgentTodo.due_date}`:''}</div>
+            <div class="list-sub">${todos.length>1?`還有 ${todos.length} 項未完成`:'僅此一項'}</div>
           </div>
           <i class="ti ti-chevron-right" style="color:var(--text3);" aria-hidden="true"></i>
         </div>`);
-      } else {
-        highlights.push(`<div class="list-row" style="padding:8px 0;border-top:0.5px solid var(--border);">
-          <div style="width:36px;height:36px;border-radius:10px;background:var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="ti ti-checklist" style="color:var(--text3);font-size:18px;" aria-hidden="true"></i>
-          </div>
-          <div class="list-info"><div class="list-title" style="color:var(--text3);">無待辦事項</div></div>
-        </div>`);
       }
-
-      // 習慣完成率（從 loadHomeHabits 載入後更新，先佔位）
-      highlights.push(`<div id="h-habit-highlight" style="border-top:0.5px solid var(--border);"></div>`);
+      highlights.push(`<div id="h-habit-highlight"></div>`);
       hlEl.innerHTML=highlights.join('');
     }
     // Events
@@ -2062,19 +2036,6 @@ async function loadHome(){
             <div style="margin-top:4px;">${e.is_shared?'<span class="tag tag-blue">共用</span>':'<span class="tag tag-gold">個人</span>'}</div>
           </div>
         </div>`).join('')+'</div>';
-    }
-    // Todos
-    const tdEl=document.getElementById('h-todos');
-    const show=todos.slice(0,4);
-    if(!show.length){tdEl.innerHTML='<div class="empty"><p>沒有未完成待辦</p></div>';}
-    else{
-      tdEl.innerHTML=show.map(t=>`
-        <div class="list-row" style="cursor:default;">
-          <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid var(--text3);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="event.stopPropagation();quickDone('${t.id}')"></div>
-          <div class="list-info"><div class="list-title">${t.title}</div>${t.due_date?`<div class="list-sub">截止 ${t.due_date}</div>`:''}</div>
-          <span class="tag tag-${t.priority}">${{high:'高',normal:'一般',low:'低'}[t.priority]}</span>
-        </div>`).join('');
-      if(todos.length>4)tdEl.innerHTML+=`<div style="text-align:center;padding:8px;font-size:11px;color:var(--text3);cursor:pointer;" onclick="goPage('todo')">還有 ${todos.length-4} 項 →</div>`;
     }
     // Announce
     const anEl=document.getElementById('h-announce');
