@@ -613,6 +613,43 @@ select.inp option{background:var(--bg2);}
       <div class="card"><div id="fxlog-list"></div></div>
     </div>
 
+    <!-- MEDICAL -->
+    <div class="page" id="pg-medical">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="pg-title" style="margin-bottom:16px;">醫療記錄</div>
+      <!-- Tab -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button class="ftab on" id="med-tab-meds" onclick="setMedTab('meds',this)">用藥管理</button>
+        <button class="ftab" id="med-tab-visits" onclick="setMedTab('visits',this)">回診記錄</button>
+        <button class="ftab" id="med-tab-body" onclick="setMedTab('body',this)">身體數據</button>
+      </div>
+      <!-- 用藥 -->
+      <div id="med-meds-wrap">
+        <div class="row-between" style="margin-bottom:12px;">
+          <div style="font-size:13px;color:var(--text3);">慢性病 / 長期用藥</div>
+          <button class="btn btn-gold btn-sm" onclick="openAddMed()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+        </div>
+        <div class="card"><div id="med-meds-list"></div></div>
+      </div>
+      <!-- 回診 -->
+      <div id="med-visits-wrap" style="display:none;">
+        <div class="row-between" style="margin-bottom:12px;">
+          <div style="font-size:13px;color:var(--text3);">回診 / 就醫紀錄</div>
+          <button class="btn btn-gold btn-sm" onclick="openAddVisit()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+        </div>
+        <div class="card"><div id="med-visits-list"></div></div>
+      </div>
+      <!-- 身體數據 -->
+      <div id="med-body-wrap" style="display:none;">
+        <div class="row-between" style="margin-bottom:12px;">
+          <div style="font-size:13px;color:var(--text3);">體重 / 身高紀錄</div>
+          <button class="btn btn-gold btn-sm" onclick="openAddBody()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+        </div>
+        <div class="card" style="margin-bottom:12px;"><canvas id="med-body-chart" height="160"></canvas></div>
+        <div class="card"><div id="med-body-list"></div></div>
+      </div>
+    </div>
+
     <!-- MORE -->
     <div class="page" id="pg-more">
       <div class="pg-title">更多</div>
@@ -1155,6 +1192,70 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Medical - Medication -->
+<div class="overlay" id="sh-med-med">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-med-med-title">新增用藥</h3>
+    <input type="hidden" id="med-med-id">
+    <div class="field"><label>藥名</label><input class="inp" type="text" id="med-med-name" placeholder="例如：降血壓藥、胃藥、維他命C"></div>
+    <div class="field"><label>每次用量</label><input class="inp" type="text" id="med-med-dosage" placeholder="例如：1顆、2顆、半顆"></div>
+    <div class="field"><label>服用時間</label><input class="inp" type="text" id="med-med-freq" placeholder="例如：早餐後、睡前、飯前30分鐘"></div>
+    <div class="field"><label>頻率</label>
+      <select class="inp" id="med-med-period">
+        <option value="每天">每天</option>
+        <option value="每週">每週</option>
+        <option value="需要時">需要時（備用）</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div class="field"><label>其他提醒</label><input class="inp" type="text" id="med-med-note" placeholder="例如：飯後吃、不能配葡萄柚汁"></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="med-med-active" checked style="width:16px;height:16px;"> 目前仍在服用</label></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-med-med')">取消</button>
+      <button class="btn btn-gold" onclick="saveMed()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Medical - Visit -->
+<div class="overlay" id="sh-med-visit">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-med-visit-title">新增回診記錄</h3>
+    <input type="hidden" id="med-visit-id">
+    <div class="field"><label>醫院 / 診所</label><input class="inp" type="text" id="med-visit-hospital" placeholder="例如：台大醫院"></div>
+    <div class="field"><label>科別</label><input class="inp" type="text" id="med-visit-dept" placeholder="例如：心臟科、家醫科"></div>
+    <div class="field"><label>醫師</label><input class="inp" type="text" id="med-visit-doctor" placeholder="選填"></div>
+    <div class="field"><label>就診日期</label><input class="inp" type="date" id="med-visit-date"></div>
+    <div class="field"><label>下次回診日期</label><input class="inp" type="date" id="med-visit-next"></div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="med-visit-note" placeholder="選填"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-med-visit')">取消</button>
+      <button class="btn btn-gold" onclick="saveVisit()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Medical - Body -->
+<div class="overlay" id="sh-med-body">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-med-body-title">新增身體數據</h3>
+    <input type="hidden" id="med-body-id">
+    <div class="field"><label>日期</label><input class="inp" type="date" id="med-body-date"></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div class="field" style="flex:1;"><label>體重 (kg)</label><input class="inp" type="number" id="med-body-weight" placeholder="例如：65.5" step="0.1"></div>
+      <div class="field" style="flex:1;"><label>身高 (cm)</label><input class="inp" type="number" id="med-body-height" placeholder="例如：170" step="0.1"></div>
+    </div>
+    <div class="field"><label>備註</label><input class="inp" type="text" id="med-body-note" placeholder="選填"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-med-body')">取消</button>
+      <button class="btn btn-gold" onclick="saveBody()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Contact -->
 <div class="overlay" id="sh-contact">
   <div class="sheet">
@@ -1614,6 +1715,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">聯絡人備忘</div><div class="mi-sub">生日、紀念日提醒</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="goPage('medical')">
+        <div class="mi-icon" style="background:rgba(232,112,112,.1)"><i class="ti ti-heart-rate-monitor" style="color:var(--red)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">醫療記錄</div><div class="mi-sub">用藥管理、回診提醒、身體數據</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="goPage('ai')">
         <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
@@ -1720,6 +1826,7 @@ function goPage(p){
   if(p==='shopping')loadShopping();
   if(p==='contacts')loadContacts();
   if(p==='fxlog')loadFxLog();
+  if(p==='medical')initMedical();
 }
 function showDet(id){
   // 管理員限定功能
@@ -3438,6 +3545,17 @@ async function getAllAlerts(){
       });
     }catch(e){}
 
+    // 7. 回診提醒
+    try{
+      const visits=await sb(`/rest/v1/medical_visits?user_id=eq.${prof.id}&next_date=not.is.null`,{});
+      visits.forEach(v=>{
+        if(!v.next_date)return;
+        const diff=Math.ceil((new Date(v.next_date)-today)/(1000*60*60*24));
+        if(diff<0)alerts.push({level:'red',icon:'ti-stethoscope',title:`回診已過期`,sub:`${v.hospital||''}${v.department?` ${v.department}`:''} · ${v.next_date}`,page:'medical'});
+        else if(diff<=7)alerts.push({level:diff===0?'red':'orange',icon:'ti-stethoscope',title:`回診提醒`,sub:`${v.hospital||''}${v.department?` ${v.department}`:''} · ${diff===0?'今天':''}${diff>0?`${diff} 天後`:''}（${v.next_date}）`,page:'medical'});
+      });
+    }catch(e){}
+
   }catch(e){console.error('getAllAlerts',e);}
 
   // 排序：red > orange > gold
@@ -4077,7 +4195,239 @@ async function delContact(id){
 }
 // ─── END CONTACTS ─────────────────────────────────────────────
 
-// ─── FX EXCHANGE LOG（外幣兌換紀錄） ─────────────────────────
+// ─── END CONTACTS ─────────────────────────────────────────────
+
+// ─── MEDICAL（醫療記錄） ───────────────────────────────────────
+let medTab='meds';
+let medBodyChart=null;
+
+function setMedTab(tab, btn){
+  medTab=tab;
+  document.querySelectorAll('.ftab[id^="med-tab-"]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('med-meds-wrap').style.display=tab==='meds'?'':'none';
+  document.getElementById('med-visits-wrap').style.display=tab==='visits'?'':'none';
+  document.getElementById('med-body-wrap').style.display=tab==='body'?'':'none';
+  if(tab==='meds')loadMeds();
+  if(tab==='visits')loadVisits();
+  if(tab==='body')loadBody();
+}
+
+function initMedical(){
+  medTab='meds';
+  document.querySelectorAll('.ftab[id^="med-tab-"]').forEach(b=>b.classList.remove('on'));
+  document.getElementById('med-tab-meds').classList.add('on');
+  document.getElementById('med-meds-wrap').style.display='';
+  document.getElementById('med-visits-wrap').style.display='none';
+  document.getElementById('med-body-wrap').style.display='none';
+  loadMeds();
+}
+
+// ── 用藥管理 ──
+async function loadMeds(){
+  const el=document.getElementById('med-meds-list');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
+  try{
+    const meds=await sb(`/rest/v1/medical_medications?user_id=eq.${prof.id}&order=is_active.desc,created_at.asc`,{});
+    if(!meds.length){el.innerHTML='<div class="empty"><i class="ti ti-pill" aria-hidden="true"></i><p>尚無用藥記錄</p></div>';return;}
+    el.innerHTML=meds.map(m=>{
+      const tags=[m.period,m.frequency,m.dosage].filter(Boolean);
+      return`<div class="list-row" style="${m.is_active?'':'opacity:0.5;'}">
+        <div style="width:36px;height:36px;border-radius:10px;background:${m.is_active?'rgba(93,189,138,0.15)':'var(--bg4)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="ti ti-pill" style="color:${m.is_active?'var(--green)':'var(--text3)'};font-size:18px;" aria-hidden="true"></i>
+        </div>
+        <div class="list-info" style="flex:1;">
+          <div class="list-title">${m.name} ${m.is_active?'':'<span style="font-size:11px;color:var(--text3);">(已停用)</span>'}</div>
+          <div class="list-sub">${tags.join(' · ')}${m.note?` · ${m.note}`:''}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openEditMed(${JSON.stringify(m).replace(/"/g,'&quot;')})">編輯</button>
+        <button class="icon-btn" onclick="delMed('${m.id}')" style="color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+
+function openAddMed(){
+  document.getElementById('sh-med-med-title').textContent='新增用藥';
+  document.getElementById('med-med-id').value='';
+  document.getElementById('med-med-name').value='';
+  document.getElementById('med-med-dosage').value='';
+  document.getElementById('med-med-freq').value='';
+  document.getElementById('med-med-period').value='每天';
+  document.getElementById('med-med-note').value='';
+  document.getElementById('med-med-active').checked=true;
+  openSheet('sh-med-med');
+}
+
+function openEditMed(m){
+  document.getElementById('sh-med-med-title').textContent='編輯用藥';
+  document.getElementById('med-med-id').value=m.id;
+  document.getElementById('med-med-name').value=m.name||'';
+  document.getElementById('med-med-dosage').value=m.dosage||'';
+  document.getElementById('med-med-freq').value=m.frequency||'';
+  document.getElementById('med-med-period').value=m.period||'每天';
+  document.getElementById('med-med-note').value=m.note||'';
+  document.getElementById('med-med-active').checked=!!m.is_active;
+  openSheet('sh-med-med');
+}
+
+async function saveMed(){
+  const id=document.getElementById('med-med-id').value;
+  const name=document.getElementById('med-med-name').value.trim();
+  if(!name){toast('請填寫藥名','err');return;}
+  const body={user_id:prof.id,name,dosage:document.getElementById('med-med-dosage').value.trim()||null,frequency:document.getElementById('med-med-freq').value.trim()||null,period:document.getElementById('med-med-period').value||'每天',note:document.getElementById('med-med-note').value.trim()||null,is_active:document.getElementById('med-med-active').checked};
+  try{
+    if(id)await sb(`/rest/v1/medical_medications?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    else await sb('/rest/v1/medical_medications',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-med-med');toast('已儲存');loadMeds();
+  }catch(e){toast('儲存失敗','err');}
+}
+
+async function delMed(id){
+  if(!confirm('確定刪除此用藥記錄？'))return;
+  try{await sb(`/rest/v1/medical_medications?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadMeds();}catch(e){toast('刪除失敗','err');}
+}
+
+// ── 回診記錄 ──
+async function loadVisits(){
+  const el=document.getElementById('med-visits-list');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
+  try{
+    const visits=await sb(`/rest/v1/medical_visits?user_id=eq.${prof.id}&order=visit_date.desc`,{});
+    if(!visits.length){el.innerHTML='<div class="empty"><i class="ti ti-stethoscope" aria-hidden="true"></i><p>尚無回診記錄</p></div>';return;}
+    const today=new Date().toISOString().slice(0,10);
+    el.innerHTML=visits.map(v=>{
+      const soon=v.next_date&&v.next_date>=today&&Math.ceil((new Date(v.next_date)-new Date())/(1000*60*60*24))<=7;
+      const overdue=v.next_date&&v.next_date<today;
+      return`<div class="list-row" style="flex-direction:column;align-items:flex-start;gap:6px;padding:12px 0;">
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+          <div style="font-weight:600;font-size:14px;">${v.hospital||''}${v.department?` · ${v.department}`:''}</div>
+          ${overdue?'<span style="font-size:11px;color:var(--red);">⚠️ 已過期</span>':soon?'<span style="font-size:11px;color:var(--orange);">即將回診</span>':''}
+        </div>
+        <div style="font-size:12px;color:var(--text3);">${[v.doctor?`醫師：${v.doctor}`:'',v.visit_date?`就診：${v.visit_date}`:'',v.next_date?`回診：${v.next_date}`:''].filter(Boolean).join(' · ')}</div>
+        ${v.note?`<div style="font-size:12px;color:var(--text2);">${v.note}</div>`:''}
+        <div style="display:flex;gap:6px;justify-content:flex-end;width:100%;">
+          <button class="btn btn-ghost btn-sm" onclick="openEditVisit(${JSON.stringify(v).replace(/"/g,'&quot;')})">編輯</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="delVisit('${v.id}')">刪除</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+
+function openAddVisit(){
+  document.getElementById('sh-med-visit-title').textContent='新增回診記錄';
+  document.getElementById('med-visit-id').value='';
+  document.getElementById('med-visit-hospital').value='';
+  document.getElementById('med-visit-dept').value='';
+  document.getElementById('med-visit-doctor').value='';
+  document.getElementById('med-visit-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('med-visit-next').value='';
+  document.getElementById('med-visit-note').value='';
+  openSheet('sh-med-visit');
+}
+
+function openEditVisit(v){
+  document.getElementById('sh-med-visit-title').textContent='編輯回診記錄';
+  document.getElementById('med-visit-id').value=v.id;
+  document.getElementById('med-visit-hospital').value=v.hospital||'';
+  document.getElementById('med-visit-dept').value=v.department||'';
+  document.getElementById('med-visit-doctor').value=v.doctor||'';
+  document.getElementById('med-visit-date').value=v.visit_date||'';
+  document.getElementById('med-visit-next').value=v.next_date||'';
+  document.getElementById('med-visit-note').value=v.note||'';
+  openSheet('sh-med-visit');
+}
+
+async function saveVisit(){
+  const id=document.getElementById('med-visit-id').value;
+  const body={user_id:prof.id,hospital:document.getElementById('med-visit-hospital').value.trim()||null,department:document.getElementById('med-visit-dept').value.trim()||null,doctor:document.getElementById('med-visit-doctor').value.trim()||null,visit_date:document.getElementById('med-visit-date').value||null,next_date:document.getElementById('med-visit-next').value||null,note:document.getElementById('med-visit-note').value.trim()||null};
+  try{
+    if(id)await sb(`/rest/v1/medical_visits?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    else await sb('/rest/v1/medical_visits',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-med-visit');toast('已儲存');loadVisits();
+  }catch(e){toast('儲存失敗','err');}
+}
+
+async function delVisit(id){
+  if(!confirm('確定刪除此回診記錄？'))return;
+  try{await sb(`/rest/v1/medical_visits?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadVisits();}catch(e){toast('刪除失敗','err');}
+}
+
+// ── 身體數據 ──
+async function loadBody(){
+  const el=document.getElementById('med-body-list');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);">載入中...</div>';
+  try{
+    const records=await sb(`/rest/v1/medical_body?user_id=eq.${prof.id}&order=date.desc&limit=30`,{});
+    if(!records.length){el.innerHTML='<div class="empty"><i class="ti ti-scale" aria-hidden="true"></i><p>尚無身體數據</p></div>';
+      if(medBodyChart){medBodyChart.destroy();medBodyChart=null;}return;}
+    // 圖表（最近30筆，由舊到新）
+    const sorted=[...records].reverse();
+    const ctx=document.getElementById('med-body-chart').getContext('2d');
+    if(medBodyChart)medBodyChart.destroy();
+    medBodyChart=new Chart(ctx,{
+      type:'line',
+      data:{
+        labels:sorted.map(r=>r.date.slice(5)),
+        datasets:[{label:'體重(kg)',data:sorted.map(r=>r.weight),borderColor:'var(--gold)',backgroundColor:'rgba(212,170,106,0.1)',tension:0.3,pointRadius:3,fill:true}]
+      },
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#888'},grid:{color:'rgba(128,128,128,0.1)'}},x:{ticks:{color:'#888'},grid:{display:false}}}}
+    });
+    // 列表
+    el.innerHTML=records.map(r=>{
+      const bmi=r.weight&&r.height?((r.weight/(r.height/100)**2).toFixed(1)):'';
+      return`<div class="list-row">
+        <div class="list-info" style="flex:1;">
+          <div class="list-title">${r.date}</div>
+          <div class="list-sub">${r.weight?`${r.weight} kg`:''}${r.height?` · ${r.height} cm`:''}${bmi?` · BMI ${bmi}`:''}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openEditBody(${JSON.stringify(r).replace(/"/g,'&quot;')})">編輯</button>
+        <button class="icon-btn" onclick="delBody('${r.id}')" style="color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+}
+
+function openAddBody(){
+  document.getElementById('sh-med-body-title').textContent='新增身體數據';
+  document.getElementById('med-body-id').value='';
+  document.getElementById('med-body-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('med-body-weight').value='';
+  document.getElementById('med-body-height').value='';
+  document.getElementById('med-body-note').value='';
+  openSheet('sh-med-body');
+}
+
+function openEditBody(r){
+  document.getElementById('sh-med-body-title').textContent='編輯身體數據';
+  document.getElementById('med-body-id').value=r.id;
+  document.getElementById('med-body-date').value=r.date||'';
+  document.getElementById('med-body-weight').value=r.weight||'';
+  document.getElementById('med-body-height').value=r.height||'';
+  document.getElementById('med-body-note').value=r.note||'';
+  openSheet('sh-med-body');
+}
+
+async function saveBody(){
+  const id=document.getElementById('med-body-id').value;
+  const date=document.getElementById('med-body-date').value;
+  if(!date){toast('請選擇日期','err');return;}
+  const body={user_id:prof.id,date,weight:parseFloat(document.getElementById('med-body-weight').value)||null,height:parseFloat(document.getElementById('med-body-height').value)||null,note:document.getElementById('med-body-note').value.trim()||null};
+  try{
+    if(id)await sb(`/rest/v1/medical_body?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    else await sb('/rest/v1/medical_body',{method:'POST',body:JSON.stringify(body)});
+    closeSheet('sh-med-body');toast('已儲存');loadBody();
+  }catch(e){toast('儲存失敗','err');}
+}
+
+async function delBody(id){
+  if(!confirm('確定刪除此記錄？'))return;
+  try{await sb(`/rest/v1/medical_body?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadBody();}catch(e){toast('刪除失敗','err');}
+}
+// ─── END MEDICAL ───────────────────────────────────────────────
+
+
 let _fxAccounts=[];
 
 function onFxAccChange(){
