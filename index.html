@@ -487,6 +487,16 @@ select.inp option{background:var(--bg2);}
         <div class="sec-label">Top 5 支出</div>
         <div id="rpt-top-txns"></div>
       </div>
+      <!-- 消費趨勢分析 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="sec-label">消費趨勢分析</div>
+        <div id="rpt-trend-summary"></div>
+      </div>
+      <!-- 每日消費分布 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="sec-label">每日消費分布</div>
+        <canvas id="rpt-daily" height="160"></canvas>
+      </div>
       <!-- Expense by category -->
       <div class="card" style="margin-bottom:12px;">
         <div class="sec-label">支出分類</div>
@@ -549,6 +559,27 @@ select.inp option{background:var(--bg2);}
       <div id="notify-list"></div>
     </div>
 
+    <!-- SEARCH -->
+    <div class="page" id="pg-search">
+      <div class="pg-title" style="margin-bottom:14px;">搜尋</div>
+      <div style="position:relative;margin-bottom:14px;">
+        <input class="inp" type="text" id="search-input" placeholder="搜尋交易、聯絡人、文件…" style="padding-left:42px;"
+          oninput="onSearchInput()" autocomplete="off">
+        <i class="ti ti-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:17px;" aria-hidden="true"></i>
+        <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="ftab on" onclick="setSearchType('all',this)">全部</button>
+        <button class="ftab" onclick="setSearchType('transactions',this)">💰 交易</button>
+        <button class="ftab" onclick="setSearchType('contacts',this)">👥 聯絡人</button>
+        <button class="ftab" onclick="setSearchType('documents',this)">📄 文件</button>
+        <button class="ftab" onclick="setSearchType('todos',this)">✅ 待辦</button>
+      </div>
+      <div id="search-results"><div class="empty"><i class="ti ti-search" aria-hidden="true"></i><p>輸入關鍵字開始搜尋</p></div></div>
+    </div>
+
     <!-- RECURRING TRANSACTIONS -->
     <div class="page" id="pg-recurring">
       <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
@@ -556,7 +587,7 @@ select.inp option{background:var(--bg2);}
         <div class="pg-title" style="margin:0">固定週期記帳</div>
         <button class="btn btn-gold btn-sm" onclick="openAddRecurring()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
       </div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6;">設定每月或每週自動產生的收支記錄，例如房租、訂閱費、保費。系統會在到期日當天自動記帳。</div>
+      <div id="recurring-stats" style="margin-bottom:12px;"></div>
       <div class="card"><div id="recurring-list"></div></div>
     </div>
 
@@ -705,7 +736,7 @@ select.inp option{background:var(--bg2);}
     <button class="bnav-item" onclick="goPage('finance')" data-p="finance"><i class="ti ti-wallet" aria-hidden="true"></i><span>財務</span></button>
     <button class="bnav-item" onclick="goPage('cal')" data-p="cal"><i class="ti ti-calendar" aria-hidden="true"></i><span>行程</span></button>
     <button class="bnav-item" onclick="goPage('todo')" data-p="todo"><i class="ti ti-checklist" aria-hidden="true"></i><span>待辦</span></button>
-    <button class="bnav-item" onclick="goPage('announce')" data-p="announce"><i class="ti ti-speakerphone" aria-hidden="true"></i><span>公告</span></button>
+    <button class="bnav-item" onclick="goPage('search')" data-p="search"><i class="ti ti-search" aria-hidden="true"></i><span>搜尋</span></button>
     <button class="bnav-item" onclick="goPage('more')" data-p="more"><i class="ti ti-dots" aria-hidden="true"></i><span>更多</span></button>
   </nav>
 </div>
@@ -1933,6 +1964,7 @@ function goPage(p){
   if(p==='medical')initMedical();
   if(p==='vehicle')loadVehicles();
   if(p==='vehicle-det')loadVehicleDetail();
+  if(p==='search')initSearch();
 }
 function showDet(id){
   // 管理員限定功能
@@ -3888,6 +3920,22 @@ async function loadRecurring(){
       sb(`/rest/v1/expense_categories?or=(user_id.eq.${prof.id},is_default.eq.true)`,{})
     ]);
     window._recurring=recs;window._recAccounts=accounts;window._recCats=cats;
+
+    // 統計卡
+    const statsEl=document.getElementById('recurring-stats');
+    if(statsEl&&recs.length){
+      const active=recs.filter(r=>r.is_active);
+      const totalExp=active.filter(r=>r.type==='expense').reduce((s,r)=>s+Number(r.amount),0);
+      const totalInc=active.filter(r=>r.type==='income').reduce((s,r)=>s+Number(r.amount),0);
+      const today=new Date().toISOString().slice(0,10);
+      const upcoming=active.filter(r=>r.next_date&&r.next_date<=new Date(Date.now()+7*86400000).toISOString().slice(0,10));
+      statsEl.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px;">
+        <div class="stat-card"><div class="stat-val amt-neg" style="font-size:15px;">NT$${Math.round(totalExp).toLocaleString()}</div><div class="stat-lbl">月固定支出</div></div>
+        <div class="stat-card"><div class="stat-val amt-pos" style="font-size:15px;">NT$${Math.round(totalInc).toLocaleString()}</div><div class="stat-lbl">月固定收入</div></div>
+        <div class="stat-card"><div class="stat-val" style="font-size:15px;color:${upcoming.length?'var(--orange)':'var(--text3)'};">${upcoming.length}</div><div class="stat-lbl">7天內到期</div></div>
+      </div>`;
+    } else if(statsEl){statsEl.innerHTML='';}
+
     if(!recs.length){el.innerHTML='<div class="empty"><i class="ti ti-repeat" aria-hidden="true"></i><p>尚無固定週期項目</p></div>';return;}
     const wdLabel=['日','一','二','三','四','五','六'];
     el.innerHTML=recs.map((r,i)=>{
@@ -3947,6 +3995,94 @@ async function processRecurringTxns(){
   }catch(e){console.error('processRecurringTxns',e);}
 }
 // ─── END RECURRING TRANSACTIONS ──────────────────────────────
+
+// ─── GLOBAL SEARCH（全局搜尋） ────────────────────────────────
+let searchType='all';
+let searchTimer=null;
+
+function initSearch(){
+  document.getElementById('search-input').focus();
+}
+
+function setSearchType(type,btn){
+  searchType=type;
+  document.querySelectorAll('#pg-search .ftab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  doSearch();
+}
+
+function onSearchInput(){
+  const q=document.getElementById('search-input').value;
+  document.getElementById('search-clear').style.display=q?'block':'none';
+  clearTimeout(searchTimer);
+  if(!q){
+    document.getElementById('search-results').innerHTML='<div class="empty"><i class="ti ti-search" aria-hidden="true"></i><p>輸入關鍵字開始搜尋</p></div>';
+    return;
+  }
+  searchTimer=setTimeout(()=>doSearch(),350);
+}
+
+function clearSearch(){
+  document.getElementById('search-input').value='';
+  document.getElementById('search-clear').style.display='none';
+  document.getElementById('search-results').innerHTML='<div class="empty"><i class="ti ti-search" aria-hidden="true"></i><p>輸入關鍵字開始搜尋</p></div>';
+  document.getElementById('search-input').focus();
+}
+
+async function doSearch(){
+  const q=document.getElementById('search-input').value.trim();
+  if(!q)return;
+  const el=document.getElementById('search-results');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">搜尋中...</div>';
+  try{
+    const enc=encodeURIComponent(q);
+    const results=[];
+
+    // 交易
+    if(searchType==='all'||searchType==='transactions'){
+      const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&note=ilike.*${enc}*&order=date.desc&limit=20`,{});
+      txns.forEach(t=>results.push({type:'transaction',icon:'ti-cash',color:'var(--gold)',title:t.note||'（無備註）',sub:`${t.date} · NT$${Number(t.amount).toLocaleString()} · ${t.type==='income'?'收入':'支出'}`,action:()=>goPage('finance')}));
+    }
+    // 聯絡人
+    if(searchType==='all'||searchType==='contacts'){
+      const contacts=await sb(`/rest/v1/contacts?user_id=eq.${prof.id}&name=ilike.*${enc}*&limit=10`,{});
+      contacts.forEach(c=>results.push({type:'contact',icon:'ti-user',color:'var(--orange)',title:c.name,sub:`${c.relation||''}${c.phone?' · '+c.phone:''}${c.birthday?' · 生日 '+c.birthday:''}`,action:()=>goPage('contacts')}));
+    }
+    // 文件
+    if(searchType==='all'||searchType==='documents'){
+      const docs=await sb(`/rest/v1/documents?user_id=eq.${prof.id}&title=ilike.*${enc}*&limit=10`,{});
+      docs.forEach(d=>results.push({type:'document',icon:'ti-file-text',color:'var(--blue)',title:d.title,sub:`${d.category||''}${d.expiry_date?' · 到期 '+d.expiry_date:''}`,action:()=>{goPage('report');setTimeout(()=>openDocDetail(d.id),300);}}));
+    }
+    // 待辦
+    if(searchType==='all'||searchType==='todos'){
+      const todos=await sb(`/rest/v1/todos?user_id=eq.${prof.id}&title=ilike.*${enc}*&limit=10`,{});
+      todos.forEach(t=>results.push({type:'todo',icon:'ti-checklist',color:'var(--green)',title:t.title,sub:`${t.completed?'已完成':'未完成'}${t.due_date?' · 截止 '+t.due_date:''}`,action:()=>goPage('todo')}));
+    }
+
+    if(!results.length){
+      el.innerHTML=`<div class="empty"><i class="ti ti-mood-empty" aria-hidden="true"></i><p>找不到「${q}」的相關結果</p></div>`;
+      return;
+    }
+
+    const typeLabel={transaction:'交易',contact:'聯絡人',document:'文件',todo:'待辦'};
+    el.innerHTML=`<div style="font-size:13px;color:var(--text3);margin-bottom:10px;">共 ${results.length} 筆結果</div>`+
+    results.map(r=>`
+      <div class="card" style="margin-bottom:8px;cursor:pointer;padding:12px 14px;" onclick="(${r.action.toString()})()">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(128,128,128,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="ti ${r.icon}" style="color:${r.color};font-size:18px;" aria-hidden="true"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">${typeLabel[r.type]}</div>
+            <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.title}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">${r.sub}</div>
+          </div>
+          <i class="ti ti-chevron-right" style="color:var(--text3);" aria-hidden="true"></i>
+        </div>
+      </div>`).join('');
+  }catch(e){el.innerHTML='<div class="empty"><p>搜尋失敗</p></div>';}
+}
+// ─── END GLOBAL SEARCH ────────────────────────────────────────
 
 // ─── SAVINGS GOALS（儲蓄目標） ────────────────────────────────
 async function loadGoals(){
@@ -5601,7 +5737,7 @@ async function updateHoldingPrices(accountId){
 }
 
 // REPORT
-let rptPieChart=null, rptBarChart=null, rptNwChart=null;
+let rptPieChart=null, rptBarChart=null, rptNwChart=null, rptDailyChart=null;
 
 function initReport(){
   const now=new Date();
@@ -5871,7 +6007,7 @@ async function loadReport(){
     }catch(e){}
 
     // === Top 5 支出 ===
-    const top5=expTxns.sort((a,b)=>Number(b.amount)-Number(a.amount)).slice(0,5);
+    const top5=[...expTxns].sort((a,b)=>Number(b.amount)-Number(a.amount)).slice(0,5);
     const top5El=document.getElementById('rpt-top-txns');
     if(!top5.length){top5El.innerHTML='<div style="font-size:13px;color:var(--text3);">本月無支出記錄</div>';}
     else{
@@ -5882,6 +6018,73 @@ async function loadReport(){
           <div style="font-weight:600;color:var(--red);white-space:nowrap;margin-left:8px;">NT$${Number(t.amount).toLocaleString()}</div>
         </div>`;
       }).join('');
+    }
+
+    // === 消費趨勢分析 ===
+    const trendEl=document.getElementById('rpt-trend-summary');
+    if(trendEl){
+      // 跟上月比較
+      const prevMonth=month===1?12:month-1;
+      const prevYear=month===1?year-1:year;
+      const prevFrom=`${prevYear}-${String(prevMonth).padStart(2,'0')}-01`;
+      const prevLastDay=new Date(prevYear,prevMonth,0).getDate();
+      const prevTo=`${prevYear}-${String(prevMonth).padStart(2,'0')}-${String(prevLastDay).padStart(2,'0')}`;
+      const prevTxns=await sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&date=gte.${prevFrom}&date=lte.${prevTo}`,{});
+      const prevExp=prevTxns.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+      const prevInc=prevTxns.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+      const expDiff=expense-prevExp;
+      const incDiff=income-prevInc;
+      const avgDaily=daysInMonth>0?(expense/daysInMonth):0;
+      trendEl.innerHTML=`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div style="background:var(--bg4);border-radius:12px;padding:12px;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">vs 上月支出</div>
+            <div style="font-size:16px;font-weight:700;color:${expDiff>0?'var(--red)':'var(--green)'};">${expDiff>0?'↑':'↓'} NT$${Math.abs(Math.round(expDiff)).toLocaleString()}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">上月 NT$${Math.round(prevExp).toLocaleString()}</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:12px;padding:12px;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">vs 上月收入</div>
+            <div style="font-size:16px;font-weight:700;color:${incDiff>=0?'var(--green)':'var(--red)'};">${incDiff>=0?'↑':'↓'} NT$${Math.abs(Math.round(incDiff)).toLocaleString()}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">上月 NT$${Math.round(prevInc).toLocaleString()}</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:12px;padding:12px;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">日均消費</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text);">NT$${Math.round(avgDaily).toLocaleString()}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">共 ${daysInMonth} 天</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:12px;padding:12px;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">儲蓄率</div>
+            <div style="font-size:16px;font-weight:700;color:${income>0&&(income-expense)/income>=0.2?'var(--green)':'var(--orange)'};">${income>0?Math.round((income-expense)/income*100):0}%</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">（收入 - 支出）/ 收入</div>
+          </div>
+        </div>`;
+    }
+
+    // === 每日消費分布圖 ===
+    const daysInM=new Date(year,month,0).getDate();
+    const dailyExp=new Array(daysInM).fill(0);
+    expTxns.forEach(t=>{
+      const d=parseInt(t.date.slice(8,10))-1;
+      if(d>=0&&d<daysInM)dailyExp[d]+=Number(t.amount);
+    });
+    const dailyCtx=document.getElementById('rpt-daily')?.getContext('2d');
+    if(dailyCtx){
+      if(rptDailyChart)rptDailyChart.destroy();
+      rptDailyChart=new Chart(dailyCtx,{
+        type:'bar',
+        data:{
+          labels:Array.from({length:daysInM},(_,i)=>i+1),
+          datasets:[{label:'支出',data:dailyExp,backgroundColor:'rgba(232,112,112,0.6)',borderRadius:3}]
+        },
+        options:{
+          responsive:true,
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{ticks:{color:'#888',font:{size:9}},grid:{display:false}},
+            y:{ticks:{color:'#888',font:{size:9},callback:v=>'$'+v.toLocaleString()},grid:{color:'rgba(128,128,128,0.1)'}}
+          }
+        }
+      });
     }
 
   }catch(e){console.error('Report error:',e);}
