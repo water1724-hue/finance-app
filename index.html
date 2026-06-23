@@ -4790,21 +4790,29 @@ async function loadHomeBudget(){
   const el=document.getElementById('h-budget-widget');if(!el)return;
   try{
     const now=new Date();const y=now.getFullYear(),m=now.getMonth()+1;
-    const budgets=await sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${y}&month=eq.${m}&order=sort_order.asc&limit=4`,{});
+    const [budgets,templates]=await Promise.all([
+      sb(`/rest/v1/budgets?user_id=eq.${prof.id}&year=eq.${y}&month=eq.${m}&order=created_at.asc&limit=4`,{}),
+      sb('/rest/v1/budget_templates?order=sort_order.asc',{})
+    ]);
     if(!budgets.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚未設定預算</div>';return;}
-    const templates=await sb('/rest/v1/budget_templates?order=sort_order.asc',{});
+    // 撈本月交易算各類別支出
+    const lastDay=new Date(y,m,0).getDate();
+    const from=`${y}-${String(m).padStart(2,'0')}-01`;
+    const to=`${y}-${String(m).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+    const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&type=eq.expense&date=gte.${from}&date=lte.${to}`,{});
     el.innerHTML=budgets.map(b=>{
-      const t=templates.find(x=>x.id===b.budget_template_id);
-      const pct=b.limit_amount>0?Math.min(100,Math.round(b.spent_amount/b.limit_amount*100)):0;
+      const tmpl=templates.find(x=>x.id===b.budget_template_id);
+      const spent=txns.filter(t=>t.category_id===tmpl?.category_id).reduce((s,t)=>s+Number(t.amount),0);
+      const pct=b.amount>0?Math.min(100,Math.round(spent/b.amount*100)):0;
       return`<div style="margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
-          <span>${t?.name||'預算'}</span>
-          <span style="color:${pct>=90?'var(--red)':'var(--text3)'};">NT$${Math.round(b.spent_amount||0).toLocaleString()} / NT$${Math.round(b.limit_amount).toLocaleString()}</span>
+          <span>${tmpl?.name||'預算'}</span>
+          <span style="color:${pct>=90?'var(--red)':'var(--text3)'};">NT$${Math.round(spent).toLocaleString()} / NT$${Math.round(b.amount).toLocaleString()}</span>
         </div>
         <div style="height:4px;background:var(--bg4);border-radius:2px;"><div style="height:100%;width:${pct}%;background:${pct>=90?'var(--red)':pct>=70?'var(--orange)':'var(--gold)'};border-radius:2px;"></div></div>
       </div>`;
     }).join('');
-  }catch(e){}
+  }catch(e){console.error('loadHomeBudget:',e);}
 }
 
 async function loadHomeGoals(){
@@ -4881,15 +4889,72 @@ async function loadHomeWeather(){
   const el=document.getElementById('h-weather-content');if(!el)return;
   try{
     const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:5000}));
-    const r=await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&appid=${OWM_KEY}&units=metric&lang=zh_tw`);
-    const d=await r.json();
-    const temp=Math.round(d.main?.temp||0);const desc=d.weather?.[0]?.description||'';
-    const feels=Math.round(d.main?.feels_like||0);const humidity=d.main?.humidity||0;
-    el.innerHTML=`<div style="display:flex;align-items:center;gap:12px;">
-      <div style="font-size:36px;font-weight:700;color:var(--gold);">${temp}°</div>
-      <div><div style="font-size:14px;font-weight:600;">${desc}</div><div style="font-size:12px;color:var(--text3);">體感 ${feels}°・濕度 ${humidity}%</div></div>
-    </div>`;
-  }catch(e){el.innerHTML='<div style="font-size:13px;color:var(--text3);">天氣資料取得失敗</div>';}
+    const {latitude:lat,longitude:lon}=pos.coords;
+    // 今日天氣
+    const [rNow,rFore]=await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OWM_KEY}&units=metric&lang=zh_tw`),
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${OWM_KEY}&units=metric&lang=zh_tw&cnt=40`)
+    ]);
+    const now=await rNow.json();
+    const fore=await rFore.json();
+    const temp=Math.round(now.main?.temp||0);
+    const feels=Math.round(now.main?.feels_like||0);
+    const humidity=now.main?.humidity||0;
+    const desc=now.weather?.[0]?.description||'';
+    const city=now.name||'';
+    const getIcon=(code,h)=>{
+      if(code>=200&&code<300)return'ti-cloud-storm';
+      if(code>=300&&code<400)return'ti-cloud-drizzle';
+      if(code>=500&&code<600)return'ti-cloud-rain';
+      if(code>=600&&code<700)return'ti-snowflake';
+      if(code>=700&&code<800)return'ti-wind';
+      if(code===800)return(h>=6&&h<18)?'ti-sun':'ti-moon';
+      if(code<=802)return'ti-cloud-sun';
+      return'ti-cloud';
+    };
+    const nowCode=now.weather?.[0]?.id||800;
+    const nowH=new Date().getHours();
+    const nowIcon=getIcon(nowCode,nowH);
+
+    // 5天預報（每天取12:00那筆）
+    const days={};
+    (fore.list||[]).forEach(item=>{
+      const d=item.dt_txt.slice(0,10);
+      const h=parseInt(item.dt_txt.slice(11,13));
+      if(!days[d]||Math.abs(h-12)<Math.abs(parseInt(days[d].dt_txt.slice(11,13))-12))days[d]=item;
+    });
+    const today=new Date().toISOString().slice(0,10);
+    const forecastDays=Object.entries(days).filter(([d])=>d>today).slice(0,5);
+    const wdLabel=['日','一','二','三','四','五','六'];
+
+    el.innerHTML=`
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:0.5px solid var(--border);">
+        <i class="ti ${nowIcon}" style="font-size:36px;color:var(--gold);" aria-hidden="true"></i>
+        <div>
+          <div style="font-size:28px;font-weight:700;color:var(--text);">${temp}°<span style="font-size:14px;color:var(--text3);margin-left:4px;">${city}</span></div>
+          <div style="font-size:13px;color:var(--text2);">${desc}・體感 ${feels}°・濕度 ${humidity}%</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">
+        ${forecastDays.map(([d,item])=>{
+          const date=new Date(d+'T00:00:00');
+          const wd=wdLabel[date.getDay()];
+          const code=item.weather?.[0]?.id||800;
+          const icon=getIcon(code,12);
+          const hi=Math.round(item.main?.temp_max||item.main?.temp||0);
+          const lo=Math.round(item.main?.temp_min||item.main?.temp||0);
+          return`<div style="flex:1;min-width:52px;text-align:center;background:var(--bg4);border-radius:10px;padding:8px 4px;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">週${wd}</div>
+            <i class="ti ${icon}" style="font-size:20px;color:var(--gold);" aria-hidden="true"></i>
+            <div style="font-size:12px;font-weight:600;margin-top:4px;">${hi}°</div>
+            <div style="font-size:11px;color:var(--text3);">${lo}°</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }catch(e){
+    const el2=document.getElementById('h-weather-content');
+    if(el2)el2.innerHTML='<div style="font-size:13px;color:var(--text3);">天氣資料取得失敗</div>';
+  }
 }
 
 async function loadHomeBirthday(){
@@ -7029,7 +7094,8 @@ async function loadReport(){
       const prevInc=prevTxns.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
       const expDiff=expense-prevExp;
       const incDiff=income-prevInc;
-      const avgDaily=daysInMonth>0?(expense/daysInMonth):0;
+      const daysInMonthTrend=new Date(year,month,0).getDate();
+      const avgDaily=daysInMonthTrend>0?(expense/daysInMonthTrend):0;
       trendEl.innerHTML=`
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
           <div style="background:var(--bg4);border-radius:12px;padding:12px;">
@@ -7045,7 +7111,7 @@ async function loadReport(){
           <div style="background:var(--bg4);border-radius:12px;padding:12px;">
             <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">日均消費</div>
             <div style="font-size:16px;font-weight:700;color:var(--text);">NT$${Math.round(avgDaily).toLocaleString()}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">共 ${daysInMonth} 天</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">共 ${daysInMonthTrend} 天</div>
           </div>
           <div style="background:var(--bg4);border-radius:12px;padding:12px;">
             <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">儲蓄率</div>
