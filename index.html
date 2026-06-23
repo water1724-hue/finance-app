@@ -292,10 +292,10 @@ select.inp option{background:var(--bg2);}
       <div class="card" id="hw-ai" style="display:none;margin-bottom:12px;cursor:pointer;" onclick="goPage('ai')">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:40px;height:40px;border-radius:12px;background:rgba(107,158,240,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="ti ti-robot" style="font-size:22px;color:var(--blue);" aria-hidden="true"></i>
+            <i class="ti ti-wand" style="font-size:22px;color:var(--blue);" aria-hidden="true"></i>
           </div>
           <div style="flex:1;">
-            <div style="font-weight:600;font-size:15px;">AI 助手</div>
+            <div style="font-weight:600;font-size:15px;">小晴 AI</div>
             <div style="font-size:12px;color:var(--text3);margin-top:2px;">問財務、行程、生活任何問題</div>
           </div>
           <i class="ti ti-chevron-right" style="color:var(--text3);" aria-hidden="true"></i>
@@ -610,8 +610,8 @@ select.inp option{background:var(--bg2);}
         </div>
         <div class="chat-msgs" id="chat-msgs">
           <div class="msg ai">
-            <div class="msg-av"><i class="ti ti-robot" aria-hidden="true"></i></div>
-            <div class="msg-bub">你好，我是 Life OS AI 秘書。我可以幫你查詢財務、行程、待辦事項等資料。請問有什麼需要？</div>
+            <div class="msg-av"><i class="ti ti-wand" aria-hidden="true"></i></div>
+            <div class="msg-bub">嗨，我是小晴，你的私人生活助理。財務、行程、投資、旅遊、生活大小事都可以問我，有什麼需要幫忙的？</div>
           </div>
         </div>
         <div class="chat-inp-area">
@@ -2221,7 +2221,7 @@ function initApp(){
       </div>
       <div class="menu-item" onclick="goPage('ai')">
         <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-message-circle" style="color:var(--gold)" aria-hidden="true"></i></div>
-        <div class="mi-info"><div class="mi-title">AI 秘書</div><div class="mi-sub">智能問答與財務分析</div></div>
+        <div class="mi-info"><div class="mi-title">小晴 AI 助手</div><div class="mi-sub">智能問答與生活助理</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
       <div class="menu-item" onclick="goPage('announce')">
@@ -2275,7 +2275,7 @@ function initApp(){
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>`:''}
       <div class="menu-item" onclick="openAiSettings()">
-        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-robot" style="color:var(--blue)" aria-hidden="true"></i></div>
+        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-wand" style="color:var(--blue)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">AI 助手設定</div><div class="mi-sub">設定 Gemini API Key</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
@@ -7474,20 +7474,21 @@ async function sendChat(){
     let inc=0,exp=0;
     txns.forEach(t=>{if(t.type==='income')inc+=Number(t.amount);else exp+=Number(t.amount);});
     const totalAssets=accounts.filter(a=>!a.is_hidden&&(a.currency||'TWD').toUpperCase()==='TWD').reduce((s,a)=>s+Number(a.balance),0);
-    const sysPrompt=`你是${prof.display_name||prof.username}的 Life OS AI 助手，使用繁體中文回答。
-你能夠幫助用戶處理各種問題，包括：財務分析、生活規劃、行程安排、健康建議、投資諮詢、旅遊規劃、學習建議、心理支持等各種日常問題。
-請根據問題給予實用、具體的建議，不要過於簡短。
+    const userName=prof.display_name||prof.username;
+    const sysPrompt=`你是${userName}的私人生活助理「小晴」，個性活潑溫暖、聰明有趣，說話像朋友一樣自然親切，偶爾會用輕鬆的語氣開玩笑，但在財務和重要問題上會切換成專業模式給出精確建議。
+使用繁體中文回答，稱呼用戶為「${userName}」。
+回答要有個性，不要太制式或死板。遇到財務問題要給出具體數字和實用建議；遇到生活問題要溫暖支持；遇到輕鬆話題可以幽默回應。
 
-【用戶個人資料 - 今日：${today}】
-待辦事項(${todos.length}項)：${todos.slice(0,8).map(t=>t.title+(t.priority==='high'?'(緊急)':'')).join('、')||'無'}
-近期行程：${events.slice(0,5).map(e=>e.start_date+' '+e.title).join('、')||'無'}
+【${userName} 的個人資料 - 今日：${today}】
+待辦事項(${todos.length}項)：${todos.slice(0,8).map(t=>t.title+(t.priority==='high'?'（緊急）':'')).join('、')||'目前沒有待辦'}
+近期行程：${events.slice(0,5).map(e=>e.start_date+' '+e.title).join('、')||'近期沒有行程'}
 本月收入：NT$${Math.round(inc).toLocaleString()}
 本月支出：NT$${Math.round(exp).toLocaleString()}
-本月結餘：NT$${Math.round(inc-exp).toLocaleString()}
+本月結餘：NT$${Math.round(inc-exp).toLocaleString()}${inc-exp<0?'（本月超支了！）':''}
 帳戶總額：NT$${Math.round(totalAssets).toLocaleString()}
-最近消費：${txns.filter(t=>t.type==='expense').slice(0,5).map(t=>(t.note||'支出')+' NT$'+t.amount).join('、')||'無'}
+最近消費：${txns.filter(t=>t.type==='expense').slice(0,5).map(t=>(t.note||'支出')+' NT$'+t.amount).join('、')||'近期無消費記錄'}
 
-請根據以上資料提供個人化的回答。`;
+根據以上資料給出個人化且有溫度的回答。`;
 
     // Groq API
     const messages=chatHistory.slice(-20).map(m=>({role:m.role==='model'?'assistant':m.role,content:m.parts[0].text}));
@@ -7512,13 +7513,13 @@ async function sendChat(){
 function appendMsg(text,who){
   const el=document.getElementById('chat-msgs');
   const d=document.createElement('div');d.className=`msg ${who}`;
-  d.innerHTML=`<div class="msg-av"><i class="ti ${who==='ai'?'ti-robot':'ti-user'}" aria-hidden="true"></i></div><div class="msg-bub">${text.replace(/\n/g,'<br>')}</div>`;
+  d.innerHTML=`<div class="msg-av"><i class="ti ${who==='ai'?'ti-wand':'ti-user'}" aria-hidden="true"></i></div><div class="msg-bub">${text.replace(/\n/g,'<br>')}</div>`;
   el.appendChild(d);el.scrollTop=el.scrollHeight;
 }
 function appendTyping(id){
   const el=document.getElementById('chat-msgs');
   const d=document.createElement('div');d.className='msg ai';d.id=id;
-  d.innerHTML='<div class="msg-av"><i class="ti ti-robot" aria-hidden="true"></i></div><div class="msg-bub"><div class="typing"><span></span><span></span><span></span></div></div>';
+  d.innerHTML='<div class="msg-av"><i class="ti ti-wand" aria-hidden="true"></i></div><div class="msg-bub"><div class="typing"><span></span><span></span><span></span></div></div>';
   el.appendChild(d);el.scrollTop=el.scrollHeight;
 }
 function removeTyping(id){document.getElementById(id)?.remove();}
