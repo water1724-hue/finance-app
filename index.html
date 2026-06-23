@@ -23,7 +23,15 @@
   --green:#5DBD8A;--red:#E87070;--orange:#E8894A;--blue:#6B9EF0;
   --r:20px;--r-sm:14px;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body.light-mode{
+  --bg:#f2f2f7;--bg2:#ffffff;--bg3:#ffffff;--bg4:#e5e5ea;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.12);
+  --gold:#B8892A;--gold2:#c99a3a;--gold-dim:rgba(184,137,42,0.1);
+  --gold-border:rgba(184,137,42,0.25);
+  --text:#1c1c1e;--text2:#555;--text3:#999;--text4:#ccc;
+  --green:#34A36A;--red:#D94F4F;--orange:#D4722A;--blue:#4A7ED4;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;transition:background-color .2s,color .2s,border-color .2s;}
 html,body{height:100%;overscroll-behavior:none;}
 body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;font-size:17px;}
 
@@ -58,7 +66,8 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 
 /* CARDS */
 .card{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;}
-.card-gold{background:#1e1a12;border-color:var(--gold-border);}
+.card-gold{background:var(--gold-dim);border-color:var(--gold-border);}
+body.light-mode .card-gold{background:rgba(184,137,42,0.08);}
 .pg-title{font-size:22px;font-weight:700;margin-bottom:18px;}
 .sec-label{font-size:13px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
 .home-tab{font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;padding-bottom:2px;border-bottom:2px solid transparent;transition:all .15s;}
@@ -135,7 +144,7 @@ select.inp option{background:var(--bg2);}
 .ftabs{display:flex;gap:7px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
 .ftabs::-webkit-scrollbar{display:none;}
 .ftab{flex-shrink:0;padding:6px 16px;border-radius:18px;font-size:12px;font-weight:600;border:0.5px solid var(--border2);color:var(--text3);background:var(--bg3);cursor:pointer;font-family:inherit;transition:all .15s;}
-.ftab.on{background:#1e1a12;border-color:var(--gold-border);color:var(--gold);}
+.ftab.on{background:var(--gold-dim);border-color:var(--gold-border);color:var(--gold);}
 
 /* STAT GRID */
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
@@ -163,7 +172,7 @@ select.inp option{background:var(--bg2);}
 .cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
 .cal-d{height:44px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;color:var(--text2);cursor:pointer;position:relative;transition:background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;}
 .cal-d:hover{background:var(--bg4);}
-.cal-d.today{background:#1e1a12;color:var(--gold);font-weight:700;border:0.5px solid var(--gold-border);}
+.cal-d.today{background:var(--gold-dim);color:var(--gold);font-weight:700;border:0.5px solid var(--gold-border);}
 .cal-d.sel:not(.today){background:var(--bg4);color:var(--text);font-weight:600;}
 .cal-d.other{opacity:.3;}
 .cal-d .evdot{position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--gold);}
@@ -180,7 +189,7 @@ select.inp option{background:var(--bg2);}
 @keyframes msgin{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 .msg.user{flex-direction:row-reverse;}
 .msg-av{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
-.msg.ai .msg-av{background:#1e1a12;border:0.5px solid var(--gold-border);}
+.msg.ai .msg-av{background:var(--gold-dim);border:0.5px solid var(--gold-border);}
 .msg.user .msg-av{background:var(--bg4);border:0.5px solid var(--border2);}
 .msg-bub{max-width:80%;padding:10px 14px;border-radius:16px;font-size:15px;line-height:1.6;}
 .msg.ai .msg-bub{background:var(--bg4);border:0.5px solid var(--border);border-bottom-left-radius:4px;}
@@ -197,7 +206,7 @@ select.inp option{background:var(--bg2);}
 @keyframes td{0%,80%,100%{opacity:.3;}40%{opacity:1;}}
 
 /* MORE PAGE */
-.profile-banner{background:#1e1a12;border:0.5px solid var(--gold-border);border-radius:var(--r);padding:18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;}
+.profile-banner{background:var(--gold-dim);border:0.5px solid var(--gold-border);border-radius:var(--r);padding:18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;}
 .avatar{width:48px;height:48px;border-radius:13px;background:#2a2418;border:0.5px solid var(--gold-border);display:flex;align-items:center;justify-content:center;}
 .avatar i{font-size:22px;color:var(--gold);}
 .more-name{font-size:16px;font-weight:700;}
@@ -1455,6 +1464,32 @@ function doLogout(){
   document.getElementById('aerr').textContent='';
 }
 
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light-mode');
+  localStorage.setItem('lifeos_theme', isLight?'light':'dark');
+  updateThemeUI(isLight);
+}
+
+function updateThemeUI(isLight){
+  const label=document.getElementById('theme-label');
+  const sub=label?.nextElementSibling;
+  const icon=document.getElementById('theme-icon');
+  if(label)label.textContent=isLight?'切換深色模式':'切換淺色模式';
+  if(sub)sub.textContent=isLight?'目前：淺色模式':'目前：深色模式';
+  if(icon)icon.className=isLight?'ti ti-moon':'ti ti-sun-moon';
+  // 更新 meta theme-color
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=isLight?'#f2f2f7':'#1c1c1e';
+}
+
+function initTheme(){
+  const saved=localStorage.getItem('lifeos_theme');
+  const preferLight=window.matchMedia('(prefers-color-scheme: light)').matches;
+  const useLight=saved?saved==='light':preferLight;
+  if(useLight)document.body.classList.add('light-mode');
+  updateThemeUI(useLight);
+}
+
 async function copyDefaultCats(){
   // 已改為共用預設類別機制（is_default=true 直接對所有使用者顯示）
   // 不再需要複製，保留函數避免呼叫處報錯
@@ -1562,6 +1597,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">消費類別</div><div class="mi-sub">管理我的收支分類</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>`:''}
+      <div class="menu-item" onclick="toggleTheme()">
+        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-sun-moon" style="color:var(--blue)" aria-hidden="true" id="theme-icon"></i></div>
+        <div class="mi-info"><div class="mi-title" id="theme-label">切換淺色模式</div><div class="mi-sub">目前：深色模式</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="doLogout()">
         <div class="mi-icon" style="background:rgba(232,112,112,.1)"><i class="ti ti-logout" style="color:var(--red)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title" style="color:var(--red)">登出</div><div class="mi-sub">退出目前帳號</div></div>
@@ -5444,6 +5484,7 @@ window.openSheet=async function(id){
 
 // Restore session on load
 (async()=>{
+  initTheme();
   const ok=await restoreSession();
   if(ok)initApp();
 })();
