@@ -5907,7 +5907,8 @@ window.openSheet=async function(id){
         sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true&order=sort_order.asc`,{})
       ]);
       accCats=cats;
-      accSel.innerHTML=accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+      const txnAccs=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='loan';});
+      accSel.innerHTML=txnAccs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
       const bankAccs=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c&&['bank','cash'].includes(c.type);});
       document.getElementById('inv-bank').innerHTML=bankAccs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
     }
