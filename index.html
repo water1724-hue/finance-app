@@ -467,7 +467,8 @@ select.inp option{background:var(--bg2);}
     <!-- REPORT -->
     <div class="page" id="pg-report">
       <div class="row-between" style="margin-bottom:16px;">
-        <div class="pg-title" style="margin:0;">月報表</div>
+        <div class="pg-title" style="margin:0;">月結報告</div>
+        <button class="btn btn-ghost btn-sm" onclick="exportMonthReport()"><i class="ti ti-download" aria-hidden="true"></i> 匯出</button>
       </div>
       <!-- Date selector -->
       <div class="card" style="margin-bottom:12px;">
@@ -488,6 +489,21 @@ select.inp option{background:var(--bg2);}
         <div class="stat-card"><div class="stat-val amt-pos" id="rpt-income">—</div><div class="stat-lbl">收入</div></div>
         <div class="stat-card"><div class="stat-val amt-neg" id="rpt-expense">—</div><div class="stat-lbl">支出</div></div>
         <div class="stat-card" style="grid-column:span 2;"><div class="stat-val amt-gold" id="rpt-balance">—</div><div class="stat-lbl">結餘</div></div>
+      </div>
+      <!-- Budget summary -->
+      <div class="card" style="margin-bottom:12px;" id="rpt-budget-wrap">
+        <div class="sec-label">預算執行</div>
+        <div id="rpt-budget-summary"></div>
+      </div>
+      <!-- Habit summary -->
+      <div class="card" style="margin-bottom:12px;" id="rpt-habit-wrap">
+        <div class="sec-label">習慣達成</div>
+        <div id="rpt-habit-summary"></div>
+      </div>
+      <!-- Top spending -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="sec-label">Top 5 支出</div>
+        <div id="rpt-top-txns"></div>
       </div>
       <!-- Expense by category -->
       <div class="card" style="margin-bottom:12px;">
@@ -5772,7 +5788,119 @@ async function loadReport(){
         }
       }
     });
+    // === 預算執行摘要 ===
+    try{
+      const templates=await sb(`/rest/v1/budget_templates?order=sort_order.asc`,{});
+      const userBudgets=await sb(`/rest/v1/budgets?user_id=eq.${getViewAsId()}&year=eq.${year}&month=eq.${month}`,{});
+      const bSummaryEl=document.getElementById('rpt-budget-summary');
+      if(!templates.length){bSummaryEl.innerHTML='<div style="font-size:13px;color:var(--text3);">尚未設定預算</div>';}
+      else{
+        let totalLimit=0,totalSpent=0;
+        const rows=templates.map(tmpl=>{
+          const bgt=userBudgets.find(b=>b.budget_template_id===tmpl.id);
+          const limit=bgt?Number(bgt.amount):0;
+          const spent=tmpl.category_id?expTxns.filter(t=>t.category_id===tmpl.category_id).reduce((s,t)=>s+Number(t.amount),0):0;
+          totalLimit+=limit;totalSpent+=spent;
+          const pct=limit>0?Math.min(Math.round(spent/limit*100),100):0;
+          const over=limit>0&&spent>limit;
+          return`<div style="padding:6px 0;border-bottom:0.5px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+              <span>${tmpl.name}</span>
+              <span style="color:${over?'var(--red)':spent>0?'var(--text)':'var(--text3)'};">${limit>0?`NT$${Math.round(spent).toLocaleString()} / NT$${limit.toLocaleString()}`:'未設定'}</span>
+            </div>
+            ${limit>0?`<div style="height:4px;background:var(--bg4);border-radius:2px;"><div style="height:100%;width:${pct}%;background:${over?'var(--red)':'var(--green)'};border-radius:2px;"></div></div>`:''}
+          </div>`;
+        });
+        const overallPct=totalLimit>0?Math.round(totalSpent/totalLimit*100):0;
+        bSummaryEl.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:8px;"><span>整體預算使用率</span><span style="color:${overallPct>100?'var(--red)':overallPct>80?'var(--orange)':'var(--green)'};">${overallPct}%</span></div>`+rows.join('');
+      }
+    }catch(e){}
+
+    // === 習慣達成率 ===
+    try{
+      const habits=await sb(`/rest/v1/habits?user_id=eq.${prof.id}&is_active=neq.false`,{});
+      const logs=await sb(`/rest/v1/habit_logs?user_id=eq.${prof.id}&date=gte.${dateFrom}&date=lte.${dateTo}`,{});
+      const daysInMonth=new Date(year,month,0).getDate();
+      const hSummaryEl=document.getElementById('rpt-habit-summary');
+      if(!habits.length){hSummaryEl.innerHTML='<div style="font-size:13px;color:var(--text3);">尚無習慣追蹤</div>';}
+      else{
+        hSummaryEl.innerHTML=habits.map(h=>{
+          const done=logs.filter(l=>l.habit_id===h.id).length;
+          const pct=Math.round(done/daysInMonth*100);
+          return`<div style="padding:6px 0;border-bottom:0.5px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+              <span>${h.emoji||'✅'} ${h.name}</span>
+              <span style="color:${pct>=80?'var(--green)':pct>=50?'var(--orange)':'var(--red)'};">${done}/${daysInMonth} 天（${pct}%）</span>
+            </div>
+            <div style="height:4px;background:var(--bg4);border-radius:2px;"><div style="height:100%;width:${pct}%;background:${pct>=80?'var(--green)':pct>=50?'var(--orange)':'var(--red)'};border-radius:2px;"></div></div>
+          </div>`;
+        }).join('');
+      }
+    }catch(e){}
+
+    // === Top 5 支出 ===
+    const top5=expTxns.sort((a,b)=>Number(b.amount)-Number(a.amount)).slice(0,5);
+    const top5El=document.getElementById('rpt-top-txns');
+    if(!top5.length){top5El.innerHTML='<div style="font-size:13px;color:var(--text3);">本月無支出記錄</div>';}
+    else{
+      top5El.innerHTML=top5.map(t=>{
+        const cat=cats.find(c=>c.id===t.category_id);
+        return`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+          <div><div style="font-weight:500;">${t.note||'（無備註）'}</div><div style="font-size:11px;color:var(--text3);">${t.date} · ${cat?.name||'未分類'}</div></div>
+          <div style="font-weight:600;color:var(--red);white-space:nowrap;margin-left:8px;">NT$${Number(t.amount).toLocaleString()}</div>
+        </div>`;
+      }).join('');
+    }
+
   }catch(e){console.error('Report error:',e);}
+}
+
+async function exportMonthReport(){
+  const year=parseInt(document.getElementById('rpt-year').value);
+  const month=parseInt(document.getElementById('rpt-month').value);
+  const dateFrom=`${year}-${String(month).padStart(2,'0')}-01`;
+  const lastDay=new Date(year,month,0).getDate();
+  const dateTo=`${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+  try{
+    const [txns,cats]=await Promise.all([
+      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${dateFrom}&date=lte.${dateTo}&order=date.asc`,{}),
+      sb(`/rest/v1/expense_categories?or=(user_id.eq.${prof.id},is_default.eq.true)`,{})
+    ]);
+    let income=0,expense=0;
+    txns.forEach(t=>{if(t.type==='income')income+=Number(t.amount);else expense+=Number(t.amount);});
+    const catMap={};
+    txns.filter(t=>t.type==='expense').forEach(t=>{
+      const cat=cats.find(c=>c.id===t.category_id);
+      const name=cat?cat.name:'未分類';
+      catMap[name]=(catMap[name]||0)+Number(t.amount);
+    });
+    const lines=[
+      `Life OS 月結報告 ${year}年${month}月`,
+      `匯出時間：${new Date().toLocaleString('zh-TW')}`,
+      `使用者：${prof.display_name||prof.username}`,
+      '',
+      '═══ 收支摘要 ═══',
+      `收入：NT$${income.toLocaleString()}`,
+      `支出：NT$${expense.toLocaleString()}`,
+      `結餘：NT$${(income-expense).toLocaleString()}`,
+      '',
+      '═══ 支出分類 ═══',
+      ...Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([n,a])=>`${n}：NT$${a.toLocaleString()}`),
+      '',
+      '═══ 交易明細 ═══',
+      ...txns.map(t=>{
+        const cat=cats.find(c=>c.id===t.category_id);
+        return`${t.date} [${t.type==='income'?'收入':'支出'}] ${cat?.name||'未分類'} ${t.note||''} NT$${Number(t.amount).toLocaleString()}`;
+      })
+    ];
+    const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`月結報告_${year}${String(month).padStart(2,'0')}.txt`;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+    toast('匯出完成 ✓');
+  }catch(e){toast('匯出失敗','err');}
 }
 
 // EXPENSE CATEGORIES
