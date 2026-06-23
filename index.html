@@ -2079,14 +2079,33 @@ async function loadFinance(){
 
     // Populate account selects（貸款帳戶不列入一般記帳選項）
     const txnAccounts=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='loan';});
-    const accOpts=txnAccounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
-    document.getElementById('txn-account').innerHTML=accOpts;
+    document.getElementById('txn-account').innerHTML=buildAccOptgroup(txnAccounts,cats);
     const bankAccs=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c&&['bank','cash'].includes(c.type);});
     document.getElementById('inv-bank').innerHTML=bankAccs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
 
     // Acc cat select
     document.getElementById('acc-cat').innerHTML=cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   }catch(e){toast('載入失敗','err');}
+}
+
+function buildAccOptgroup(accounts, cats){
+  const groups=[
+    {types:['cash'],label:'現金'},
+    {types:['bank'],label:'銀行帳戶'},
+    {types:['credit'],label:'信用卡'},
+    {types:['forex'],label:'外幣帳戶'},
+    {types:['securities','fund'],label:'投資帳戶'},
+    {types:['other',null,undefined],label:'其他'},
+  ];
+  let html='';
+  for(const g of groups){
+    const accs=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return g.types.includes(c?.type);});
+    if(!accs.length)continue;
+    html+=`<optgroup label="${g.label}">`;
+    html+=accs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+    html+=`</optgroup>`;
+  }
+  return html;
 }
 
 function renderAccounts(accounts,cats){
@@ -5908,7 +5927,7 @@ window.openSheet=async function(id){
       ]);
       accCats=cats;
       const txnAccs=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type!=='loan';});
-      accSel.innerHTML=txnAccs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+      accSel.innerHTML=buildAccOptgroup(txnAccs,cats);
       const bankAccs=accounts.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c&&['bank','cash'].includes(c.type);});
       document.getElementById('inv-bank').innerHTML=bankAccs.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
     }
