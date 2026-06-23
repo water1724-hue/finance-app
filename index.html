@@ -1495,6 +1495,78 @@ async function copyDefaultCats(){
   // 不再需要複製，保留函數避免呼叫處報錯
 }
 
+// ─── 資料備份還原 ─────────────────────────────────────────────
+async function exportBackup(){
+  toast('備份中...');
+  try{
+    const uid=prof.id;
+    const [accounts,transactions,budgets,habits,habitLogs,goals,contacts,shopping,regTxns,docs,invTxns]=await Promise.all([
+      sb(`/rest/v1/accounts?user_id=eq.${uid}`,{}),
+      sb(`/rest/v1/transactions?user_id=eq.${uid}&order=date.desc`,{}),
+      sb(`/rest/v1/budgets?user_id=eq.${uid}`,{}),
+      sb(`/rest/v1/habits?user_id=eq.${uid}`,{}),
+      sb(`/rest/v1/habit_logs?user_id=eq.${uid}`,{}),
+      sb(`/rest/v1/savings_goals?user_id=eq.${uid}`,{}),
+      sb(`/rest/v1/contacts?user_id=eq.${uid}`,{}),
+      sb(`/rest/v1/shopping_items?user_id=eq.${uid}`,{}),
+      sb(`/rest/v1/recurring_transactions?user_id=eq.${uid}`,{}),
+      sb(`/rest/v1/documents?user_id=eq.${uid}`,{}),
+      sb(`/rest/v1/investment_transactions?user_id=eq.${uid}`,{}),
+    ]);
+    const backup={
+      version:'1.0',
+      exported_at:new Date().toISOString(),
+      user:{id:uid,username:prof.username,display_name:prof.display_name},
+      data:{accounts,transactions,budgets,habits,habit_logs:habitLogs,savings_goals:goals,contacts,shopping_items:shopping,recurring_transactions:regTxns,documents:docs,investment_transactions:invTxns}
+    };
+    const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const date=new Date().toISOString().slice(0,10);
+    a.href=url;a.download=`lifeos_backup_${date}.json`;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+    toast('備份完成 ✓');
+  }catch(e){console.error(e);toast('備份失敗','err');}
+}
+
+async function importBackup(input){
+  const file=input.files[0];
+  if(!file)return;
+  input.value='';
+  if(!confirm('⚠️ 匯入將覆蓋現有資料，確定繼續？'))return;
+  toast('還原中...');
+  try{
+    const text=await file.text();
+    const backup=JSON.parse(text);
+    if(!backup.version||!backup.data){toast('格式錯誤','err');return;}
+    const uid=prof.id;
+    const d=backup.data;
+    const tables=[
+      ['accounts',d.accounts],
+      ['transactions',d.transactions],
+      ['budgets',d.budgets],
+      ['habits',d.habits],
+      ['habit_logs',d.habit_logs],
+      ['savings_goals',d.savings_goals],
+      ['contacts',d.contacts],
+      ['shopping_items',d.shopping_items],
+      ['recurring_transactions',d.recurring_transactions],
+      ['investment_transactions',d.investment_transactions],
+    ];
+    for(const [table,rows] of tables){
+      if(!rows?.length)continue;
+      try{
+        await sb(`/rest/v1/${table}?user_id=eq.${uid}`,{method:'DELETE'});
+        const cleaned=rows.map(r=>({...r,user_id:uid}));
+        await sb(`/rest/v1/${table}`,{method:'POST',body:JSON.stringify(cleaned),headers:{'Prefer':'resolution=merge-duplicates'}});
+      }catch(e){console.warn(`還原 ${table} 失敗:`,e);}
+    }
+    toast('還原完成 ✓，請重新整理');
+    setTimeout(()=>location.reload(),1500);
+  }catch(e){console.error(e);toast('還原失敗，檔案格式錯誤','err');}
+}
+
 function initApp(){
   document.getElementById('auth').style.display='none';
   document.getElementById('app').classList.add('on');
@@ -1602,6 +1674,17 @@ function initApp(){
         <div class="mi-info"><div class="mi-title" id="theme-label">切換淺色模式</div><div class="mi-sub">目前：深色模式</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="exportBackup()">
+        <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-database-export" style="color:var(--green)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">匯出備份</div><div class="mi-sub">下載所有資料 JSON 檔</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="document.getElementById('restore-input').click()">
+        <div class="mi-icon" style="background:rgba(232,137,74,.1)"><i class="ti ti-database-import" style="color:var(--orange)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">匯入還原</div><div class="mi-sub">從 JSON 備份檔還原資料</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <input type="file" id="restore-input" accept=".json" style="display:none" onchange="importBackup(this)">
       <div class="menu-item" onclick="doLogout()">
         <div class="mi-icon" style="background:rgba(232,112,112,.1)"><i class="ti ti-logout" style="color:var(--red)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title" style="color:var(--red)">登出</div><div class="mi-sub">退出目前帳號</div></div>
