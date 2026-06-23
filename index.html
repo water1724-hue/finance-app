@@ -394,11 +394,6 @@ select.inp option{background:var(--bg2);}
         <div id="h-creditcard-widget"></div>
       </div>
 
-      <!-- 每日一句 -->
-      <div class="card" id="hw-quote" style="display:none;margin-bottom:12px;">
-        <div id="h-quote-widget" style="font-size:15px;color:var(--text2);line-height:1.7;text-align:center;padding:8px 0;"></div>
-      </div>
-
       <!-- 公告 / 留言板 -->
       <div class="card" id="hw-announce" style="margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:12px;">
@@ -588,11 +583,12 @@ select.inp option{background:var(--bg2);}
     <div class="page" id="pg-ai" style="padding:0;">
       <div class="chat-wrap">
         <div class="chat-sug">
-          <button class="sug-btn" onclick="sendSug(this)">今天支出多少？</button>
-          <button class="sug-btn" onclick="sendSug(this)">本月收支概況</button>
-          <button class="sug-btn" onclick="sendSug(this)">今日行程</button>
-          <button class="sug-btn" onclick="sendSug(this)">未完成待辦</button>
-          <button class="sug-btn" onclick="sendSug(this)">總資產概況</button>
+          <button class="sug-btn" onclick="sendSug(this)">本月收支分析</button>
+          <button class="sug-btn" onclick="sendSug(this)">今日行程提醒</button>
+          <button class="sug-btn" onclick="sendSug(this)">理財建議</button>
+          <button class="sug-btn" onclick="sendSug(this)">如何提升存款？</button>
+          <button class="sug-btn" onclick="sendSug(this)">幫我規劃今天</button>
+          <button class="sug-btn" onclick="sendSug(this)">投資建議</button>
         </div>
         <div class="chat-msgs" id="chat-msgs">
           <div class="msg ai">
@@ -1436,6 +1432,27 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- AI Settings -->
+<div class="overlay" id="sh-ai-settings">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>AI 助手設定</h3>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      管理員設定後，所有使用者共用 AI 功能，無需各自設定。<br>
+      免費申請：<span style="color:var(--blue);">aistudio.google.com</span>
+    </div>
+    <div class="field">
+      <label>Gemini API Key</label>
+      <input class="inp" type="password" id="ai-key-input" placeholder="AIza...">
+    </div>
+    <div id="ai-key-status" style="font-size:12px;margin-bottom:12px;"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-ai-settings')">取消</button>
+      <button class="btn btn-gold" onclick="saveAiKey()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Home Settings -->
 <div class="overlay" id="sh-home-settings">
   <div class="sheet" style="max-height:85vh;overflow-y:auto;">
@@ -1517,13 +1534,9 @@ select.inp option{background:var(--bg2);}
         <div><div style="font-size:14px;font-weight:500;">車輛保養</div><div style="font-size:12px;color:var(--text3);">保養/保險到期提醒</div></div>
         <input type="checkbox" id="hw-toggle-vehicle" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
       </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;">
         <div><div style="font-size:14px;font-weight:500;">文件到期</div><div style="font-size:12px;color:var(--text3);">即將到期的文件</div></div>
         <input type="checkbox" id="hw-toggle-docs" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;">
-        <div><div style="font-size:14px;font-weight:500;">每日一句</div><div style="font-size:12px;color:var(--text3);">每日勵志名言</div></div>
-        <input type="checkbox" id="hw-toggle-quote" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
       </label>
     </div>
 
@@ -1932,7 +1945,17 @@ select.inp option{background:var(--bg2);}
 const SB='https://twejdabdhuohfyylsprn.supabase.co';
 const PUB='sb_publishable_LKQb3W7mJcdwUNKUq8cLDg_LJvMiFZK';
 // 注意：前端不存放 Secret Key，所有操作均透過 JWT Token 與 RLS 保護
-const CLAUDE_KEY=''; // 填入後 AI秘書啟用
+const GEMINI_KEY=localStorage.getItem('lifeos_gemini_key')||'';
+let GEMINI_KEY_GLOBAL=''; // 從 Supabase 讀取的共用 Key
+
+async function loadAppSettings(){
+  try{
+    const settings=await sb('/rest/v1/app_settings?key=eq.gemini_key',{});
+    if(settings.length&&settings[0].value){
+      GEMINI_KEY_GLOBAL=settings[0].value;
+    }
+  }catch(e){}
+}
 
 // STATE
 let me=null,prof=null;
@@ -2117,6 +2140,7 @@ function initApp(){
   document.getElementById('app').classList.add('on');
   document.getElementById('more-name').textContent=prof.display_name||prof.username;
   document.getElementById('more-role').textContent=prof.role==='admin'?'管理員':'使用者';
+  loadAppSettings(); // 載入共用設定（Gemini Key 等）
 
   const isAdmin=prof.role==='admin';
 
@@ -2224,6 +2248,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">消費類別</div><div class="mi-sub">管理我的收支分類</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>`:''}
+      <div class="menu-item" onclick="openAiSettings()">
+        <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-robot" style="color:var(--blue)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">AI 助手設定</div><div class="mi-sub">設定 Gemini API Key</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="openHomeSettings()">
         <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-layout-dashboard" style="color:#9C6BFF" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">首頁自訂</div><div class="mi-sub">選擇首頁顯示的卡片</div></div>
@@ -2465,7 +2494,6 @@ async function loadHome(){
   if(w.medical)loadHomeMedical();
   if(w.vehicle)loadHomeVehicle();
   if(w.docs)loadHomeDocs();
-  if(w.quote)loadHomeQuote();
 }
 
 async function quickDone(id){
@@ -4668,7 +4696,7 @@ const HW_DEFAULTS={
   events:true, habits:true, todos:false, announce:true, shortcuts:true,
   monthly:true, networth:false, budget:false, goals:false, portfolio:false,
   forex:false, creditcard:false, weather:true, birthday:false,
-  medical:false, vehicle:false, docs:false, quote:false
+  medical:false, vehicle:false, docs:false
 };
 
 function getHomeWidgets(){
@@ -4694,9 +4722,34 @@ function loadHomeSettings(){
   show('hw-medical',w.medical);
   show('hw-vehicle',w.vehicle);
   show('hw-docs',w.docs);
-  show('hw-quote',w.quote);
   show('hw-todos',w.todos);
   return w;
+}
+
+function openAiSettings(){
+  const hasKey=!!GEMINI_KEY_GLOBAL;
+  document.getElementById('ai-key-input').value='';
+  document.getElementById('ai-key-input').placeholder=hasKey?'已設定（輸入新 Key 可更新）':'AIza...';
+  const status=document.getElementById('ai-key-status');
+  status.textContent=hasKey?'✅ AI 助手已啟用（所有使用者共用）':'未設定，AI 助手停用中';
+  status.style.color=hasKey?'var(--green)':'var(--text3)';
+  // 非管理員只能看狀態
+  const saveBtn=document.querySelector('#sh-ai-settings .btn-gold');
+  if(saveBtn)saveBtn.style.display=prof.role==='admin'?'':'none';
+  openSheet('sh-ai-settings');
+}
+
+async function saveAiKey(){
+  if(prof.role!=='admin'){toast('只有管理員可以設定','err');return;}
+  const key=document.getElementById('ai-key-input').value.trim();
+  if(!key){toast('請輸入 API Key','err');return;}
+  try{
+    // upsert 到 app_settings
+    await sb('/rest/v1/app_settings',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({key:'gemini_key',value:key,updated_at:new Date().toISOString()})});
+    GEMINI_KEY_GLOBAL=key;
+    toast('AI Key 已儲存，所有使用者可使用 ✓');
+    closeSheet('sh-ai-settings');
+  }catch(e){toast('儲存失敗','err');}
 }
 
 function openHomeSettings(){
@@ -4730,7 +4783,6 @@ function saveHomeSettings(){
   if(w.medical)loadHomeMedical();
   if(w.vehicle)loadHomeVehicle();
   if(w.docs)loadHomeDocs();
-  if(w.quote)loadHomeQuote();
 }
 // ─── END 首頁小工具自訂 ───────────────────────────────────────
 
@@ -5036,17 +5088,7 @@ async function loadHomeDocs(){
   }catch(e){}
 }
 
-function loadHomeQuote(){
-  const el=document.getElementById('h-quote-widget');if(!el)return;
-  const quotes=[
-    '每一天都是新的開始。','計畫未來，活在當下。','小事成就大事。',
-    '紀律是自由的基礎。','儲蓄是給未來的禮物。','健康是最大的財富。',
-    '家人是最好的後盾。','習慣決定命運。','每一筆記錄都是進步。',
-    '時間是最公平的資源。','生活的品質在於選擇。','今日事今日畢。'
-  ];
-  const idx=new Date().getDate()%quotes.length;
-  el.innerHTML=`<div style="font-size:13px;color:var(--text3);">每日一句</div><div style="margin-top:8px;">"${quotes[idx]}"</div>`;
-}
+
 // ─── END 首頁小工具資料載入 ───────────────────────────────────
 let inOutType='in';
 
@@ -7356,36 +7398,58 @@ async function sendChat(){
   const ta=document.getElementById('chat-ta');
   const msg=ta.value.trim();if(!msg)return;
   ta.value='';ta.style.height='auto';
-  appendMsg(msg,'user');chatHistory.push({role:'user',content:msg});
-  if(!CLAUDE_KEY){appendMsg('AI 秘書尚未啟用。請在設定中填入 API Key。','ai');return;}
+  appendMsg(msg,'user');chatHistory.push({role:'user',parts:[{text:msg}]});
+  if(!GEMINI_KEY){appendMsg('AI 秘書尚未啟用。','ai');return;}
   const btn=document.getElementById('chat-send');btn.disabled=true;
   const tid='t'+Date.now();appendTyping(tid);
+  const GEMINI_KEY_NOW=GEMINI_KEY_GLOBAL||localStorage.getItem('lifeos_gemini_key')||GEMINI_KEY;
+  if(!GEMINI_KEY_NOW){removeTyping(tid);appendMsg('AI 助手尚未設定。請聯絡管理員啟用 AI 功能。','ai');btn.disabled=false;return;}
   try{
-    const _now=new Date();const today=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
-    const mStart=`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-01`;
+    const _now=new Date();
+    const today=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
+    const mStart=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-01`;
     const [todos,events,txns,accounts]=await Promise.all([
       sb(`/rest/v1/todos?user_id=eq.${getViewAsId()}&completed=eq.false&limit=15`,{}),
       sb(`/rest/v1/events?user_id=eq.${getViewAsId()}&start_date=gte.${today}&limit=10`,{}),
       sb(`/rest/v1/transactions?user_id=eq.${getViewAsId()}&date=gte.${mStart}&order=date.desc&limit=30`,{}),
       sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}`,{})
     ]);
-    let inc=0,exp=0;txns.forEach(t=>{if(t.type==='income')inc+=Number(t.amount);else exp+=Number(t.amount);});
-    const totalAssets=accounts.filter(a=>(a.currency||'TWD').toUpperCase()==='TWD').reduce((s,a)=>s+Number(a.balance),0);
-    const ctx=`你是${prof.display_name||prof.username}的 Life OS AI 秘書，用繁體中文簡潔回答。
-今日：${today}
-待辦(${todos.length}項)：${todos.slice(0,5).map(t=>t.title).join('、')}
-即將行程：${events.slice(0,3).map(e=>e.start_date+' '+e.title).join('、')}
-本月收入：NT$${inc.toLocaleString()}
-本月支出：NT$${exp.toLocaleString()}
-結餘：NT$${(inc-exp).toLocaleString()}
-帳戶總額：NT$${totalAssets.toLocaleString()}
-最近支出：${txns.filter(t=>t.type==='expense').slice(0,5).map(t=>(t.note||'記帳')+' NT$'+t.amount).join('、')}`;
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:600,system:ctx,messages:chatHistory})});
+    let inc=0,exp=0;
+    txns.forEach(t=>{if(t.type==='income')inc+=Number(t.amount);else exp+=Number(t.amount);});
+    const totalAssets=accounts.filter(a=>!a.is_hidden&&(a.currency||'TWD').toUpperCase()==='TWD').reduce((s,a)=>s+Number(a.balance),0);
+    const sysPrompt=`你是${prof.display_name||prof.username}的 Life OS AI 助手，使用繁體中文回答。
+你能夠幫助用戶處理各種問題，包括：財務分析、生活規劃、行程安排、健康建議、投資諮詢、旅遊規劃、學習建議、心理支持等各種日常問題。
+請根據問題給予實用、具體的建議，不要過於簡短。
+
+【用戶個人資料 - 今日：${today}】
+待辦事項(${todos.length}項)：${todos.slice(0,8).map(t=>t.title+(t.priority==='high'?'(緊急)':'')).join('、')||'無'}
+近期行程：${events.slice(0,5).map(e=>e.start_date+' '+e.title).join('、')||'無'}
+本月收入：NT$${Math.round(inc).toLocaleString()}
+本月支出：NT$${Math.round(exp).toLocaleString()}
+本月結餘：NT$${Math.round(inc-exp).toLocaleString()}
+帳戶總額：NT$${Math.round(totalAssets).toLocaleString()}
+最近消費：${txns.filter(t=>t.type==='expense').slice(0,5).map(t=>(t.note||'支出')+' NT$'+t.amount).join('、')||'無'}
+
+請根據以上資料提供個人化的回答。`;
+
+    // Gemini API
+    const messages=chatHistory.slice(-20);
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY_NOW}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:sysPrompt}]},
+        contents:messages,
+        generationConfig:{maxOutputTokens:800,temperature:0.7}
+      })
+    });
     const d=await r.json();
-    const reply=d.content?.[0]?.text||'抱歉，無法回應';
-    removeTyping(tid);appendMsg(reply,'ai');chatHistory.push({role:'assistant',content:reply});
-    if(chatHistory.length>20)chatHistory=chatHistory.slice(-20);
-  }catch(e){removeTyping(tid);appendMsg('發生錯誤，請稍後再試','ai');}
+    const reply=d.candidates?.[0]?.content?.parts?.[0]?.text||'抱歉，無法回應';
+    removeTyping(tid);
+    appendMsg(reply,'ai');
+    chatHistory.push({role:'model',parts:[{text:reply}]});
+    if(chatHistory.length>40)chatHistory=chatHistory.slice(-40);
+  }catch(e){console.error(e);removeTyping(tid);appendMsg('發生錯誤，請稍後再試','ai');}
   btn.disabled=false;
 }
 function appendMsg(text,who){
