@@ -3554,8 +3554,10 @@ function escapeHtml(s){
   const d=document.createElement('div');d.textContent=s;return d.innerHTML;
 }
 function tagChips(tags){
-  if(!tags||!tags.length)return'';
-  return tags.map(tg=>`<span class="tag" style="background:rgba(107,158,240,.12);color:var(--blue);font-size:9px;margin-left:4px;">#${escapeHtml(tg)}</span>`).join('');
+  if(!tags)return'';
+  const arr=Array.isArray(tags)?tags:String(tags).split(',').map(t=>t.trim()).filter(Boolean);
+  if(!arr.length)return'';
+  return arr.map(tg=>`<span class="tag" style="background:rgba(107,158,240,.12);color:var(--blue);font-size:9px;margin-left:4px;">#${escapeHtml(tg)}</span>`).join('');
 }
 
 async function postMemo(){
