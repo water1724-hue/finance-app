@@ -69,6 +69,7 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 
 /* CARDS */
 .card{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .hw-half{padding:14px 12px;}
 .hw-half .sec-label{font-size:11px;}
 .hw-half h3,.hw-half .sec-title{font-size:13px;}
@@ -2055,7 +2056,7 @@ async function importBackup(input){
   const file=input.files[0];
   if(!file)return;
   input.value='';
-  if(!confirm('⚠️ 匯入將覆蓋現有資料，確定繼續？'))return;
+  if(!await customConfirm('⚠️ 匯入將覆蓋現有資料，確定繼續？','確認','確定',true))return;
   toast('還原中...');
   try{
     const text=await file.text();
@@ -2787,7 +2788,7 @@ async function saveEditAccount(){
     toast('已更新');
     loadAccManage();
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function loadAccManage(){
@@ -2851,7 +2852,7 @@ async function loadAccManage(){
 
     // 拖曳排序
     initAccDragSort();
-  }catch(e){toast('載入失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function toggleAccHidden(id, currentlyHidden){
@@ -2860,7 +2861,7 @@ async function toggleAccHidden(id, currentlyHidden){
     toast(currentlyHidden?'已顯示':'已隱藏');
     loadAccManage();
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
-  }catch(e){toast('操作失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 function initAccDragSort(){
@@ -2906,13 +2907,13 @@ function initAccDragSort(){
 }
 
 async function delAccount(id){
-  if(!confirm('確定刪除此帳戶？帳戶內的交易記錄也會一併刪除。'))return;
+  if(!await customConfirm('確定刪除此帳戶？帳戶內的交易記錄也會一併刪除。','確認刪除','刪除',true))return;
   try{
     await sb(`/rest/v1/accounts?id=eq.${id}`,{method:'DELETE'});
     toast('帳戶已刪除');
     loadAccManage();
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
-  }catch(e){toast('刪除失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // Edit transaction by index (from account detail)
@@ -2947,7 +2948,7 @@ function editFinTxnByIdx(idx){
 
 // Delete transaction and reverse account balance
 async function delTxnFromAcc(id, amount, type, accountId){
-  if(!confirm('確定刪除此交易記錄？'))return;
+  if(!await customConfirm('確定刪除此交易記錄？','確認刪除','刪除',true))return;
   try{
     await sb(`/rest/v1/transactions?id=eq.${id}`,{method:'DELETE'});
     // Reverse the balance effect
@@ -2959,7 +2960,7 @@ async function delTxnFromAcc(id, amount, type, accountId){
     toast('已刪除');
     if(document.getElementById('det-account').classList.contains('on'))openAccDetail(accountId);
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
-  }catch(e){toast('刪除失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // Update saveTxn to handle edit
@@ -3096,7 +3097,7 @@ async function saveTransfer(){
     closeSheet('sh-transfer');
     toast(isCrossCur?'轉帳成功，換匯紀錄已自動記錄':'轉帳成功');
     loadFinance();
-  }catch(e){toast('轉帳失敗','err');console.error(e);}
+  }catch(e){toast(friendlyError(e),'err');console.error(e);}
 }
 
 async function loadAllTxns(){
@@ -3246,7 +3247,7 @@ async function openAccDetail(id){
     }
     initAccTxnFilter();
     showDet('det-account');
-  }catch(e){toast('載入失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // Initialize date filter with 1 year range
@@ -3458,7 +3459,7 @@ async function saveHolding(){
   };
   if(!body.symbol||!body.name){toast('請填寫代號和名稱','err');return;}
   try{await sb('/rest/v1/holdings',{method:'POST',body:JSON.stringify(body)});closeSheet('sh-holding');toast('已新增');openAccDetail(currentHoldingAccId);}
-  catch(e){toast('儲存失敗','err');}
+  catch(e){toast(friendlyError(e),'err');}
 }
 
 // Investment transaction
@@ -3550,7 +3551,7 @@ async function saveAccount(){
   body.note=document.getElementById('acc-note').value.trim();
   if(!body.name){toast('請填寫帳戶名稱','err');return;}
   try{await sb('/rest/v1/accounts',{method:'POST',body:JSON.stringify(body)});closeSheet('sh-account');toast('帳戶已新增');loadFinance();}
-  catch(e){toast('儲存失敗','err');}
+  catch(e){toast(friendlyError(e),'err');}
 }
 
 // Transaction
@@ -3620,11 +3621,12 @@ async function saveTxn(){
     closeSheet('sh-txn');
     document.getElementById('txn-id').value='';
     document.getElementById('sh-txn-title').textContent='新增記帳';
+    clearCache('monthly');clearCache('networth');clearCache('budget');
     toast(id?'已更新':'記帳成功');
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
     if(document.getElementById('det-account').classList.contains('on'))openAccDetail(accId);
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // CALENDAR
@@ -3766,9 +3768,9 @@ async function saveEvent(){
     document.getElementById('ev-repeat-end-field').style.display='none';
     await renderCal();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
-async function delEvent(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/events?id=eq.${id}`,{method:'DELETE'});toast('已刪除');renderCal();}catch(e){}}
+async function delEvent(id){if(!await customConfirm('確定刪除？','確認刪除','刪除',true))return;try{await sb(`/rest/v1/events?id=eq.${id}`,{method:'DELETE'});toast('已刪除');renderCal();}catch(e){}}
 
 // TODOS
 async function loadTodos(){
@@ -3809,7 +3811,7 @@ async function loadTodos(){
         </div>
       </div>`;
     }).join('');
-  }catch(e){toast('載入失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 function editTodoByIdx(idx){
   const t=window._todos[parseInt(idx)];
@@ -3843,10 +3845,10 @@ async function saveTodo(){
     else await sb('/rest/v1/todos',{method:'POST',body:JSON.stringify(body)});
     closeSheet('sh-todo');document.getElementById('todo-id').value='';document.getElementById('sh-todo-title').textContent='新增待辦';
     toast('儲存成功');loadTodos();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 async function toggleTodo(id,cur){try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({completed:!cur,completed_at:!cur?new Date().toISOString():null})});loadTodos();}catch(e){}}
-async function delTodo(id){if(!confirm('確定刪除？'))return;try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadTodos();}catch(e){}}
+async function delTodo(id){if(!await customConfirm('確定刪除？','確認刪除','刪除',true))return;try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadTodos();}catch(e){}}
 
 // ANNOUNCEMENTS
 async function loadAnnouncements(){
@@ -3942,11 +3944,11 @@ async function saveAnnounce(){
     closeSheet('sh-announce');
     loadAnnouncements();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function delAnnounce(id){
-  if(!confirm('確定刪除公告？'))return;
+  if(!await customConfirm('確定刪除公告？','確認刪除','刪除',true))return;
   try{await sb(`/rest/v1/announcements?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadAnnouncements();if(document.getElementById('pg-home').classList.contains('on'))loadHome();}catch(e){}
 }
 
@@ -3969,7 +3971,7 @@ async function postMemoFromHome(){
     input.value='';
     toast('留言已送出');
     loadHome();
-  }catch(e){toast('送出失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 // ─── END HOME TAB SWITCH ─────────────────────────────────────
 
@@ -4024,7 +4026,7 @@ async function postMemo(){
     document.getElementById('memo-input').value='';
     toast('留言已送出');
     loadMemos();
-  }catch(e){toast('送出失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 function openMemoEdit(m){
@@ -4043,17 +4045,17 @@ async function saveMemoEdit(){
     closeSheet('sh-memo-edit');
     toast('已更新');
     loadMemos();
-  }catch(e){toast('更新失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function delMemo(id){
   if(prof.role!=='admin'){toast('此功能僅限管理員','err');return;}
-  if(!confirm('確定刪除這則留言？'))return;
+  if(!await customConfirm('確定刪除這則留言？','確認刪除','刪除',true))return;
   try{
     await sb(`/rest/v1/memos?id=eq.${id}`,{method:'DELETE'});
     toast('已刪除');
     loadMemos();
-  }catch(e){toast('刪除失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 // ─── END MEMO BOARD ──────────────────────────────────────────
 
@@ -4325,13 +4327,13 @@ async function saveRecurring(){
     closeSheet('sh-recurring');
     toast('已儲存');
     loadRecurring();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 async function toggleRecurring(id,cur){
   try{await sb(`/rest/v1/recurring_transactions?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_active:!cur})});loadRecurring();}catch(e){}
 }
 async function delRecurring(id){
-  if(!confirm('確定刪除此固定週期項目？（已產生的記錄不會被刪除）'))return;
+  if(!await customConfirm('確定刪除此固定週期項目？（已產生的記錄不會被刪除）','確認刪除','刪除',true))return;
   try{await sb(`/rest/v1/recurring_transactions?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadRecurring();}catch(e){}
 }
 async function loadRecurring(){
@@ -4880,7 +4882,7 @@ async function saveAiKey(){
     GEMINI_KEY_GLOBAL=key;
     toast('AI Key 已儲存，所有使用者可使用 ✓');
     closeSheet('sh-ai-settings');
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 function saveHomeSettings(){
@@ -4925,15 +4927,18 @@ async function loadHomeTodos(){
 
 async function loadHomeMonthly(){
   const el=document.getElementById('h-monthly-content');if(!el)return;
+  const now=new Date();
+  const y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0');
+  const cacheKey=`monthly_${prof.id}_${y}${m}`;
+  const cached=getCache(cacheKey);
+  if(cached){el.innerHTML=cached;return;}
   try{
-    const now=new Date();
-    const y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0');
     const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
     const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${y}-${m}-01&date=lte.${y}-${m}-${String(lastDay).padStart(2,'0')}`,{});
     const income=txns.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
     const expense=txns.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
     const balance=income-expense;
-    el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+    const html=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
       <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:10px;">
         <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">收入</div>
         <div style="font-size:14px;font-weight:700;color:var(--green);">NT$${Math.round(income).toLocaleString()}</div>
@@ -4947,6 +4952,8 @@ async function loadHomeMonthly(){
         <div style="font-size:14px;font-weight:700;color:${balance>=0?'var(--gold)':'var(--red)'};">NT$${Math.round(balance).toLocaleString()}</div>
       </div>
     </div>`;
+    el.innerHTML=html;
+    setCache(cacheKey,html);
   }catch(e){}
 }
 
@@ -5306,12 +5313,12 @@ function openPortTxn(holdingId, type){
 }
 
 async function delPortHolding(id){
-  if(!confirm('確定刪除此持股？（交易記錄不會被刪除）'))return;
+  if(!await customConfirm('確定刪除此持股？（交易記錄不會被刪除）','確認刪除','刪除',true))return;
   try{
     await sb(`/rest/v1/holdings?id=eq.${id}`,{method:'DELETE'});
     toast('已刪除');
     loadPortfolio();
-  }catch(e){toast('刪除失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // ─── END PORTFOLIO ─────────────────────────────────────────────
@@ -5393,10 +5400,10 @@ async function saveGoal(){
     closeSheet('sh-goal');
     toast('已儲存');
     loadGoals();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 async function delGoal(id){
-  if(!confirm('確定刪除此儲蓄目標？'))return;
+  if(!await customConfirm('確定刪除此儲蓄目標？','確認刪除','刪除',true))return;
   try{await sb(`/rest/v1/savings_goals?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadGoals();}catch(e){}
 }
 function openGoalAdd(id){
@@ -5416,7 +5423,7 @@ async function saveGoalContribution(){
     closeSheet('sh-goal-add');
     toast(newAmt>=Number(goals[0].target_amount)?'🎉 已達成目標！':'已存入');
     loadGoals();
-  }catch(e){toast('操作失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 // ─── END SAVINGS GOALS ────────────────────────────────────────
 
@@ -5456,10 +5463,10 @@ async function saveHabit(){
     toast('已儲存');
     loadHabits();
     if(document.getElementById('pg-home').classList.contains('on'))loadHomeHabits();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 async function delHabit(id){
-  if(!confirm('確定刪除此習慣？打卡記錄也會一併刪除。'))return;
+  if(!await customConfirm('確定刪除此習慣？打卡記錄也會一併刪除。','確認刪除','刪除',true))return;
   try{await sb(`/rest/v1/habits?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadHabits();loadHomeHabits();}catch(e){}
 }
 function habitDateOffset(daysAgo){
@@ -5527,7 +5534,7 @@ async function toggleHabitDay(habitId,date){
     else await sb('/rest/v1/habit_logs',{method:'POST',body:JSON.stringify({habit_id:habitId,user_id:prof.id,date})});
     if(document.getElementById('pg-habits').classList.contains('on'))loadHabits();
     if(document.getElementById('pg-home').classList.contains('on'))loadHomeHabits();
-  }catch(e){toast('操作失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 async function loadHomeHabits(){
   try{
@@ -5634,7 +5641,7 @@ async function saveShopItem(){
   try{
     await sb('/rest/v1/shopping_items',{method:'POST',body:JSON.stringify(body)});
     closeSheet('sh-shop');toast('已新增');loadShopping();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 async function toggleShopItem(id,isDone){
   try{
@@ -5643,11 +5650,11 @@ async function toggleShopItem(id,isDone){
   }catch(e){}
 }
 async function delShopItem(id){
-  if(!confirm('確定刪除此項目？'))return;
+  if(!await customConfirm('確定刪除此項目？','確認刪除','刪除',true))return;
   try{await sb(`/rest/v1/shopping_items?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadShopping();}catch(e){}
 }
 async function clearDoneItems(){
-  if(!confirm('確定清除所有已購買項目？'))return;
+  if(!await customConfirm('確定清除所有已購買項目？','確認清除','清除',true))return;
   try{await sb(`/rest/v1/shopping_items?is_done=eq.true&user_id=eq.${prof.id}`,{method:'DELETE'});toast('已清除');loadShopping();}catch(e){}
 }
 // ─── END SHOPPING LIST ────────────────────────────────────────
@@ -5738,10 +5745,10 @@ async function saveContact(){
     if(id)await sb(`/rest/v1/contacts?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
     else await sb('/rest/v1/contacts',{method:'POST',body:JSON.stringify(body)});
     closeSheet('sh-contact');toast('已儲存');loadContacts();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 async function delContact(id){
-  if(!confirm('確定刪除此聯絡人？'))return;
+  if(!await customConfirm('確定刪除此聯絡人？','確認刪除','刪除',true))return;
   try{await sb(`/rest/v1/contacts?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadContacts();}catch(e){}
 }
 // ─── END CONTACTS ─────────────────────────────────────────────
@@ -5831,12 +5838,12 @@ async function saveMed(){
     if(id)await sb(`/rest/v1/medical_medications?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
     else await sb('/rest/v1/medical_medications',{method:'POST',body:JSON.stringify(body)});
     closeSheet('sh-med-med');toast('已儲存');loadMeds();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function delMed(id){
-  if(!confirm('確定刪除此用藥記錄？'))return;
-  try{await sb(`/rest/v1/medical_medications?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadMeds();}catch(e){toast('刪除失敗','err');}
+  if(!await customConfirm('確定刪除此用藥記錄？','確認刪除','刪除',true))return;
+  try{await sb(`/rest/v1/medical_medications?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadMeds();}catch(e){toast(friendlyError(e),'err');}
 }
 
 // ── 回診記錄 ──
@@ -5897,12 +5904,12 @@ async function saveVisit(){
     if(id)await sb(`/rest/v1/medical_visits?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
     else await sb('/rest/v1/medical_visits',{method:'POST',body:JSON.stringify(body)});
     closeSheet('sh-med-visit');toast('已儲存');loadVisits();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function delVisit(id){
-  if(!confirm('確定刪除此回診記錄？'))return;
-  try{await sb(`/rest/v1/medical_visits?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadVisits();}catch(e){toast('刪除失敗','err');}
+  if(!await customConfirm('確定刪除此回診記錄？','確認刪除','刪除',true))return;
+  try{await sb(`/rest/v1/medical_visits?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadVisits();}catch(e){toast(friendlyError(e),'err');}
 }
 
 // ── 身體數據 ──
@@ -5969,12 +5976,12 @@ async function saveBody(){
     if(id)await sb(`/rest/v1/medical_body?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
     else await sb('/rest/v1/medical_body',{method:'POST',body:JSON.stringify(body)});
     closeSheet('sh-med-body');toast('已儲存');loadBody();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function delBody(id){
-  if(!confirm('確定刪除此記錄？'))return;
-  try{await sb(`/rest/v1/medical_body?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadBody();}catch(e){toast('刪除失敗','err');}
+  if(!await customConfirm('確定刪除此記錄？','確認刪除','刪除',true))return;
+  try{await sb(`/rest/v1/medical_body?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadBody();}catch(e){toast(friendlyError(e),'err');}
 }
 // ─── VEHICLE（車輛管理） ───────────────────────────────────────
 let currentVehicleId=null;
@@ -6124,7 +6131,7 @@ async function saveVehicle(){
     else await sb('/rest/v1/vehicles',{method:'POST',body:JSON.stringify(body)});
     closeSheet('sh-vehicle');toast('已儲存');
     if(currentVehicleId)loadVehicleDetail();else loadVehicles();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function onVrecTypeChange(){
@@ -6181,19 +6188,19 @@ async function saveRecord(){
     if(id)await sb(`/rest/v1/vehicle_records?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
     else await sb('/rest/v1/vehicle_records',{method:'POST',body:JSON.stringify(body)});
     closeSheet('sh-vehicle-rec');toast('已儲存');loadVehicleDetail();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function delRecord(id){
-  if(!confirm('確定刪除此記錄？'))return;
-  try{await sb(`/rest/v1/vehicle_records?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadVehicleDetail();}catch(e){toast('刪除失敗','err');}
+  if(!await customConfirm('確定刪除此記錄？','確認刪除','刪除',true))return;
+  try{await sb(`/rest/v1/vehicle_records?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadVehicleDetail();}catch(e){toast(friendlyError(e),'err');}
 }
 
 async function viewLinkedDoc(docId){
   try{
     goPage('report');
     setTimeout(()=>openDocDetail(docId),300);
-  }catch(e){toast('載入失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 // ─── END VEHICLE ───────────────────────────────────────────────
 
@@ -6335,7 +6342,7 @@ async function saveFxLog(){
     if(accountId)openAccDetail(accountId);
     else loadFxLog();
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
-  }catch(e){toast('儲存失敗','err');console.error(e);}
+  }catch(e){toast(friendlyError(e),'err');console.error(e);}
 }
 
 async function loadFxLog(){
@@ -6362,7 +6369,7 @@ async function loadFxLog(){
 }
 
 async function delFxLog(id,accountId){
-  if(!confirm('確定刪除此換匯紀錄？（帳戶餘額不會自動還原）'))return;
+  if(!await customConfirm('確定刪除此換匯紀錄？（帳戶餘額不會自動還原）','確認刪除','刪除',true))return;
   try{
     await sb(`/rest/v1/fx_exchange_logs?id=eq.${id}`,{method:'DELETE'});
     toast('已刪除');
@@ -6441,7 +6448,7 @@ async function saveEditUser(){
     const data=await res.json();
     if(data.error){toast('更新失敗: '+data.error,'err');return;}
     closeSheet('sh-edituser');toast('已更新');loadUsers();
-  }catch(e){toast('更新失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function resetUserPwd(userId, username){
@@ -6453,7 +6460,7 @@ async function resetUserPwd(userId, username){
     const data=await res.json();
     if(data.error){toast('重設失敗: '+data.error,'err');return;}
     toast('密碼已重設');
-  }catch(e){toast('重設失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function loadUsers(){
@@ -6492,14 +6499,14 @@ async function createUser(){
 }
 
 async function delUser(userId){
-  if(!confirm('確定刪除此使用者？所有資料將一併刪除。'))return;
+  if(!await customConfirm('確定刪除此使用者？所有資料將一併刪除。','確認刪除','刪除',true))return;
   try{
     const token=JSON.parse(localStorage.getItem('lifeos_session')||'{}').token||'';
     const res=await fetch('https://twejdabdhuohfyylsprn.supabase.co/functions/v1/manage-users',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({action:'delete',userId})});
     const data=await res.json();
     if(data.error){toast('刪除失敗: '+data.error,'err');return;}
     toast('已刪除');loadUsers();
-  }catch(e){toast('刪除失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // BUDGET
@@ -6652,7 +6659,7 @@ function editFinTxnByIdx2(idx){
 }
 
 async function delTxnFromAccAndRefresh(id,amount,type,accountId){
-  if(!confirm('確定刪除此交易記錄？'))return;
+  if(!await customConfirm('確定刪除此交易記錄？','確認刪除','刪除',true))return;
   try{
     await sb(`/rest/v1/transactions?id=eq.${id}`,{method:'DELETE'});
     const accs=await sb(`/rest/v1/accounts?id=eq.${accountId}`,{});
@@ -6662,7 +6669,7 @@ async function delTxnFromAccAndRefresh(id,amount,type,accountId){
     }
     toast('已刪除');
     searchAllTxns();
-  }catch(e){toast('刪除失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // VIEW AS USER
@@ -6805,15 +6812,15 @@ async function saveBudget(tmplId, budgetId, year, month){
       toast('預算已設定');
     }
     loadBudget();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function clearBudget(budgetId){
-  if(!confirm('確定清除此預算上限？'))return;
+  if(!await customConfirm('確定清除此預算上限？','確認清除','清除',true))return;
   try{
     await sb(`/rest/v1/budgets?id=eq.${budgetId}`,{method:'DELETE'});
     toast('已清除');loadBudget();
-  }catch(e){toast('操作失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // ─── 預算項目管理（管理員） ────────────────────────────────────
@@ -6879,15 +6886,15 @@ async function saveBudgetItem(){
     }
     closeSheet('sh-budget-item');
     loadBudgetItems();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function removeBudgetItem(id){
-  if(!confirm('確定刪除此預算項目？'))return;
+  if(!await customConfirm('確定刪除此預算項目？','確認刪除','刪除',true))return;
   try{
     await sb(`/rest/v1/budget_templates?id=eq.${id}`,{method:'DELETE'});
     toast('已刪除');loadBudgetItems();
-  }catch(e){toast('操作失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function fetchTwStockPrice(symbol){
@@ -6958,7 +6965,7 @@ async function updateHoldingPrices(accountId){
     }
     toast(`已更新 ${updated} 筆報價`);
     openAccDetail(accountId);
-  }catch(e){toast('更新失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // REPORT
@@ -7423,7 +7430,7 @@ async function exportMonthReport(format='txt'){
       document.body.removeChild(a);URL.revokeObjectURL(url);
       toast('匯出完成 ✓');
     }
-  }catch(e){toast('匯出失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 // EXPENSE CATEGORIES
@@ -7517,7 +7524,7 @@ async function toggleExpCatActive(id, current){
     await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_active:!current})});
     toast(!current?'已啟用':'已停用');
     loadExpCats();
-  }catch(e){toast('操作失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function toggleDefault(id, current){
@@ -7526,7 +7533,7 @@ async function toggleDefault(id, current){
     await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({is_default:!current})});
     toast(!current?'已設為預設':'已取消預設');
     loadExpCats();
-  }catch(e){toast('操作失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function toggleInBudget(id, current){
@@ -7534,7 +7541,7 @@ async function toggleInBudget(id, current){
     await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({in_budget:!current})});
     toast(!current?'已加入預算清單':'已從預算清單移除');
     loadExpCats();
-  }catch(e){toast('操作失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 function openAddSubCat(parentId,parentName){
@@ -7560,7 +7567,7 @@ async function saveExpCat(){
     document.getElementById('ec-type').closest('.field').style.display='block';
     currentParentCat=null;
     toast('儲存成功');loadExpCats();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function delExpCat(id){
@@ -7568,10 +7575,87 @@ async function delExpCat(id){
     const cat=await sb(`/rest/v1/expense_categories?id=eq.${id}`,{});
     if(!cat.length)return;
     if(cat[0].is_default&&prof.role!=='admin'){toast('預設類別不可刪除','err');return;}
-    if(!confirm('確定刪除？此類別下的細項也會一併刪除。'))return;
+    if(!await customConfirm('確定刪除？此類別下的細項也會一併刪除。','確認刪除','刪除',true))return;
     await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'DELETE'});
     toast('已刪除');loadExpCats();
-  }catch(e){toast('刪除失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
+}
+
+// ─── 離線監測 ───────────────────────────────────────
+window.addEventListener('online',()=>{
+  document.getElementById('offline-banner').style.display='none';
+  toast('網路已恢復','ok');
+});
+window.addEventListener('offline',()=>{
+  document.getElementById('offline-banner').style.display='block';
+});
+if(!navigator.onLine){
+  setTimeout(()=>{const b=document.getElementById('offline-banner');if(b)b.style.display='block';},500);
+}
+
+// ─── 自製確認對話框（替換 confirm）───────────────────
+let _confirmResolve=null;
+function customConfirm(msg,title='確認',okText='確定',isDanger=false){
+  return new Promise(resolve=>{
+    _confirmResolve=resolve;
+    document.getElementById('confirm-title').textContent=title;
+    document.getElementById('confirm-msg').textContent=msg;
+    const okBtn=document.getElementById('confirm-ok-btn');
+    okBtn.textContent=okText;
+    okBtn.className=isDanger?'btn':'btn btn-gold';
+    if(isDanger)okBtn.style.background='#D94F4F',okBtn.style.color='#fff';
+    else okBtn.style.background='',okBtn.style.color='';
+    document.getElementById('confirm-dialog').style.display='flex';
+  });
+}
+function confirmDialogResult(ok){
+  document.getElementById('confirm-dialog').style.display='none';
+  if(_confirmResolve)_confirmResolve(ok);
+  _confirmResolve=null;
+}
+
+// ─── 首頁資料快取（5 分鐘）───────────────────────────
+const HOME_CACHE_TTL=5*60*1000; // 5 分鐘
+function getCache(key){
+  try{
+    const item=JSON.parse(sessionStorage.getItem('cache_'+key)||'null');
+    if(!item)return null;
+    if(Date.now()-item.t>HOME_CACHE_TTL){sessionStorage.removeItem('cache_'+key);return null;}
+    return item.data;
+  }catch(e){return null;}
+}
+function setCache(key,data){
+  try{sessionStorage.setItem('cache_'+key,JSON.stringify({t:Date.now(),data}));}catch(e){}
+}
+function clearCache(prefix=''){
+  Object.keys(sessionStorage).filter(k=>k.startsWith('cache_'+prefix)).forEach(k=>sessionStorage.removeItem(k));
+}
+
+// ─── 錯誤訊息友善化 ────────────────────────────────
+function friendlyError(e){
+  if(!navigator.onLine)return'無網路連線';
+  const msg=String(e?.message||e||'');
+  if(msg.includes('401'))return'登入已過期，請重新登入';
+  if(msg.includes('403'))return'權限不足';
+  if(msg.includes('404'))return'資料不存在';
+  if(msg.includes('400'))return'資料格式錯誤';
+  if(msg.includes('500'))return'伺服器忙碌中，請稍後再試';
+  if(msg.includes('NetworkError')||msg.includes('Failed to fetch'))return'網路連線問題';
+  if(msg.includes('duplicate'))return'資料重複';
+  return'操作失敗，請稍後再試';
+}
+
+// ─── 按鈕載入中狀態 ──────────────────────────────────
+function btnLoading(btn,loading=true){
+  if(!btn)return;
+  if(loading){
+    btn._origText=btn.innerHTML;
+    btn.disabled=true;
+    btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 0.8s linear infinite;"></i> 處理中...';
+  } else {
+    btn.disabled=false;
+    if(btn._origText)btn.innerHTML=btn._origText;
+  }
 }
 
 // AI CHAT
@@ -7945,7 +8029,7 @@ async function saveDoc(){
     docPendingFile=null;
     if(id){hideDet('det-doc');currentDoc=null;}
     loadDocs();
-  }catch(e){toast('儲存失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 
 async function delCurrentDoc(){
@@ -7954,7 +8038,7 @@ async function delCurrentDoc(){
   try{
     await sb(`/rest/v1/documents?id=eq.${currentDoc.id}`,{method:'DELETE'});
     toast('已刪除');hideDet('det-doc');currentDoc=null;loadDocs();
-  }catch(e){toast('刪除失敗','err');}
+  }catch(e){toast(friendlyError(e),'err');}
 }
 // ─── END DOCUMENT CENTER ────────────────────────────────────────
 
@@ -8009,5 +8093,22 @@ window.openSheet=async function(id){
   if(ok)initApp();
 })();
 </script>
+
+<!-- 離線提示 -->
+<div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#D94F4F;color:#fff;text-align:center;padding:8px;font-size:13px;z-index:9999;">
+  <i class="ti ti-wifi-off" style="vertical-align:-2px;margin-right:4px;"></i>無網路連線
+</div>
+
+<!-- 確認對話框 -->
+<div class="overlay" id="confirm-dialog" style="background:rgba(0,0,0,0.6);align-items:center;justify-content:center;display:none;">
+  <div style="background:var(--bg2);border-radius:14px;padding:20px;max-width:300px;margin:0 20px;border:0.5px solid var(--border);">
+    <div id="confirm-title" style="font-size:16px;font-weight:600;margin-bottom:8px;">確認</div>
+    <div id="confirm-msg" style="font-size:14px;color:var(--text2);margin-bottom:18px;line-height:1.6;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="confirmDialogResult(false)">取消</button>
+      <button class="btn btn-gold" id="confirm-ok-btn" style="flex:1;" onclick="confirmDialogResult(true)">確定</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
