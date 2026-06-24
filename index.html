@@ -299,8 +299,8 @@ select.inp option{background:var(--bg2);}
       <!-- 通知提醒 banner -->
       <div id="home-notify-banner" style="display:none;margin-bottom:12px;"></div>
 
-      <!-- HERO 主視覺卡 -->
-      <div id="hw-hero" style="background:linear-gradient(135deg,var(--bg3) 0%,rgba(184,137,42,0.08) 100%);border:0.5px solid var(--gold-border);border-radius:20px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;cursor:pointer;" onclick="goPage('finance')">
+      <!-- HERO 主視覺卡（淨資產） -->
+      <div id="hw-networth" style="display:none;background:linear-gradient(135deg,var(--bg3) 0%,rgba(184,137,42,0.08) 100%);border:0.5px solid var(--gold-border);border-radius:20px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;cursor:pointer;" onclick="goPage('finance')">
         <div style="font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:8px;">本月淨資產</div>
         <div id="hero-amount" style="font-size:30px;font-weight:700;color:var(--gold);letter-spacing:-0.5px;">NT$ —</div>
         <div id="hero-delta" style="font-size:12px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:6px;"></div>
@@ -330,13 +330,6 @@ select.inp option{background:var(--bg2);}
       <div class="card" id="hw-monthly" style="margin-bottom:12px;">
         <div class="sec-label" style="margin-bottom:10px;">本月收支</div>
         <div id="h-monthly-content"></div>
-      </div>
-
-      <!-- 淨資產 -->
-      <div class="card" id="hw-networth" style="display:none;margin-bottom:12px;cursor:pointer;" onclick="goPage('finance')">
-        <div class="sec-label" style="margin-bottom:6px;">淨資產</div>
-        <div id="h-networth-val" style="font-size:26px;font-weight:700;color:var(--gold);">—</div>
-        <div id="h-networth-sub" style="font-size:12px;color:var(--text3);margin-top:4px;"></div>
       </div>
 
       <!-- 天氣預報 -->
@@ -2471,7 +2464,7 @@ async function loadHome(){
   else{const c=document.getElementById('h-habits-card');if(c)c.style.display='none';}
   if(w.todos)loadHomeTodos();
   if(w.monthly)loadHomeMonthly();
-  if(w.networth)loadHomeNetworth();
+  if(w.networth)loadHero();
   if(w.budget)loadHomeBudget();
   if(w.goals)loadHomeGoals();
   if(w.portfolio)loadHomePortfolio();
@@ -2482,7 +2475,6 @@ async function loadHome(){
   if(w.medical)loadHomeMedical();
   if(w.vehicle)loadHomeVehicle();
   if(w.docs)loadHomeDocs();
-  loadHero();
 }
 
 async function quickDone(id){
@@ -4712,7 +4704,7 @@ const HW_META={
   shortcuts: {name:'快捷按鈕',  sub:'記帳、待辦、行程', group:'基本', defaultOn:true},
   ai:        {name:'AI 助手',   sub:'首頁快捷入口',     group:'基本', defaultOn:false},
   monthly:   {name:'本月收支',  sub:'收入/支出/結餘',   group:'財務', defaultOn:true},
-  networth:  {name:'淨資產',    sub:'總資產預覽',       group:'財務', defaultOn:false},
+  networth:  {name:'淨資產',    sub:'金色主視覺大卡',   group:'財務', defaultOn:false},
   budget:    {name:'預算使用率',sub:'本月預算剩餘',     group:'財務', defaultOn:false},
   goals:     {name:'儲蓄目標',  sub:'目標達成進度',     group:'財務', defaultOn:false},
   portfolio: {name:'投資組合',  sub:'總市值和損益',     group:'財務', defaultOn:false},
@@ -4818,7 +4810,7 @@ function renderHwList(){
     const m=HW_META[k];if(!m)return;
     const on=w[k];
     const isHalf=!!half[k];
-    const halfDisabled=k==='shortcuts';
+    const halfDisabled=k==='shortcuts'||k==='networth';
     const isLast=i===order.length-1;
     html+=`<div class="hw-row" data-key="${k}" draggable="true" style="display:flex;align-items:center;gap:8px;padding:10px 14px;${isLast?'':'border-bottom:0.5px solid var(--border);'}cursor:grab;">
       <i class="ti ti-grip-vertical" style="color:var(--text3);font-size:18px;" aria-hidden="true"></i>
@@ -4911,7 +4903,7 @@ function saveHomeSettings(){
   // 載入新開啟的小工具資料
   if(w.todos)loadHomeTodos();
   if(w.monthly)loadHomeMonthly();
-  if(w.networth)loadHomeNetworth();
+  if(w.networth)loadHero();
   if(w.budget)loadHomeBudget();
   if(w.goals)loadHomeGoals();
   if(w.portfolio)loadHomePortfolio();
