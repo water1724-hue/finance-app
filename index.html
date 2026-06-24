@@ -69,6 +69,11 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 
 /* CARDS */
 .card{background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;}
+.hw-half{padding:14px 12px;}
+.hw-half .sec-label{font-size:11px;}
+.hw-half h3,.hw-half .sec-title{font-size:13px;}
+#hw-ai.hw-half > div{flex-direction:column;align-items:flex-start;gap:8px;}
+#hw-ai.hw-half > div > i:last-child{display:none;}
 .card-gold{background:var(--gold-dim);border-color:var(--gold-border);}
 body.light-mode .card-gold{background:rgba(184,137,42,0.08);}
 body.light-mode .card{border:1.5px solid #c8c8cc;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
@@ -288,6 +293,9 @@ select.inp option{background:var(--bg2);}
       <!-- 通知提醒 banner -->
       <div id="home-notify-banner" style="display:none;margin-bottom:12px;"></div>
 
+      <!-- 小工具容器（依設定順序動態排列） -->
+      <div id="home-cards-wrap">
+
       <!-- AI 助手快捷 -->
       <div class="card" id="hw-ai" style="display:none;margin-bottom:12px;cursor:pointer;" onclick="goPage('ai')">
         <div style="display:flex;align-items:center;gap:12px;">
@@ -439,6 +447,8 @@ select.inp option{background:var(--bg2);}
           <i class="ti ti-calendar-plus" style="color:var(--green);" aria-hidden="true"></i><span style="font-size:14px;">行程</span>
         </button>
       </div>
+
+      </div><!-- /home-cards-wrap -->
 
     </div>
 
@@ -1476,95 +1486,14 @@ select.inp option{background:var(--bg2);}
 
 <!-- Home Settings -->
 <div class="overlay" id="sh-home-settings">
-  <div class="sheet" style="max-height:85vh;overflow-y:auto;">
+  <div class="sheet" style="max-height:88vh;overflow-y:auto;">
     <div class="sheet-handle"></div>
     <h3>首頁自訂</h3>
-    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;">選擇要在首頁顯示的卡片，設定即時生效。</div>
-
-    <div style="font-size:11px;color:var(--text3);letter-spacing:1px;font-weight:700;margin-bottom:6px;margin-top:4px;">基本</div>
-    <div class="card" style="padding:0;margin-bottom:12px;">
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">AI 助手</div><div style="font-size:12px;color:var(--text3);">首頁快捷入口</div></div>
-        <input type="checkbox" id="hw-toggle-ai" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">今日行程</div><div style="font-size:12px;color:var(--text3);">當天行程列表</div></div>
-        <input type="checkbox" id="hw-toggle-events" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">今日習慣</div><div style="font-size:12px;color:var(--text3);">習慣打卡</div></div>
-        <input type="checkbox" id="hw-toggle-habits" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">待辦清單</div><div style="font-size:12px;color:var(--text3);">未完成待辦前幾筆</div></div>
-        <input type="checkbox" id="hw-toggle-todos" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">公告／留言板</div><div style="font-size:12px;color:var(--text3);">最新公告和家人留言</div></div>
-        <input type="checkbox" id="hw-toggle-announce" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;">
-        <div><div style="font-size:14px;font-weight:500;">快捷按鈕</div><div style="font-size:12px;color:var(--text3);">記帳、待辦、行程快捷鍵</div></div>
-        <input type="checkbox" id="hw-toggle-shortcuts" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      開啟想顯示的卡片，長按 <i class="ti ti-grip-vertical" style="vertical-align:-1px;"></i> 拖曳排序。<br>
+      點 <i class="ti ti-rectangle" style="vertical-align:-1px;"></i> 切換半寬，兩個半寬卡片會並排顯示。
     </div>
-
-    <div style="font-size:11px;color:var(--text3);letter-spacing:1px;font-weight:700;margin-bottom:6px;">財務</div>
-    <div class="card" style="padding:0;margin-bottom:12px;">
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">本月收支</div><div style="font-size:12px;color:var(--text3);">當月收入/支出/結餘</div></div>
-        <input type="checkbox" id="hw-toggle-monthly" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">淨資產</div><div style="font-size:12px;color:var(--text3);">總資產快速預覽</div></div>
-        <input type="checkbox" id="hw-toggle-networth" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">預算使用率</div><div style="font-size:12px;color:var(--text3);">本月預算剩餘</div></div>
-        <input type="checkbox" id="hw-toggle-budget" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">儲蓄目標</div><div style="font-size:12px;color:var(--text3);">目標達成進度</div></div>
-        <input type="checkbox" id="hw-toggle-goals" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">投資組合快覽</div><div style="font-size:12px;color:var(--text3);">總市值和損益</div></div>
-        <input type="checkbox" id="hw-toggle-portfolio" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">外幣匯率</div><div style="font-size:12px;color:var(--text3);">外幣帳戶即時匯率</div></div>
-        <input type="checkbox" id="hw-toggle-forex" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;">
-        <div><div style="font-size:14px;font-weight:500;">信用卡帳單</div><div style="font-size:12px;color:var(--text3);">近期帳單/繳款日</div></div>
-        <input type="checkbox" id="hw-toggle-creditcard" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-    </div>
-
-    <div style="font-size:11px;color:var(--text3);letter-spacing:1px;font-weight:700;margin-bottom:6px;">生活</div>
-    <div class="card" style="padding:0;margin-bottom:12px;">
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">天氣</div><div style="font-size:12px;color:var(--text3);">當地即時天氣</div></div>
-        <input type="checkbox" id="hw-toggle-weather" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">生日/紀念日</div><div style="font-size:12px;color:var(--text3);">近7天內的生日</div></div>
-        <input type="checkbox" id="hw-toggle-birthday" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">回診提醒</div><div style="font-size:12px;color:var(--text3);">近期回診日期</div></div>
-        <input type="checkbox" id="hw-toggle-medical" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;border-bottom:0.5px solid var(--border);">
-        <div><div style="font-size:14px;font-weight:500;">車輛保養</div><div style="font-size:12px;color:var(--text3);">保養/保險到期提醒</div></div>
-        <input type="checkbox" id="hw-toggle-vehicle" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 14px;">
-        <div><div style="font-size:14px;font-weight:500;">文件到期</div><div style="font-size:12px;color:var(--text3);">即將到期的文件</div></div>
-        <input type="checkbox" id="hw-toggle-docs" onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);">
-      </label>
-    </div>
-
+    <div id="hw-list"></div>
     <div class="btn-row">
       <button class="btn btn-gold" style="width:100%;" onclick="closeSheet('sh-home-settings')">完成</button>
     </div>
@@ -4758,39 +4687,176 @@ async function openAddHoldingFromPortfolio(){
 }
 
 // ─── 首頁小工具自訂 ───────────────────────────────────────────
-const HW_DEFAULTS={
-  events:true, habits:true, todos:false, announce:true, shortcuts:true,
-  monthly:true, networth:false, budget:false, goals:false, portfolio:false,
-  forex:false, creditcard:false, weather:true, birthday:false,
-  medical:false, vehicle:false, docs:false, ai:false
+const HW_META={
+  events:    {name:'今日行程',  sub:'當天行程列表',     group:'基本', defaultOn:true},
+  habits:    {name:'今日習慣',  sub:'習慣打卡',         group:'基本', defaultOn:true},
+  todos:     {name:'待辦清單',  sub:'未完成待辦',       group:'基本', defaultOn:false},
+  announce:  {name:'公告／留言板',sub:'公告和家人留言', group:'基本', defaultOn:true},
+  shortcuts: {name:'快捷按鈕',  sub:'記帳、待辦、行程', group:'基本', defaultOn:true},
+  ai:        {name:'AI 助手',   sub:'首頁快捷入口',     group:'基本', defaultOn:false},
+  monthly:   {name:'本月收支',  sub:'收入/支出/結餘',   group:'財務', defaultOn:true},
+  networth:  {name:'淨資產',    sub:'總資產預覽',       group:'財務', defaultOn:false},
+  budget:    {name:'預算使用率',sub:'本月預算剩餘',     group:'財務', defaultOn:false},
+  goals:     {name:'儲蓄目標',  sub:'目標達成進度',     group:'財務', defaultOn:false},
+  portfolio: {name:'投資組合',  sub:'總市值和損益',     group:'財務', defaultOn:false},
+  forex:     {name:'外幣匯率',  sub:'外幣帳戶匯率',     group:'財務', defaultOn:false},
+  creditcard:{name:'信用卡帳單',sub:'近期帳單/繳款日',  group:'財務', defaultOn:false},
+  weather:   {name:'天氣',      sub:'當地即時天氣',     group:'生活', defaultOn:true},
+  birthday:  {name:'生日/紀念日',sub:'近期生日提醒',    group:'生活', defaultOn:false},
+  medical:   {name:'回診提醒',  sub:'近期回診日期',     group:'生活', defaultOn:false},
+  vehicle:   {name:'車輛保養',  sub:'保養/保險到期',    group:'生活', defaultOn:false},
+  docs:      {name:'文件到期',  sub:'即將到期文件',     group:'生活', defaultOn:false}
 };
+const HW_DEFAULTS=Object.fromEntries(Object.entries(HW_META).map(([k,v])=>[k,v.defaultOn]));
+const HW_DEFAULT_ORDER=Object.keys(HW_META);
 
 function getHomeWidgets(){
   const saved=JSON.parse(localStorage.getItem('lifeos_home_widgets')||'{}');
   return{...HW_DEFAULTS,...saved};
 }
 
-function loadHomeSettings(){
+function getHomeOrder(){
+  const saved=JSON.parse(localStorage.getItem('lifeos_home_order')||'null');
+  if(!saved)return[...HW_DEFAULT_ORDER];
+  const missing=HW_DEFAULT_ORDER.filter(k=>!saved.includes(k));
+  return[...saved.filter(k=>HW_META[k]),...missing];
+}
+
+function getHomeHalf(){
+  return JSON.parse(localStorage.getItem('lifeos_home_half')||'{}');
+}
+
+function applyHomeLayout(){
   const w=getHomeWidgets();
-  const show=(id,on,flex=false)=>{const el=document.getElementById(id);if(el)el.style.display=on?(flex?'flex':'block'):'none';};
-  show('hw-events',w.events);
-  show('hw-announce',w.announce);
-  show('hw-shortcuts',w.shortcuts,'flex');
-  show('hw-monthly',w.monthly);
-  show('hw-networth',w.networth);
-  show('hw-budget',w.budget);
-  show('hw-goals',w.goals);
-  show('hw-portfolio',w.portfolio);
-  show('hw-forex',w.forex);
-  show('hw-creditcard',w.creditcard);
-  show('hw-weather',w.weather);
-  show('hw-birthday',w.birthday);
-  show('hw-medical',w.medical);
-  show('hw-vehicle',w.vehicle);
-  show('hw-docs',w.docs);
-  show('hw-ai',w.ai);
-  show('hw-todos',w.todos);
-  return w;
+  const order=getHomeOrder();
+  const half=getHomeHalf();
+  const container=document.getElementById('home-cards-wrap');
+  if(!container)return;
+  // 隱藏所有並重設樣式
+  Object.keys(HW_META).forEach(k=>{
+    const id=k==='habits'?'h-habits-card':`hw-${k}`;
+    const el=document.getElementById(id);
+    if(el){
+      el.style.display='none';
+      el.classList.remove('hw-half');
+      el.style.removeProperty('flex');
+      el.style.removeProperty('margin-bottom');
+      if(el.parentElement&&el.parentElement.classList.contains('hw-row-wrap')){
+        el.parentElement.parentElement.insertBefore(el,el.parentElement);
+      }
+    }
+  });
+  // 清除舊的 row wrap
+  container.querySelectorAll('.hw-row-wrap').forEach(r=>r.remove());
+
+  // 依順序重新插入
+  let pendingHalf=null;
+  const fragment=document.createDocumentFragment();
+  order.forEach(k=>{
+    if(!w[k])return;
+    const id=k==='habits'?'h-habits-card':`hw-${k}`;
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.style.display=k==='shortcuts'?'flex':'block';
+    if(half[k]&&k!=='shortcuts'){
+      el.classList.add('hw-half');
+      if(pendingHalf){
+        const row=document.createElement('div');
+        row.className='hw-row-wrap';
+        row.style.cssText='display:flex;gap:8px;margin-bottom:12px;';
+        pendingHalf.style.flex='1';pendingHalf.style.marginBottom='0';
+        el.style.flex='1';el.style.marginBottom='0';
+        row.appendChild(pendingHalf);
+        row.appendChild(el);
+        fragment.appendChild(row);
+        pendingHalf=null;
+      } else {
+        pendingHalf=el;
+      }
+    } else {
+      if(pendingHalf){fragment.appendChild(pendingHalf);pendingHalf=null;}
+      fragment.appendChild(el);
+    }
+  });
+  if(pendingHalf)fragment.appendChild(pendingHalf);
+  container.appendChild(fragment);
+}
+
+function loadHomeSettings(){
+  applyHomeLayout();
+  return getHomeWidgets();
+}
+
+function openHomeSettings(){
+  renderHwList();
+  openSheet('sh-home-settings');
+}
+
+function renderHwList(){
+  const w=getHomeWidgets();
+  const order=getHomeOrder();
+  const half=getHomeHalf();
+  let html=`<div class="card" style="padding:4px 0;">`;
+  order.forEach((k,i)=>{
+    const m=HW_META[k];if(!m)return;
+    const on=w[k];
+    const isHalf=!!half[k];
+    const halfDisabled=k==='shortcuts';
+    const isLast=i===order.length-1;
+    html+=`<div class="hw-row" data-key="${k}" draggable="true" style="display:flex;align-items:center;gap:8px;padding:10px 14px;${isLast?'':'border-bottom:0.5px solid var(--border);'}cursor:grab;">
+      <i class="ti ti-grip-vertical" style="color:var(--text3);font-size:18px;" aria-hidden="true"></i>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:500;">${m.name}</div>
+        <div style="font-size:12px;color:var(--text3);">${m.sub}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();toggleHwHalf('${k}')" style="padding:6px 8px;${halfDisabled?'opacity:.3;pointer-events:none;':''}" title="${isHalf?'切回全寬':'切半寬'}">
+        <i class="ti ${isHalf?'ti-layout-columns':'ti-layout-rows'}" style="font-size:16px;color:${isHalf?'var(--gold)':'var(--text3)'};" aria-hidden="true"></i>
+      </button>
+      <input type="checkbox" id="hw-toggle-${k}" ${on?'checked':''} onchange="saveHomeSettings()" style="width:20px;height:20px;accent-color:var(--gold);" onclick="event.stopPropagation();">
+    </div>`;
+  });
+  html+=`</div>`;
+  document.getElementById('hw-list').innerHTML=html;
+  setupHwDrag();
+}
+
+function setupHwDrag(){
+  let dragging=null;
+  document.querySelectorAll('#hw-list .hw-row').forEach(row=>{
+    row.addEventListener('dragstart',e=>{
+      dragging=row;
+      setTimeout(()=>row.style.opacity='0.3',0);
+      e.dataTransfer.effectAllowed='move';
+    });
+    row.addEventListener('dragend',()=>{
+      row.style.opacity='1';
+      dragging=null;
+      saveHomeOrder();
+    });
+    row.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(!dragging||dragging===row)return;
+      const parent=row.parentElement;
+      const rect=row.getBoundingClientRect();
+      const after=(e.clientY-rect.top)>rect.height/2;
+      parent.insertBefore(dragging,after?row.nextSibling:row);
+    });
+  });
+}
+
+function saveHomeOrder(){
+  const newOrder=[];
+  document.querySelectorAll('#hw-list .hw-row').forEach(row=>newOrder.push(row.dataset.key));
+  localStorage.setItem('lifeos_home_order',JSON.stringify(newOrder));
+  applyHomeLayout();
+}
+
+function toggleHwHalf(key){
+  const half=getHomeHalf();
+  half[key]=!half[key];
+  localStorage.setItem('lifeos_home_half',JSON.stringify(half));
+  renderHwList();
+  applyHomeLayout();
 }
 
 function openAiSettings(){
@@ -4800,7 +4866,6 @@ function openAiSettings(){
   const status=document.getElementById('ai-key-status');
   status.textContent=hasKey?'✅ AI 助手已啟用（所有使用者共用）':'未設定，AI 助手停用中';
   status.style.color=hasKey?'var(--green)':'var(--text3)';
-  // 非管理員只能看狀態
   const saveBtn=document.querySelector('#sh-ai-settings .btn-gold');
   if(saveBtn)saveBtn.style.display=prof.role==='admin'?'':'none';
   openSheet('sh-ai-settings');
@@ -4811,7 +4876,6 @@ async function saveAiKey(){
   const key=document.getElementById('ai-key-input').value.trim();
   if(!key){toast('請輸入 API Key','err');return;}
   try{
-    // upsert 到 app_settings
     await sb('/rest/v1/app_settings',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({key:'gemini_key',value:key,updated_at:new Date().toISOString()})});
     GEMINI_KEY_GLOBAL=key;
     toast('AI Key 已儲存，所有使用者可使用 ✓');
@@ -4819,23 +4883,14 @@ async function saveAiKey(){
   }catch(e){toast('儲存失敗','err');}
 }
 
-function openHomeSettings(){
-  const w=getHomeWidgets();
-  Object.keys(HW_DEFAULTS).forEach(k=>{
-    const el=document.getElementById(`hw-toggle-${k}`);
-    if(el)el.checked=w[k];
-  });
-  openSheet('sh-home-settings');
-}
-
 function saveHomeSettings(){
   const w={};
-  Object.keys(HW_DEFAULTS).forEach(k=>{
+  Object.keys(HW_META).forEach(k=>{
     const el=document.getElementById(`hw-toggle-${k}`);
     if(el)w[k]=el.checked;
   });
   localStorage.setItem('lifeos_home_widgets',JSON.stringify(w));
-  loadHomeSettings();
+  applyHomeLayout();
   // 載入新開啟的小工具資料
   if(w.todos)loadHomeTodos();
   if(w.monthly)loadHomeMonthly();
@@ -4850,6 +4905,7 @@ function saveHomeSettings(){
   if(w.medical)loadHomeMedical();
   if(w.vehicle)loadHomeVehicle();
   if(w.docs)loadHomeDocs();
+  if(w.habits)loadHomeHabits();
 }
 // ─── END 首頁小工具自訂 ───────────────────────────────────────
 
