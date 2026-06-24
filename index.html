@@ -88,7 +88,7 @@ body.light-mode .tl-card{border:1.5px solid #c8c8cc;}
 body.light-mode .cal-arr{border:1.5px solid #c0c0c6;}
 body.light-mode .stat-card{background:#ffffff;border:1.5px solid #c8c8cc;}
 .pg-title{font-size:23px;font-weight:700;margin-bottom:18px;}
-.sec-label{font-size:14px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
+.sec-label{font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
 .home-tab{font-size:14px;font-weight:600;color:var(--text3);cursor:pointer;padding-bottom:2px;border-bottom:2px solid transparent;transition:all .15s;}
 .home-tab.on{color:var(--gold);border-bottom-color:var(--gold);}
 .row-between{display:flex;align-items:center;justify-content:space-between;}
@@ -279,20 +279,35 @@ select.inp option{background:var(--bg2);}
 
     <!-- HOME -->
     <div class="page on" id="pg-home">
-      <!-- 頂部：日期＋鈴鐺 -->
+      <!-- 頂部：問候+日期+搜尋+鈴鐺 -->
       <div class="row-between" style="margin-bottom:14px;">
-        <div>
-          <div class="pg-title" style="margin:0;font-size:22px;" id="home-greeting"></div>
-          <div id="home-date" style="font-size:13px;color:var(--text3);margin-top:2px;"></div>
+        <div style="min-width:0;">
+          <div class="pg-title" style="margin:0;font-size:20px;font-weight:600;" id="home-greeting"></div>
+          <div id="home-date" style="font-size:12px;color:var(--text3);margin-top:2px;"></div>
         </div>
-        <button onclick="goPage('notify')" style="position:relative;background:none;border:none;cursor:pointer;color:var(--text2);font-size:22px;padding:4px;">
-          <i class="ti ti-bell" aria-hidden="true"></i>
-          <span id="notify-badge" style="display:none;position:absolute;top:0;right:0;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:8px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;">0</span>
-        </button>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+          <button onclick="goPage('search')" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:20px;padding:6px;">
+            <i class="ti ti-search" aria-hidden="true"></i>
+          </button>
+          <button onclick="goPage('notify')" style="position:relative;background:none;border:none;cursor:pointer;color:var(--text2);font-size:20px;padding:6px;">
+            <i class="ti ti-bell" aria-hidden="true"></i>
+            <span id="notify-badge" style="display:none;position:absolute;top:0;right:0;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:8px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;">0</span>
+          </button>
+        </div>
       </div>
 
       <!-- 通知提醒 banner -->
       <div id="home-notify-banner" style="display:none;margin-bottom:12px;"></div>
+
+      <!-- HERO 主視覺卡 -->
+      <div id="hw-hero" style="background:linear-gradient(135deg,var(--bg3) 0%,rgba(184,137,42,0.08) 100%);border:0.5px solid var(--gold-border);border-radius:20px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden;cursor:pointer;" onclick="goPage('finance')">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:8px;">本月淨資產</div>
+        <div id="hero-amount" style="font-size:30px;font-weight:700;color:var(--gold);letter-spacing:-0.5px;">NT$ —</div>
+        <div id="hero-delta" style="font-size:12px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:6px;"></div>
+        <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);opacity:0.08;">
+          <i class="ti ti-coin" style="font-size:80px;color:var(--gold);" aria-hidden="true"></i>
+        </div>
+      </div>
 
       <!-- 小工具容器（依設定順序動態排列） -->
       <div id="home-cards-wrap">
@@ -343,7 +358,7 @@ select.inp option{background:var(--bg2);}
       <div class="card" id="hw-todos" style="display:none;margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:10px;">
           <div class="sec-label" style="margin:0">待辦清單</div>
-          <span style="font-size:13px;color:var(--gold);cursor:pointer;" onclick="goPage('todo')">全部 →</span>
+          <span style="font-size:13px;color:var(--text3);cursor:pointer;" onclick="goPage('todo')">全部 →</span>
         </div>
         <div id="h-todos-widget"></div>
       </div>
@@ -352,7 +367,7 @@ select.inp option{background:var(--bg2);}
       <div class="card" id="h-habits-card" style="display:none;margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:10px;">
           <div class="sec-label" style="margin:0">今日習慣</div>
-          <span style="font-size:13px;color:var(--gold);cursor:pointer;" onclick="goPage('habits')">管理 →</span>
+          <span style="font-size:13px;color:var(--text3);cursor:pointer;" onclick="goPage('habits')">管理 →</span>
         </div>
         <div id="h-habits"></div>
       </div>
@@ -361,7 +376,7 @@ select.inp option{background:var(--bg2);}
       <div class="card" id="hw-budget" style="display:none;margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:10px;">
           <div class="sec-label" style="margin:0">本月預算</div>
-          <span style="font-size:13px;color:var(--gold);cursor:pointer;" onclick="showDet('det-budget')">設定 →</span>
+          <span style="font-size:13px;color:var(--text3);cursor:pointer;" onclick="showDet('det-budget')">設定 →</span>
         </div>
         <div id="h-budget-widget"></div>
       </div>
@@ -370,7 +385,7 @@ select.inp option{background:var(--bg2);}
       <div class="card" id="hw-goals" style="display:none;margin-bottom:12px;">
         <div class="row-between" style="margin-bottom:10px;">
           <div class="sec-label" style="margin:0">儲蓄目標</div>
-          <span style="font-size:13px;color:var(--gold);cursor:pointer;" onclick="goPage('goals')">全部 →</span>
+          <span style="font-size:13px;color:var(--text3);cursor:pointer;" onclick="goPage('goals')">全部 →</span>
         </div>
         <div id="h-goals-widget"></div>
       </div>
@@ -424,7 +439,7 @@ select.inp option{background:var(--bg2);}
             <div class="home-tab on" id="home-tab-announce" onclick="switchHomeTab('announce')">公告</div>
             <div class="home-tab" id="home-tab-memo" onclick="switchHomeTab('memo')">留言板</div>
           </div>
-          <span style="font-size:13px;color:var(--gold);cursor:pointer;" id="home-tab-more" onclick="goPage('announce')">全部</span>
+          <span style="font-size:13px;color:var(--text3);cursor:pointer;" id="home-tab-more" onclick="goPage('announce')">全部</span>
         </div>
         <div id="h-announce"></div>
         <div id="h-memo" style="display:none;">
@@ -761,10 +776,10 @@ select.inp option{background:var(--bg2);}
       </div>
       <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
         <button class="ftab on" onclick="setSearchType('all',this)">全部</button>
-        <button class="ftab" onclick="setSearchType('transactions',this)">💰 交易</button>
-        <button class="ftab" onclick="setSearchType('contacts',this)">👥 聯絡人</button>
-        <button class="ftab" onclick="setSearchType('documents',this)">📄 文件</button>
-        <button class="ftab" onclick="setSearchType('todos',this)">✅ 待辦</button>
+        <button class="ftab" onclick="setSearchType('transactions',this)"><i class="ti ti-wallet" aria-hidden="true"></i> 交易</button>
+        <button class="ftab" onclick="setSearchType('contacts',this)"><i class="ti ti-users" aria-hidden="true"></i> 聯絡人</button>
+        <button class="ftab" onclick="setSearchType('documents',this)"><i class="ti ti-folder" aria-hidden="true"></i> 文件</button>
+        <button class="ftab" onclick="setSearchType('todos',this)"><i class="ti ti-checklist" aria-hidden="true"></i> 待辦</button>
       </div>
       <div id="search-results"><div class="empty"><i class="ti ti-search" aria-hidden="true"></i><p>輸入關鍵字開始搜尋</p></div></div>
     </div>
@@ -925,7 +940,6 @@ select.inp option{background:var(--bg2);}
     <button class="bnav-item" onclick="goPage('finance')" data-p="finance"><i class="ti ti-wallet" aria-hidden="true"></i><span>財務</span></button>
     <button class="bnav-item" onclick="goPage('cal')" data-p="cal"><i class="ti ti-calendar" aria-hidden="true"></i><span>行程</span></button>
     <button class="bnav-item" onclick="goPage('todo')" data-p="todo"><i class="ti ti-checklist" aria-hidden="true"></i><span>待辦</span></button>
-    <button class="bnav-item" onclick="goPage('search')" data-p="search"><i class="ti ti-search" aria-hidden="true"></i><span>搜尋</span></button>
     <button class="bnav-item" onclick="goPage('more')" data-p="more"><i class="ti ti-dots" aria-hidden="true"></i><span>更多</span></button>
   </nav>
 </div>
@@ -2468,6 +2482,7 @@ async function loadHome(){
   if(w.medical)loadHomeMedical();
   if(w.vehicle)loadHomeVehicle();
   if(w.docs)loadHomeDocs();
+  loadHero();
 }
 
 async function quickDone(id){
@@ -3621,7 +3636,7 @@ async function saveTxn(){
     closeSheet('sh-txn');
     document.getElementById('txn-id').value='';
     document.getElementById('sh-txn-title').textContent='新增記帳';
-    clearCache('monthly');clearCache('networth');clearCache('budget');
+    clearCache('monthly');clearCache('networth');clearCache('budget');clearCache('hero');
     toast(id?'已更新':'記帳成功');
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
@@ -7579,6 +7594,46 @@ async function delExpCat(id){
     await sb(`/rest/v1/expense_categories?id=eq.${id}`,{method:'DELETE'});
     toast('已刪除');loadExpCats();
   }catch(e){toast(friendlyError(e),'err');}
+}
+
+// ─── HERO 主視覺卡 ───────────────────────────────────
+async function loadHero(){
+  const el=document.getElementById('hero-amount');
+  const deltaEl=document.getElementById('hero-delta');
+  if(!el)return;
+  const cacheKey=`hero_${prof.id}`;
+  const cached=getCache(cacheKey);
+  if(cached){el.textContent=cached.amount;deltaEl.innerHTML=cached.delta;return;}
+  try{
+    const [accs,cats]=await Promise.all([
+      sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{}),
+      accCats.length?Promise.resolve(accCats):sb('/rest/v1/account_categories?order=sort_order.asc',{})
+    ]);
+    let total=0,debt=0;
+    accs.filter(a=>!a.is_hidden).forEach(a=>{
+      const c=cats.find(x=>x.id===a.category_id);
+      const bal=Number(a.balance)||0;
+      const cur=(a.currency||'TWD').toUpperCase();
+      const rate=cur==='TWD'?1:(fxRates[cur]||1);
+      if(c?.type==='credit'||c?.type==='loan')debt+=bal*rate;
+      else total+=bal*rate;
+    });
+    const net=total-debt;
+    const amount=`NT$ ${Math.round(net).toLocaleString()}`;
+    // 比較上月淨資產
+    const now=new Date();
+    const mStart=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${mStart}`,{});
+    let mInc=0,mExp=0;
+    txns.forEach(t=>{if(t.type==='income')mInc+=Number(t.amount);else mExp+=Number(t.amount);});
+    const mBal=mInc-mExp;
+    const deltaHtml=mBal>=0
+      ?`<i class="ti ti-trending-up" style="color:var(--green);" aria-hidden="true"></i><span style="color:var(--green);">本月 +NT$${Math.round(mBal).toLocaleString()}</span>`
+      :`<i class="ti ti-trending-down" style="color:var(--red);" aria-hidden="true"></i><span style="color:var(--red);">本月 ${Math.round(mBal).toLocaleString().replace('-','-NT$')}</span>`;
+    el.textContent=amount;
+    deltaEl.innerHTML=deltaHtml;
+    setCache(cacheKey,{amount,delta:deltaHtml});
+  }catch(e){el.textContent='NT$ —';}
 }
 
 // ─── 離線監測 ───────────────────────────────────────
