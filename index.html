@@ -495,7 +495,7 @@ select.inp option{background:var(--bg2);}
         <button class="btn btn-ghost" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;" onclick="openSheet('sh-txn')">
           <i class="ti ti-wallet" style="color:var(--gold);" aria-hidden="true"></i><span style="font-size:14px;">記帳</span>
         </button>
-        <button class="btn btn-ghost" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;" onclick="openSheet('sh-todo')">
+        <button class="btn btn-ghost" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;" onclick="openNewTodo()">
           <i class="ti ti-checklist" style="color:var(--blue);" aria-hidden="true"></i><span style="font-size:14px;">待辦</span>
         </button>
         <button class="btn btn-ghost" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;" onclick="openSheet('sh-event')">
@@ -641,7 +641,7 @@ select.inp option{background:var(--bg2);}
     <div class="page" id="pg-todo">
       <div class="row-between" style="margin-bottom:16px;">
         <div class="pg-title" style="margin:0">待辦清單</div>
-        <button class="btn btn-gold btn-sm" onclick="openSheet('sh-todo')"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+        <button class="btn btn-gold btn-sm" onclick="openNewTodo()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
       </div>
       <div class="ftabs">
         <button class="ftab on" onclick="setTodoFilter('all',this)">全部</button>
@@ -2416,7 +2416,7 @@ function showDet(id){
   if(id==='det-view-as')loadViewAsList();
 }
 function hideDet(id){document.getElementById(id).classList.remove('on');}
-function openSheet(id){
+async function openSheet(id){
   if(id==='sh-account'){
     loadAccCatOptions();
     document.getElementById('acc-name').value='';
@@ -2425,6 +2425,24 @@ function openSheet(id){
     document.getElementById('acc-credit-fields').style.display='none';
     document.getElementById('acc-forex-fields').style.display='none';
     document.getElementById('acc-loan-fields').style.display='none';
+  }
+  if(id==='sh-txn'){
+    // 只有新增模式（id 為空）才清空
+    const txnId=document.getElementById('txn-id')?.value;
+    if(!txnId){
+      setTxnType('expense');
+      document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);
+      document.getElementById('txn-amt').value='';
+      document.getElementById('txn-note').value='';
+    }
+    await loadExpCatOptions();
+  }
+  if(id==='sh-todo'){
+    // 只有新增模式才填預設的 assign 選項
+    const todoId=document.getElementById('todo-id')?.value;
+    if(!todoId){
+      document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');
+    }
   }
   document.getElementById(id).classList.add('on');
 }
@@ -3697,12 +3715,6 @@ async function loadExpCatOptions(){
   });
   document.getElementById('txn-cat').innerHTML=opts;
 }
-async function openSheet(id){
-  document.getElementById(id).classList.add('on');
-  // sh-transfer handled by openTransfer()
-  if(id==='sh-txn'){setTxnType('expense');document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);document.getElementById('txn-amt').value='';document.getElementById('txn-note').value='';await loadExpCatOptions();}
-  if(id==='sh-todo'){document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');}
-}
 async function saveTxn(){
   const id=document.getElementById('txn-id').value;
   const accId=document.getElementById('txn-account').value;
@@ -3929,6 +3941,16 @@ async function loadTodos(){
     }).join('');
   }catch(e){toast(friendlyError(e),'err');}
 }
+function openNewTodo(){
+  document.getElementById('sh-todo-title').textContent='新增待辦';
+  document.getElementById('todo-id').value='';
+  document.getElementById('todo-title').value='';
+  document.getElementById('todo-due').value='';
+  document.getElementById('todo-note').value='';
+  document.getElementById('todo-pri').value='normal';
+  openSheet('sh-todo');
+}
+
 function editTodoByIdx(idx){
   const t=window._todos[parseInt(idx)];
   if(!t)return;
