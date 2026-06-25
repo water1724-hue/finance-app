@@ -8341,15 +8341,40 @@ document.getElementById('p').addEventListener('keydown',e=>{if(e.key==='Enter')d
 // Override openSheet to handle event defaults
 const _origOpen=window.openSheet;
 window.openSheet=async function(id){
-  if(id==='sh-event'){setEvType(false);document.getElementById('ev-date').value=calSel;document.getElementById('ev-title').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-desc').value='';document.getElementById('ev-id').value='';document.getElementById('ev-repeat').value='none';document.getElementById('ev-repeat-end-field').style.display='none';document.getElementById('ev-repeat-end').value='';}
-  if(id==='sh-todo'){document.getElementById('sh-todo-title').textContent='新增待辦';document.getElementById('todo-id').value='';document.getElementById('todo-title').value='';document.getElementById('todo-note').value='';document.getElementById('todo-due').value='';document.getElementById('todo-pri').value='normal';document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');}
+  if(id==='sh-event'){
+    const evId=document.getElementById('ev-id')?.value;
+    if(!evId){
+      setEvType(false);
+      document.getElementById('ev-date').value=calSel;
+      document.getElementById('ev-title').value='';
+      document.getElementById('ev-start').value='';
+      document.getElementById('ev-end').value='';
+      document.getElementById('ev-desc').value='';
+      document.getElementById('ev-repeat').value='none';
+      document.getElementById('ev-repeat-end-field').style.display='none';
+      document.getElementById('ev-repeat-end').value='';
+    }
+  }
+  if(id==='sh-todo'){
+    const todoId=document.getElementById('todo-id')?.value;
+    if(!todoId){
+      document.getElementById('sh-todo-title').textContent='新增待辦';
+      document.getElementById('todo-title').value='';
+      document.getElementById('todo-note').value='';
+      document.getElementById('todo-due').value='';
+      document.getElementById('todo-pri').value='normal';
+      document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');
+    }
+  }
   if(id==='sh-txn'){
-    setTxnType('expense');
-    document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);
-    document.getElementById('txn-amt').value='';
-    document.getElementById('txn-note').value='';
-    document.getElementById('txn-tags').value='';
-    document.getElementById('txn-id').value='';
+    const txnId=document.getElementById('txn-id')?.value;
+    if(!txnId){
+      setTxnType('expense');
+      document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);
+      document.getElementById('txn-amt').value='';
+      document.getElementById('txn-note').value='';
+      document.getElementById('txn-tags').value='';
+    }
     // Load accounts if not already loaded
     const accSel=document.getElementById('txn-account');
     if(!accSel.options.length||accSel.options.length===0){
