@@ -82,6 +82,8 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 .hw-half h3,.hw-half .sec-title{font-size:13px;}
 #hw-ai.hw-half > div{flex-direction:column;align-items:flex-start;gap:8px;}
 #hw-ai.hw-half > div > i:last-child{display:none;}
+.hw-row-wrap{display:flex !important;gap:8px;margin-bottom:12px;}
+.hw-row-wrap > .hw-half{flex:1 !important;margin-bottom:0 !important;min-width:0;display:block !important;}
 .card-gold{background:var(--gold-dim);border-color:var(--gold-border);}
 body.light-mode .card-gold{background:rgba(184,137,42,0.08);}
 body.light-mode .card{border:1px solid #d8d8dc;box-shadow:0 1px 3px rgba(0,0,0,0.04),0 0 0 1px rgba(0,0,0,0.02);}
@@ -2539,9 +2541,9 @@ async function loadHome(){
     }catch(e){}
   }catch(e){console.error(e);}
   updateHomeNotifyBadge();
-  const w=loadHomeSettings();
-  if(w.habits)loadHomeHabits();
-  else{const c=document.getElementById('h-habits-card');if(c)c.style.display='none';}
+  const w=getHomeWidgets();
+  // 先載入資料
+  if(w.habits)await loadHomeHabits();
   if(w.todos)loadHomeTodos();
   if(w.monthly)loadHomeMonthly();
   if(w.networth)loadHero();
@@ -2555,6 +2557,8 @@ async function loadHome(){
   if(w.medical)loadHomeMedical();
   if(w.vehicle)loadHomeVehicle();
   if(w.docs)loadHomeDocs();
+  // 最後套版面（顯示+排序+半寬）
+  applyHomeLayout();
 }
 
 async function quickDone(id){
@@ -4830,44 +4834,67 @@ function applyHomeLayout(){
       el.classList.remove('hw-half');
       el.style.removeProperty('flex');
       el.style.removeProperty('margin-bottom');
+      // 從 row-wrap 中取出
       if(el.parentElement&&el.parentElement.classList.contains('hw-row-wrap')){
-        el.parentElement.parentElement.insertBefore(el,el.parentElement);
+        container.appendChild(el);
       }
     }
   });
   // 清除舊的 row wrap
   container.querySelectorAll('.hw-row-wrap').forEach(r=>r.remove());
 
-  // 依順序重新插入
-  let pendingHalf=null;
+  // 收集要顯示的工具
+  const activeKeys=order.filter(k=>w[k]);
+  // 按設定順序處理：將連續的半寬配對成 row（也允許跨非半寬配對的依舊順序原則）
   const fragment=document.createDocumentFragment();
-  order.forEach(k=>{
-    if(!w[k])return;
+  let i=0;
+  while(i<activeKeys.length){
+    const k=activeKeys[i];
     const id=k==='habits'?'h-habits-card':`hw-${k}`;
     const el=document.getElementById(id);
-    if(!el)return;
+    if(!el){i++;continue;}
+    const isHalf=half[k]&&k!=='shortcuts';
     el.style.display=k==='shortcuts'?'flex':'block';
-    if(half[k]&&k!=='shortcuts'){
+    if(isHalf){
       el.classList.add('hw-half');
-      if(pendingHalf){
+      // 找下一個也是半寬的（可能跳過全寬）
+      let j=i+1;
+      while(j<activeKeys.length){
+        const k2=activeKeys[j];
+        if(half[k2]&&k2!=='shortcuts')break;
+        j++;
+      }
+      if(j<activeKeys.length){
+        // 找到配對
+        const k2=activeKeys[j];
+        const id2=k2==='habits'?'h-habits-card':`hw-${k2}`;
+        const el2=document.getElementById(id2);
+        el2.classList.add('hw-half');
+        el2.style.display='block';
         const row=document.createElement('div');
         row.className='hw-row-wrap';
-        row.style.cssText='display:flex;gap:8px;margin-bottom:12px;';
-        pendingHalf.style.flex='1';pendingHalf.style.marginBottom='0';
-        el.style.flex='1';el.style.marginBottom='0';
-        row.appendChild(pendingHalf);
         row.appendChild(el);
+        row.appendChild(el2);
         fragment.appendChild(row);
-        pendingHalf=null;
+        // 將中間的全寬卡按順序加進來（放在 row 後面）
+        for(let m=i+1;m<j;m++){
+          const km=activeKeys[m];
+          const idm=km==='habits'?'h-habits-card':`hw-${km}`;
+          const elm=document.getElementById(idm);
+          if(elm){elm.style.display=km==='shortcuts'?'flex':'block';fragment.appendChild(elm);}
+        }
+        i=j+1;
       } else {
-        pendingHalf=el;
+        // 沒配對，獨佔一行（保持全寬樣式）
+        el.classList.remove('hw-half');
+        fragment.appendChild(el);
+        i++;
       }
     } else {
-      if(pendingHalf){fragment.appendChild(pendingHalf);pendingHalf=null;}
       fragment.appendChild(el);
+      i++;
     }
-  });
-  if(pendingHalf)fragment.appendChild(pendingHalf);
+  }
   container.appendChild(fragment);
 }
 
@@ -5646,7 +5673,7 @@ async function loadHomeHabits(){
     const habits=await sb(`/rest/v1/habits?user_id=eq.${prof.id}&is_active=eq.true&order=created_at.asc`,{});
     const card=document.getElementById('h-habits-card');
     if(!habits.length){card.style.display='none';return;}
-    card.style.display='block';
+    // 不在這裡設 display，讓 applyHomeLayout 處理
     const today=habitDateOffset(0);
     const logs=await sb(`/rest/v1/habit_logs?user_id=eq.${prof.id}&date=eq.${today}`,{});
     const doneSet=new Set(logs.map(l=>l.habit_id));
