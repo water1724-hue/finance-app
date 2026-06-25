@@ -2038,6 +2038,8 @@ async function doLogin(){
   const err=document.getElementById('aerr');
   err.textContent='';
   if(!u||!p){err.textContent='請輸入帳號和密碼';return;}
+  // 清除上一個帳號的快取
+  Object.keys(sessionStorage).forEach(k=>{if(k.startsWith('cache_'))sessionStorage.removeItem(k);});
   try{
     // Use publishable key to find user profile
     const profiles=await sb(`/rest/v1/user_profiles?username=eq.${encodeURIComponent(u)}&select=id,username,display_name,role,email,avatar_color`,{});
@@ -2066,6 +2068,8 @@ async function restoreSession(){
 }
 
 function doLogout(){
+  // 清除所有快取資料
+  Object.keys(sessionStorage).forEach(k=>{if(k.startsWith('cache_'))sessionStorage.removeItem(k);});
   localStorage.removeItem('lifeos_session');
   me=null;prof=null;chatHistory=[];
   document.getElementById('auth').style.display='flex';
@@ -7861,17 +7865,23 @@ function confirmDialogResult(ok){
 const HOME_CACHE_TTL=5*60*1000; // 5 分鐘
 function getCache(key){
   try{
-    const item=JSON.parse(sessionStorage.getItem('cache_'+key)||'null');
+    const userKey=prof?.id||'anon';
+    const item=JSON.parse(sessionStorage.getItem(`cache_${userKey}_${key}`)||'null');
     if(!item)return null;
-    if(Date.now()-item.t>HOME_CACHE_TTL){sessionStorage.removeItem('cache_'+key);return null;}
+    if(Date.now()-item.t>HOME_CACHE_TTL){sessionStorage.removeItem(`cache_${userKey}_${key}`);return null;}
     return item.data;
   }catch(e){return null;}
 }
 function setCache(key,data){
-  try{sessionStorage.setItem('cache_'+key,JSON.stringify({t:Date.now(),data}));}catch(e){}
+  try{
+    const userKey=prof?.id||'anon';
+    sessionStorage.setItem(`cache_${userKey}_${key}`,JSON.stringify({t:Date.now(),data}));
+  }catch(e){}
 }
 function clearCache(prefix=''){
-  Object.keys(sessionStorage).filter(k=>k.startsWith('cache_'+prefix)).forEach(k=>sessionStorage.removeItem(k));
+  Object.keys(sessionStorage).filter(k=>k.startsWith('cache_')).forEach(k=>{
+    if(!prefix||k.includes('_'+prefix))sessionStorage.removeItem(k);
+  });
 }
 
 // ─── 錯誤訊息友善化 ────────────────────────────────
