@@ -34,6 +34,80 @@ body.light-mode{
   --text:#1c1c1e;--text2:#555;--text3:#888;--text4:#bbb;
   --green:#34A36A;--red:#D94F4F;--orange:#D4722A;--blue:#4A7ED4;
 }
+body.future-mode{
+  --bg:#0a0e27;--bg2:rgba(20,28,60,0.6);--bg3:rgba(20,28,60,0.5);--bg4:rgba(30,40,75,0.5);
+  --border:rgba(99,179,237,0.18);--border2:rgba(99,179,237,0.28);
+  --gold:#FFD580;--gold2:#FFE4A0;--gold-dim:rgba(255,213,128,0.12);
+  --gold-border:rgba(255,213,128,0.45);
+  --text:#e8ecff;--text2:#c4cdf0;--text3:#9DA8D8;--text4:#7a86b8;
+  --green:#7CFFC4;--red:#FF8585;--orange:#FFB070;--blue:#9DC8FF;
+}
+body.future-mode{
+  background:linear-gradient(180deg,#0a0e27 0%,#151b3d 50%,#0d1330 100%) fixed;
+}
+body.future-mode #app{
+  background:transparent;
+}
+body.future-mode .card{
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+body.future-mode .card-gold,
+body.future-mode #hw-networth{
+  box-shadow:0 0 20px rgba(255,213,128,0.12),inset 0 0 30px rgba(255,213,128,0.04);
+}
+body.future-mode #hero-amount{
+  text-shadow:0 0 16px rgba(255,213,128,0.4);
+}
+body.future-mode .bnav{
+  background:rgba(15,21,49,0.85);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-top:1px solid rgba(99,179,237,0.2);
+}
+body.future-mode .bnav-item.on{
+  color:var(--gold);
+  text-shadow:0 0 12px rgba(255,213,128,0.4);
+}
+body.future-mode .sheet{
+  background:linear-gradient(180deg,#151b3d,#0d1330);
+  border-top:1px solid rgba(99,179,237,0.25);
+}
+body.future-mode .btn-gold{
+  box-shadow:0 0 16px rgba(255,213,128,0.25);
+}
+body.future-mode .auth-logo h1{
+  text-shadow:0 0 20px rgba(255,213,128,0.4);
+}
+body.future-mode .pg-title{
+  letter-spacing:-0.2px;
+}
+body.future-mode .mi-icon{
+  border:1px solid rgba(99,179,237,0.15);
+}
+/* 背景光暈點 */
+body.future-mode::before{
+  content:'';
+  position:fixed;
+  top:-100px;
+  right:-100px;
+  width:300px;
+  height:300px;
+  background:radial-gradient(circle,rgba(255,213,128,0.08),transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
+body.future-mode::after{
+  content:'';
+  position:fixed;
+  bottom:-100px;
+  left:-100px;
+  width:300px;
+  height:300px;
+  background:radial-gradient(circle,rgba(99,179,237,0.08),transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;transition:background-color .2s,color .2s,border-color .2s;}
 html,body{height:100%;overscroll-behavior:none;}
 body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;font-size:18px;}
@@ -2079,29 +2153,47 @@ function doLogout(){
 }
 
 function toggleTheme(){
-  const isLight=document.body.classList.toggle('light-mode');
-  localStorage.setItem('lifeos_theme', isLight?'light':'dark');
-  updateThemeUI(isLight);
+  const cur=getCurrentTheme();
+  // 輪流：dark → light → future → dark
+  const next=cur==='dark'?'light':cur==='light'?'future':'dark';
+  applyTheme(next);
+  localStorage.setItem('lifeos_theme',next);
 }
 
-function updateThemeUI(isLight){
+function getCurrentTheme(){
+  if(document.body.classList.contains('light-mode'))return 'light';
+  if(document.body.classList.contains('future-mode'))return 'future';
+  return 'dark';
+}
+
+function applyTheme(theme){
+  document.body.classList.remove('light-mode','future-mode');
+  if(theme==='light')document.body.classList.add('light-mode');
+  else if(theme==='future')document.body.classList.add('future-mode');
+  updateThemeUI(theme);
+}
+
+function updateThemeUI(theme){
   const label=document.getElementById('theme-label');
   const sub=label?.nextElementSibling;
   const icon=document.getElementById('theme-icon');
-  if(label)label.textContent=isLight?'切換深色模式':'切換淺色模式';
-  if(sub)sub.textContent=isLight?'目前：淺色模式':'目前：深色模式';
-  if(icon)icon.className=isLight?'ti ti-moon':'ti ti-sun-moon';
+  const labels={dark:'淺色模式',light:'未來色模式',future:'深色模式'};
+  const subs={dark:'目前：深色模式',light:'目前：淺色模式',future:'目前：未來色模式'};
+  const icons={dark:'ti ti-sun-moon',light:'ti ti-moon',future:'ti ti-sparkles'};
+  if(label)label.textContent='切換'+labels[theme];
+  if(sub)sub.textContent=subs[theme];
+  if(icon)icon.className=icons[theme];
   // 更新 meta theme-color
   const meta=document.querySelector('meta[name="theme-color"]');
-  if(meta)meta.content=isLight?'#f2f2f7':'#1c1c1e';
+  const colors={dark:'#1c1c1e',light:'#f2f2f7',future:'#0a0e27'};
+  if(meta)meta.content=colors[theme];
 }
 
 function initTheme(){
   const saved=localStorage.getItem('lifeos_theme');
   const preferLight=window.matchMedia('(prefers-color-scheme: light)').matches;
-  const useLight=saved?saved==='light':preferLight;
-  if(useLight)document.body.classList.add('light-mode');
-  updateThemeUI(useLight);
+  const theme=saved||(preferLight?'light':'dark');
+  applyTheme(theme);
 }
 
 async function copyDefaultCats(){
