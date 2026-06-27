@@ -108,6 +108,102 @@ body.future-mode::after{
   pointer-events:none;
   z-index:0;
 }
+/* 未來色：對話框深底 */
+body.future-mode .overlay{
+  background:rgba(5,8,25,0.75);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+body.future-mode .inp,
+body.future-mode select.inp,
+body.future-mode textarea.inp{
+  background:rgba(20,28,60,0.5);
+  border:1px solid rgba(99,179,237,0.25);
+  color:var(--text);
+}
+body.future-mode .inp:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(255,213,128,0.15);
+}
+body.future-mode .ftab{
+  background:rgba(20,28,60,0.5);
+  border:1px solid rgba(99,179,237,0.25);
+  color:var(--text2);
+  backdrop-filter:blur(8px);
+}
+body.future-mode .ftab.on{
+  background:rgba(255,213,128,0.12);
+  border-color:rgba(255,213,128,0.4);
+  color:var(--gold);
+  box-shadow:0 0 10px rgba(255,213,128,0.2);
+}
+body.future-mode .btn-ghost{
+  background:rgba(20,28,60,0.5);
+  border:1px solid rgba(99,179,237,0.25);
+  color:var(--text2);
+}
+body.future-mode .list-row{
+  border-bottom:1px solid rgba(99,179,237,0.12);
+}
+body.future-mode .menu-item{
+  border-bottom:1px solid rgba(99,179,237,0.12);
+}
+/* AI 對話氣泡未來色 */
+body.future-mode .ai-bubble-user{
+  background:linear-gradient(135deg,rgba(155,107,255,0.25),rgba(99,179,237,0.15));
+  border:1px solid rgba(155,107,255,0.35);
+  color:var(--text);
+}
+body.future-mode .ai-bubble-bot{
+  background:rgba(20,28,60,0.5);
+  border:1px solid rgba(99,179,237,0.25);
+  color:var(--text);
+}
+/* Toast 未來色 */
+body.future-mode #toast,
+body.future-mode #toast{
+  background:linear-gradient(135deg,rgba(20,28,60,0.85),rgba(15,21,49,0.85));
+  border:1px solid rgba(99,179,237,0.45);
+  box-shadow:0 0 24px rgba(99,179,237,0.3);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+body.future-mode #toast.ok{
+  border-color:rgba(124,255,196,0.5);
+  color:#7CFFC4;
+  box-shadow:0 0 20px rgba(124,255,196,0.3);
+}
+body.future-mode #toast.err{
+  border-color:rgba(255,133,133,0.5);
+  color:#FF8585;
+  box-shadow:0 0 20px rgba(255,133,133,0.3);
+}
+/* 對話框未來色 */
+body.future-mode #confirm-dialog > div{
+  background:linear-gradient(180deg,#151b3d,#0d1330);
+  border:1px solid rgba(99,179,237,0.3);
+  box-shadow:0 0 32px rgba(99,179,237,0.2);
+}
+/* 載入動畫科幻環 */
+body.future-mode .ti-loader-2{
+  filter:drop-shadow(0 0 6px rgba(255,213,128,0.6));
+}
+/* 互動光波 */
+body.future-mode .btn:active{
+  box-shadow:0 0 20px rgba(255,213,128,0.4);
+}
+body.future-mode .menu-item:active,
+body.future-mode .list-row:active{
+  background:rgba(99,179,237,0.08);
+}
+/* tag 未來色 */
+body.future-mode .tag{
+  border:1px solid rgba(99,179,237,0.3);
+}
+/* 滾動條 */
+body.future-mode ::-webkit-scrollbar-thumb{
+  background:rgba(99,179,237,0.2);
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;transition:background-color .2s,color .2s,border-color .2s;}
 html,body{height:100%;overscroll-behavior:none;}
 body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;font-size:18px;}
@@ -151,8 +247,16 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 
 .card{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+/* 未來色：光波擴散 */
+@keyframes ripple{
+  from{box-shadow:0 0 0 0 rgba(255,213,128,0.5);}
+  to{box-shadow:0 0 0 16px rgba(255,213,128,0);}
+}
+body.future-mode .btn-gold:active{
+  animation:ripple 0.4s ease-out;
+}
 .hw-half{padding:14px 12px;}
-.hw-half .sec-label{font-size:11px;}
+.hw-half .sec-label{font-size:12px;}
 .hw-half h3,.hw-half .sec-title{font-size:13px;}
 #hw-ai.hw-half > div{flex-direction:column;align-items:flex-start;gap:8px;}
 #hw-ai.hw-half > div > i:last-child{display:none;}
@@ -196,6 +300,13 @@ body.a11y-contrast.light-mode{
   --border:rgba(0,0,0,0.45);--border2:rgba(0,0,0,0.6);
 }
 body.a11y-contrast .card{border-width:1px;}
+/* 顯微+未來色：放大後仍保持發光與深底 */
+body.future-mode.a11y-large .pg-title{text-shadow:0 0 16px rgba(255,213,128,0.3);}
+body.future-mode.a11y-large #hero-amount{text-shadow:0 0 20px rgba(255,213,128,0.5);}
+body.future-mode.a11y-contrast{
+  --text2:#fff;--text3:#d8e0ff;--text4:#b0bce0;
+  --border:rgba(99,179,237,0.45);--border2:rgba(99,179,237,0.55);
+}
 body.light-mode .inp{background:#ffffff;border:1.5px solid #c0c0c6;}
 body.light-mode .btn-ghost{background:#e8e8ed;border:1.5px solid #c0c0c6;}
 body.light-mode .sheet{box-shadow:0 -4px 24px rgba(0,0,0,0.15);border-top:1.5px solid #c8c8cc;}
@@ -266,7 +377,7 @@ select.inp option{background:var(--bg2);}
 .arr{color:var(--text4);font-size:15px;}
 
 /* TAG */
-.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;}
+.tag{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:12px;font-weight:600;}
 .tag-high{background:rgba(232,112,112,.12);color:var(--red);}
 .tag-normal{background:rgba(107,158,240,.12);color:var(--blue);}
 .tag-low{background:rgba(136,136,136,.1);color:var(--text3);}
@@ -320,7 +431,7 @@ select.inp option{background:var(--bg2);}
 .chat-wrap{position:absolute;inset:0;display:flex;flex-direction:column;}
 .chat-sug{display:flex;gap:6px;padding:10px 14px 0;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
 .chat-sug::-webkit-scrollbar{display:none;}
-.sug-btn{flex-shrink:0;padding:6px 12px;border-radius:14px;background:var(--bg4);border:0.5px solid var(--border2);color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;}
+.sug-btn{flex-shrink:0;padding:6px 12px;border-radius:14px;background:var(--bg4);border:0.5px solid var(--border2);color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s;}
 .sug-btn:hover{border-color:var(--gold-border);color:var(--gold);}
 .chat-msgs{flex:1;overflow-y:auto;padding:12px 14px 8px;scrollbar-width:none;}
 .chat-msgs::-webkit-scrollbar{display:none;}
@@ -350,7 +461,7 @@ select.inp option{background:var(--bg2);}
 .avatar i{font-size:22px;color:var(--gold);}
 .more-name{font-size:17px;font-weight:700;}
 .more-role{font-size:13px;color:var(--gold);margin-top:2px;}
-.menu-sec-lbl{font-size:11px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin:4px 4px 8px;}
+.menu-sec-lbl{font-size:12px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin:4px 4px 8px;}
 .menu-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:opacity .15s;min-height:58px;}
 .menu-item:last-child{border-bottom:none;}
 .menu-item:active{opacity:.7;}
@@ -591,18 +702,18 @@ select.inp option{background:var(--bg2);}
       <!-- 淨資產 -->
       <div class="card card-gold" style="margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;">淨資產（台幣）</div>
+          <div style="font-size:12px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;">淨資產（台幣）</div>
           <button onclick="refreshFxRates()" id="fx-refresh-btn" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 4px;" title="更新匯率"><i class="ti ti-refresh" aria-hidden="true"></i></button>
         </div>
         <div style="font-size:30px;font-weight:700;color:var(--gold);" id="fin-net">NT$ —</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="fin-sub">計算中...</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;" id="fin-sub">計算中...</div>
         <div id="fx-summary" style="display:none;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--gold-border);">
-          <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">外幣資產</div>
+          <div style="font-size:12px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">外幣資產</div>
           <div id="fx-rows"></div>
-          <div style="font-size:10px;color:var(--text3);margin-top:6px;" id="fx-rate-time"></div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px;" id="fx-rate-time"></div>
         </div>
         <div id="fin-stock-val" style="display:none;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--gold-border);">
-          <div style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">持股市值（另計）</div>
+          <div style="font-size:12px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">持股市值（另計）</div>
           <div style="font-size:18px;font-weight:700;color:var(--gold);" id="fin-stock-num">NT$ —</div>
         </div>
       </div>
@@ -654,12 +765,12 @@ select.inp option{background:var(--bg2);}
           </div>
         </div>
         <div class="card card-gold" style="margin-bottom:12px;">
-          <div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">總市值（台幣）</div>
+          <div style="font-size:12px;color:var(--text3);letter-spacing:1px;margin-bottom:6px;">總市值（台幣）</div>
           <div style="font-size:26px;font-weight:700;color:var(--gold);" id="port-total-val">—</div>
           <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;">
-            <div><div style="font-size:11px;color:var(--text3);">未實現損益</div><div id="port-unrealized" style="font-size:15px;font-weight:700;">—</div></div>
-            <div><div style="font-size:11px;color:var(--text3);">已實現損益</div><div id="port-realized" style="font-size:15px;font-weight:700;">—</div></div>
-            <div><div style="font-size:11px;color:var(--text3);">報酬率</div><div id="port-return-pct" style="font-size:15px;font-weight:700;">—</div></div>
+            <div><div style="font-size:12px;color:var(--text3);">未實現損益</div><div id="port-unrealized" style="font-size:15px;font-weight:700;">—</div></div>
+            <div><div style="font-size:12px;color:var(--text3);">已實現損益</div><div id="port-realized" style="font-size:15px;font-weight:700;">—</div></div>
+            <div><div style="font-size:12px;color:var(--text3);">報酬率</div><div id="port-return-pct" style="font-size:15px;font-weight:700;">—</div></div>
           </div>
         </div>
         <div class="card" style="margin-bottom:12px;">
@@ -1240,7 +1351,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>單價</label><input class="inp" type="number" id="inv-price" placeholder="0" oninput="calcInvTotal()"></div>
     <div class="field"><label>手續費</label><input class="inp" type="number" id="inv-fee" placeholder="0" oninput="calcInvTotal()"></div>
     <div style="background:var(--bg4);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">交易總金額</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">交易總金額</div>
       <div style="font-size:20px;font-weight:700;color:var(--gold);" id="inv-total">NT$ 0</div>
     </div>
     <div class="field"><label>日期</label><input class="inp" type="date" id="inv-date"></div>
@@ -1249,7 +1360,7 @@ select.inp option{background:var(--bg2);}
       <select class="inp" id="inv-bank">
         <option value="">不連結</option>
       </select>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;">選填：同步更新銀行帳戶餘額</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;">選填：同步更新銀行帳戶餘額</div>
     </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-inv-txn')">取消</button>
@@ -1412,7 +1523,7 @@ select.inp option{background:var(--bg2);}
           <span style="font-size:13px;font-weight:600;color:var(--text);">所有人</span>
         </label>
         <div id="an-target-list" style="display:none;border-top:0.5px solid var(--border);padding-top:10px;">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">選擇指定接收者（可多選）</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">選擇指定接收者（可多選）</div>
           <div id="an-target-users"></div>
         </div>
       </div>
@@ -1872,14 +1983,14 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>從</label><select class="inp" id="tr-from" onchange="onTransferAccChange()"></select></div>
     <div class="field"><label>到</label><select class="inp" id="tr-to" onchange="onTransferAccChange()"></select></div>
     <div id="tr-fx-info" style="display:none;background:#1a1a2e;border:0.5px solid var(--blue);border-radius:12px;padding:10px 14px;margin-bottom:12px;">
-      <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:6px;"><i class="ti ti-currency-exchange" aria-hidden="true"></i> 跨幣別兌換</div>
+      <div style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px;"><i class="ti ti-currency-exchange" aria-hidden="true"></i> 跨幣別兌換</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <div style="flex:1;min-width:100px;">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">匯率（1外幣 = ? TWD）</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">匯率（1外幣 = ? TWD）</div>
           <input class="inp" type="number" id="tr-fx-rate" placeholder="自動帶入" step="0.001" oninput="calcTransferResult()" style="padding:8px 10px;font-size:13px;">
         </div>
         <div style="flex:1;min-width:100px;">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">到帳金額</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">到帳金額</div>
           <div style="font-size:14px;font-weight:700;color:var(--gold);padding:10px 0;" id="tr-result-amt">—</div>
         </div>
       </div>
@@ -2798,7 +2909,7 @@ async function loadFinance(){
         return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--gold-border);">
           <div>
             <span style="font-size:13px;font-weight:600;color:var(--text);">${cur} ${balance.toLocaleString()}</span>
-            <span style="font-size:10px;color:var(--text3);margin-left:6px;">${rateStr}</span>
+            <span style="font-size:12px;color:var(--text3);margin-left:6px;">${rateStr}</span>
           </div>
           <span style="font-size:12px;color:var(--gold);font-weight:600;">${twdStr}</span>
         </div>`;
@@ -2899,9 +3010,9 @@ function renderAccounts(accounts,cats){
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px;margin-bottom:6px;">
         <div style="display:flex;align-items:center;gap:6px;">
           <i class="ti ${g.icon}" style="font-size:13px;color:var(--text3);" aria-hidden="true"></i>
-          <span style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;">${g.label}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;">${g.label}</span>
         </div>
-        <span style="font-size:11px;color:${isNegGroup?'var(--red)':'var(--text3)'};">${isNegGroup?'-':''}NT$${Math.abs(subtotal).toLocaleString()}</span>
+        <span style="font-size:12px;color:${isNegGroup?'var(--red)':'var(--text3)'};">${isNegGroup?'-':''}NT$${Math.abs(subtotal).toLocaleString()}</span>
       </div>
       <div style="background:var(--bg2);border-radius:16px;overflow:hidden;">
         ${g.accounts.map((a,i)=>{
@@ -2912,13 +3023,13 @@ function renderAccounts(accounts,cats){
           const bal=Number(a.balance);
           const amtStr=isFx?`${cur} ${bal.toLocaleString()}`:`NT$${bal.toLocaleString()}`;
           const rate=isFx?fxRates[cur]:null;
-          const twdEquiv=rate?`<div style="font-size:10px;color:var(--text3);margin-top:1px;">≈ NT$${Math.round(bal*rate).toLocaleString()}</div>`:'';
+          const twdEquiv=rate?`<div style="font-size:12px;color:var(--text3);margin-top:1px;">≈ NT$${Math.round(bal*rate).toLocaleString()}</div>`:'';
           const border=i>0?'border-top:0.5px solid var(--border);':'';
           return`<div class="list-row" onclick="openAccDetail('${a.id}')" style="cursor:pointer;${border}padding:14px 16px;">
             <div class="list-icon" style="background:${isNeg?'rgba(232,112,112,.1)':'rgba(212,170,106,.1)'}"><i class="ti ${cat?.icon||'ti-wallet'}" style="color:${isNeg?'var(--red)':'var(--gold)'}" aria-hidden="true"></i></div>
             <div class="list-info">
               <div class="list-title">${a.name}</div>
-              ${isFx?`<div class="list-sub"><span style="color:var(--blue);font-size:10px;font-weight:600;">${cur}</span></div>`:''}
+              ${isFx?`<div class="list-sub"><span style="color:var(--blue);font-size:12px;font-weight:600;">${cur}</span></div>`:''}
             </div>
             <div class="list-right">
               <div class="list-amt ${isNeg?'amt-neg':'amt-gold'}">${amtStr}</div>
@@ -3041,7 +3152,7 @@ async function loadAccManage(){
     sortedKeys.forEach(key=>{
       const g=groups[key];
       html+=`<div style="margin-bottom:18px;">
-        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
           <i class="ti ${g.icon}" aria-hidden="true"></i> ${g.label}
         </div>
         <div style="background:var(--bg2);border-radius:14px;overflow:hidden;" id="acc-group-${key}">
@@ -3055,7 +3166,7 @@ async function loadAccManage(){
               style="${border}display:flex;align-items:center;gap:10px;padding:12px 14px;opacity:${hidden?'0.45':'1'};">
               <i class="ti ti-grip-vertical" style="color:var(--text4);font-size:16px;cursor:grab;flex-shrink:0;" aria-hidden="true"></i>
               <div style="flex:1;min-width:0;">
-                <div style="font-size:14px;font-weight:500;color:${hidden?'var(--text3)':'var(--text)'};">${a.name}${hidden?'<span style="font-size:10px;color:var(--text4);margin-left:6px;">已隱藏</span>':''}</div>
+                <div style="font-size:14px;font-weight:500;color:${hidden?'var(--text3)':'var(--text)'};">${a.name}${hidden?'<span style="font-size:12px;color:var(--text4);margin-left:6px;">已隱藏</span>':''}</div>
                 <div style="font-size:12px;color:var(--text3);">${balStr}</div>
               </div>
               <div style="display:flex;gap:4px;align-items:center;">
@@ -3413,13 +3524,13 @@ async function openAccDetail(id){
             </div>
             <div class="list-right">
               <div style="font-size:13px;font-weight:600;color:var(--text);">${l.from_currency} ${Number(l.from_amount).toLocaleString()}</div>
-              <div style="font-size:11px;color:var(--gold);">→ ${l.to_currency} ${Number(l.to_amount).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+              <div style="font-size:12px;color:var(--gold);">→ ${l.to_currency} ${Number(l.to_amount).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
             </div>
             <button class="icon-btn" onclick="delFxLog('${l.id}','${id}')" style="color:var(--text4);font-size:14px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
           </div>`).join('');
       }
       contEl.innerHTML=`
-        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">${accBalStr}${isAccFx&&accRate?`<div style="font-size:10px;color:var(--text3);font-weight:400;">≈ NT$${Math.round(accBal*accRate).toLocaleString()} (1 ${accCur} = ${accRate.toFixed(2)})</div>`:''}</div></div>
+        <div class="list-row"><div class="list-info"><div class="list-sub">餘額</div></div><div class="list-amt amt-gold">${accBalStr}${isAccFx&&accRate?`<div style="font-size:12px;color:var(--text3);font-weight:400;">≈ NT$${Math.round(accBal*accRate).toLocaleString()} (1 ${accCur} = ${accRate.toFixed(2)})</div>`:''}</div></div>
         ${currentAcc.credit_limit?`<div class="list-row"><div class="list-info"><div class="list-sub">信用額度</div></div><div class="list-amt">NT$${Number(currentAcc.credit_limit).toLocaleString()}</div></div>`:''}
         ${currentAcc.statement_day?`<div class="list-row"><div class="list-info"><div class="list-sub">帳單日</div></div><div class="list-amt">每月 ${currentAcc.statement_day} 日</div></div>`:''}
         ${currentAcc.payment_day&&cat?.type==='credit'?`<div class="list-row"><div class="list-info"><div class="list-sub">繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}
@@ -3429,7 +3540,7 @@ async function openAccDetail(id){
           ${currentAcc.payment_day?`<div class="list-row"><div class="list-info"><div class="list-sub">每月繳款日</div></div><div class="list-amt">每月 ${currentAcc.payment_day} 日</div></div>`:''}
           ${currentAcc.loan_end_date?`<div class="list-row"><div class="list-info"><div class="list-sub">貸款到期日</div></div><div class="list-amt">${currentAcc.loan_end_date}</div></div>`:''}
           ${currentAcc.loan_total&&currentAcc.balance?`<div style="padding:12px 0 4px;">
-            <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">還款進度 ${((Number(currentAcc.loan_total)-Number(currentAcc.balance))/Number(currentAcc.loan_total)*100).toFixed(1)}%</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">還款進度 ${((Number(currentAcc.loan_total)-Number(currentAcc.balance))/Number(currentAcc.loan_total)*100).toFixed(1)}%</div>
             <div style="background:var(--bg3);border-radius:8px;height:8px;overflow:hidden;">
               <div style="background:var(--gold);height:100%;width:${Math.min(100,((Number(currentAcc.loan_total)-Number(currentAcc.balance))/Number(currentAcc.loan_total)*100)).toFixed(1)}%;"></div>
             </div>
@@ -4020,7 +4131,7 @@ async function loadTodos(){
           <div class="list-title" style="${t.completed?'text-decoration:line-through;color:var(--text3);':''}">${t.title}</div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;">
             <span class="tag tag-${t.priority}">${priLabel[t.priority]}</span>
-            ${t.due_date?`<span style="font-size:10px;color:var(--text3);">截止 ${t.due_date}</span>`:''}
+            ${t.due_date?`<span style="font-size:12px;color:var(--text3);">截止 ${t.due_date}</span>`:''}
             ${t.assigned_to&&assignee?`<span class="tag tag-gold">→ ${assignee.display_name||assignee.username}</span>`:t.assigned_to?`<span class="tag tag-gold">→ 已指派</span>`:''}
             ${t.user_id!==prof.id&&owner?`<span class="tag tag-blue">來自 ${owner.display_name||owner.username}</span>`:''}
           </div>
@@ -4094,7 +4205,7 @@ async function loadAnnouncements(){
         <div class="list-info">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
             ${a.pinned?'<span class="tag tag-gold">置頂</span>':''}
-            ${isTargeted?`<span class="tag" style="background:rgba(107,158,240,.15);color:var(--blue);font-size:10px;">📌 僅 ${targetNames.join('、')} 可見</span>`:''}
+            ${isTargeted?`<span class="tag" style="background:rgba(107,158,240,.15);color:var(--blue);font-size:12px;">📌 僅 ${targetNames.join('、')} 可見</span>`:''}
             <div class="list-title">${a.title}</div>
           </div>
           <div style="font-size:15px;color:var(--text2);line-height:1.6;margin-bottom:4px;white-space:pre-wrap;">${a.content}</div>
@@ -4603,7 +4714,7 @@ async function loadRecurring(){
           <i class="ti ti-repeat" style="color:${r.type==='income'?'var(--green)':'var(--red)'}" aria-hidden="true"></i>
         </div>
         <div class="list-info">
-          <div class="list-title">${r.name}${!r.is_active?'<span style="font-size:10px;color:var(--text3);margin-left:6px;">(已停用)</span>':''}</div>
+          <div class="list-title">${r.name}${!r.is_active?'<span style="font-size:12px;color:var(--text3);margin-left:6px;">(已停用)</span>':''}</div>
           <div class="list-sub">${acc?.name||''}${cat?' · '+cat.name:''} · ${freqLabel} · 下次 ${r.next_date}</div>
         </div>
         <div style="display:flex;align-items:center;gap:4px;">
@@ -4769,7 +4880,7 @@ async function doSearch(){
             <i class="ti ${r.icon}" style="color:${r.color};font-size:18px;" aria-hidden="true"></i>
           </div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">${typeLabel[r.type]}</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:2px;">${typeLabel[r.type]}</div>
             <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.title}</div>
             <div style="font-size:12px;color:var(--text3);margin-top:2px;">${r.sub}</div>
           </div>
@@ -4879,8 +4990,8 @@ function renderPortHoldings(tab){
         <div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span style="font-size:15px;font-weight:700;">${h.symbol}</span>
-            <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${assetTypeColor[t]||'#888'}22;color:${assetTypeColor[t]||'#888'};">${assetTypeLabel[t]||t}</span>
-            ${qty===0?'<span style="font-size:10px;color:var(--text3);">已清倉</span>':''}
+            <span style="font-size:12px;padding:2px 6px;border-radius:4px;background:${assetTypeColor[t]||'#888'}22;color:${assetTypeColor[t]||'#888'};">${assetTypeLabel[t]||t}</span>
+            ${qty===0?'<span style="font-size:12px;color:var(--text3);">已清倉</span>':''}
           </div>
           <div style="font-size:13px;color:var(--text3);margin-top:2px;">${h.name}</div>
           ${qty>0?`<div style="font-size:12px;color:var(--text3);margin-top:2px;">${qty.toLocaleString()} 股 · 均價 ${Number(h.avg_cost).toLocaleString()} ${currency}</div>`:''}
@@ -4888,7 +4999,7 @@ function renderPortHoldings(tab){
         <div style="text-align:right;">
           ${qty>0?`<div style="font-size:15px;font-weight:700;color:var(--gold);">NT$${Math.round(val).toLocaleString()}</div>`:''}
           ${qty>0&&Number(h.current_price)>0?`<div style="font-size:13px;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}NT$${Math.round(pnl).toLocaleString()} (${pct}%)</div>`:''}
-          ${qty>0?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">現價 ${Number(h.current_price)>0?Number(h.current_price).toLocaleString():'—'}</div>`:''}
+          ${qty>0?`<div style="font-size:12px;color:var(--text3);margin-top:2px;">現價 ${Number(h.current_price)>0?Number(h.current_price).toLocaleString():'—'}</div>`:''}
         </div>
       </div>
       <div style="display:flex;gap:6px;">
@@ -5191,7 +5302,7 @@ async function loadHomeTodos(){
     el.innerHTML=todos.map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--border);">
       <div onclick="quickDone('${t.id}')" style="width:20px;height:20px;border-radius:6px;border:1.5px solid var(--text3);flex-shrink:0;cursor:pointer;"></div>
       <div style="flex:1;font-size:13px;">${t.title}</div>
-      <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${t.priority==='high'?'rgba(232,112,112,0.15)':'var(--bg4)'};color:${t.priority==='high'?'var(--red)':'var(--text3)'};">${{high:'高',normal:'一般',low:'低'}[t.priority]||''}</span>
+      <span style="font-size:12px;padding:2px 6px;border-radius:4px;background:${t.priority==='high'?'rgba(232,112,112,0.15)':'var(--bg4)'};color:${t.priority==='high'?'var(--red)':'var(--text3)'};">${{high:'高',normal:'一般',low:'低'}[t.priority]||''}</span>
     </div>`).join('');
   }catch(e){}
 }
@@ -5211,15 +5322,15 @@ async function loadHomeMonthly(){
     const balance=income-expense;
     const html=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
       <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:10px;">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">收入</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:3px;">收入</div>
         <div style="font-size:14px;font-weight:700;color:var(--green);">NT$${Math.round(income).toLocaleString()}</div>
       </div>
       <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:10px;">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">支出</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:3px;">支出</div>
         <div style="font-size:14px;font-weight:700;color:var(--red);">NT$${Math.round(expense).toLocaleString()}</div>
       </div>
       <div style="text-align:center;padding:8px;background:var(--bg4);border-radius:10px;">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:3px;">結餘</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:3px;">結餘</div>
         <div style="font-size:14px;font-weight:700;color:${balance>=0?'var(--gold)':'var(--red)'};">NT$${Math.round(balance).toLocaleString()}</div>
       </div>
     </div>`;
@@ -5292,8 +5403,8 @@ async function loadHomePortfolio(){
     holdings.forEach(h=>{const qty=Number(h.quantity);const cur=Number(h.current_price)||Number(h.avg_cost);totalVal+=qty*cur;totalCost+=qty*Number(h.avg_cost);});
     const pnl=totalVal-totalCost;const pct=totalCost>0?(pnl/totalCost*100).toFixed(1):0;
     el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;">
-      <div><div style="font-size:18px;font-weight:700;color:var(--gold);">NT$${Math.round(totalVal).toLocaleString()}</div><div style="font-size:11px;color:var(--text3);">總市值・${holdings.filter(h=>Number(h.quantity)>0).length} 檔持股</div></div>
-      <div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}NT$${Math.round(pnl).toLocaleString()}</div><div style="font-size:11px;color:${pnl>=0?'var(--green)':'var(--red)'};">${pct>=0?'+':''}${pct}%</div></div>
+      <div><div style="font-size:18px;font-weight:700;color:var(--gold);">NT$${Math.round(totalVal).toLocaleString()}</div><div style="font-size:12px;color:var(--text3);">總市值・${holdings.filter(h=>Number(h.quantity)>0).length} 檔持股</div></div>
+      <div style="text-align:right;"><div style="font-size:14px;font-weight:700;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}NT$${Math.round(pnl).toLocaleString()}</div><div style="font-size:12px;color:${pnl>=0?'var(--green)':'var(--red)'};">${pct>=0?'+':''}${pct}%</div></div>
     </div>`;
   }catch(e){}
 }
@@ -5397,10 +5508,10 @@ async function loadHomeWeather(){
           const hi=Math.round(item.main?.temp_max||item.main?.temp||0);
           const lo=Math.round(item.main?.temp_min||item.main?.temp||0);
           return`<div style="flex:1;min-width:52px;text-align:center;background:var(--bg4);border-radius:10px;padding:8px 4px;">
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">週${wd}</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">週${wd}</div>
             <i class="ti ${icon}" style="font-size:20px;color:var(--gold);" aria-hidden="true"></i>
             <div style="font-size:12px;font-weight:600;margin-top:4px;">${hi}°</div>
-            <div style="font-size:11px;color:var(--text3);">${lo}°</div>
+            <div style="font-size:12px;color:var(--text3);">${lo}°</div>
           </div>`;
         }).join('')}
       </div>`;
@@ -5610,7 +5721,7 @@ async function loadGoals(){
         <div class="row-between" style="margin-bottom:8px;">
           <div>
             <div style="font-size:14px;font-weight:600;color:var(--text);">${g.name}${g.is_shared?'<span class="tag tag-blue" style="margin-left:6px;font-size:9px;">共用</span>':''}</div>
-            ${!isMine?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">由 ${owner?(owner.display_name||owner.username):'未知'} 建立</div>`:''}
+            ${!isMine?`<div style="font-size:12px;color:var(--text3);margin-top:2px;">由 ${owner?(owner.display_name||owner.username):'未知'} 建立</div>`:''}
           </div>
           ${isMine?`<div style="display:flex;gap:4px;">
             <button class="icon-btn" onclick="editGoal(${i})" style="font-size:14px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
@@ -5625,7 +5736,7 @@ async function loadGoals(){
           <div style="background:var(--gold);height:100%;width:${pct}%;transition:width .3s;"></div>
         </div>
         <div class="row-between">
-          <div style="font-size:11px;color:var(--text3);">${pct.toFixed(1)}% ${g.target_date?`· ${daysLeft>=0?`剩 ${daysLeft} 天`:'已過期'}（${g.target_date}）`:''}</div>
+          <div style="font-size:12px;color:var(--text3);">${pct.toFixed(1)}% ${g.target_date?`· ${daysLeft>=0?`剩 ${daysLeft} 天`:'已過期'}（${g.target_date}）`:''}</div>
           <button class="btn btn-gold btn-sm" onclick="openGoalAdd('${g.id}')">＋ 存入</button>
         </div>
       </div>`;
@@ -5775,7 +5886,7 @@ async function loadHabits(){
             <span style="font-size:20px;">${h.icon||'🎯'}</span>
             <div>
               <div style="font-size:14px;font-weight:600;color:var(--text);">${h.name}</div>
-              <div style="font-size:11px;color:var(--text3);">${streak>0?`🔥 連續 ${streak} 天`:'尚未開始'}</div>
+              <div style="font-size:12px;color:var(--text3);">${streak>0?`🔥 連續 ${streak} 天`:'尚未開始'}</div>
             </div>
           </div>
           <div style="display:flex;gap:4px;">
@@ -5786,7 +5897,7 @@ async function loadHabits(){
         <div style="display:flex;justify-content:space-between;gap:4px;">
           ${days.map(d=>`
             <div style="text-align:center;flex:1;">
-              <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">${d.wd}</div>
+              <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">${d.wd}</div>
               <div onclick="toggleHabitDay('${h.id}','${d.date}')" style="width:100%;aspect-ratio:1;border-radius:8px;background:${d.done?'var(--gold)':'var(--bg3)'};display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;">
                 ${d.done?'<i class="ti ti-check" style="color:#1c1c1e;font-size:14px;" aria-hidden="true"></i>':''}
               </div>
@@ -5879,7 +5990,7 @@ async function loadShopping(){
     let html='';
     if(pending.length) html+=pending.map(renderItem).join('');
     if(done.length){
-      html+=`<div style="font-size:11px;color:var(--text3);letter-spacing:1px;margin:12px 2px 6px;text-transform:uppercase;">已購買（${done.length}）</div>`;
+      html+=`<div style="font-size:12px;color:var(--text3);letter-spacing:1px;margin:12px 2px 6px;text-transform:uppercase;">已購買（${done.length}）</div>`;
       html+=done.map(renderItem).join('');
     }
     el.innerHTML=html;
@@ -5951,8 +6062,8 @@ async function loadContacts(){
     el.innerHTML=contacts.map((c,i)=>{
       const bdDiff=soon(c.birthday);
       const annDiff=soon(c.anniversary);
-      const bdBadge=bdDiff!==null&&bdDiff<=7?`<span class="tag" style="background:rgba(232,112,112,.15);color:var(--red);font-size:10px;">${bdDiff===0?'🎂 今天生日':`🎂 ${bdDiff}天後生日`}</span>`:'';
-      const annBadge=annDiff!==null&&annDiff<=7?`<span class="tag" style="background:rgba(212,170,106,.15);color:var(--gold);font-size:10px;">${annDiff===0?`🎉 今天${c.anniversary_note||'紀念日'}`:`🎉 ${annDiff}天後${c.anniversary_note||'紀念日'}`}</span>`:'';
+      const bdBadge=bdDiff!==null&&bdDiff<=7?`<span class="tag" style="background:rgba(232,112,112,.15);color:var(--red);font-size:12px;">${bdDiff===0?'🎂 今天生日':`🎂 ${bdDiff}天後生日`}</span>`:'';
+      const annBadge=annDiff!==null&&annDiff<=7?`<span class="tag" style="background:rgba(212,170,106,.15);color:var(--gold);font-size:12px;">${annDiff===0?`🎉 今天${c.anniversary_note||'紀念日'}`:`🎉 ${annDiff}天後${c.anniversary_note||'紀念日'}`}</span>`:'';
       return`<div class="card" style="margin-bottom:10px;">
         <div class="row-between">
           <div style="display:flex;align-items:center;gap:10px;">
@@ -6066,7 +6177,7 @@ async function loadMeds(){
           <i class="ti ti-pill" style="color:${m.is_active?'var(--green)':'var(--text3)'};font-size:18px;" aria-hidden="true"></i>
         </div>
         <div class="list-info" style="flex:1;">
-          <div class="list-title">${m.name} ${m.is_active?'':'<span style="font-size:11px;color:var(--text3);">(已停用)</span>'}</div>
+          <div class="list-title">${m.name} ${m.is_active?'':'<span style="font-size:12px;color:var(--text3);">(已停用)</span>'}</div>
           <div class="list-sub">${tags.join(' · ')}${m.note?` · ${m.note}`:''}</div>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="openEditMed(${JSON.stringify(m).replace(/"/g,'&quot;')})">編輯</button>
@@ -6131,7 +6242,7 @@ async function loadVisits(){
       return`<div class="list-row" style="flex-direction:column;align-items:flex-start;gap:6px;padding:12px 0;">
         <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
           <div style="font-weight:600;font-size:14px;">${v.hospital||''}${v.department?` · ${v.department}`:''}</div>
-          ${overdue?'<span style="font-size:11px;color:var(--red);">⚠️ 已過期</span>':soon?'<span style="font-size:11px;color:var(--orange);">即將回診</span>':''}
+          ${overdue?'<span style="font-size:12px;color:var(--red);">⚠️ 已過期</span>':soon?'<span style="font-size:12px;color:var(--orange);">即將回診</span>':''}
         </div>
         <div style="font-size:12px;color:var(--text3);">${[v.doctor?`醫師：${v.doctor}`:'',v.visit_date?`就診：${v.visit_date}`:'',v.next_date?`回診：${v.next_date}`:''].filter(Boolean).join(' · ')}</div>
         ${v.note?`<div style="font-size:12px;color:var(--text2);">${v.note}</div>`:''}
@@ -6285,9 +6396,9 @@ async function loadVehicles(){
       const upcoming=vRecs.filter(r=>r.next_date&&r.next_date>=today).sort((a,b)=>a.next_date.localeCompare(b.next_date))[0];
       const overdue=vRecs.filter(r=>r.next_date&&r.next_date<today).sort((a,b)=>b.next_date.localeCompare(a.next_date))[0];
       const alertEl=overdue
-        ?`<div style="font-size:11px;color:var(--red);">⚠️ ${vehicleTypeMap[overdue.type]?.label||overdue.type} 已過期（${overdue.next_date}）</div>`
+        ?`<div style="font-size:12px;color:var(--red);">⚠️ ${vehicleTypeMap[overdue.type]?.label||overdue.type} 已過期（${overdue.next_date}）</div>`
         :upcoming
-        ?`<div style="font-size:11px;color:var(--orange);">🔔 ${vehicleTypeMap[upcoming.type]?.label||upcoming.type} 提醒（${upcoming.next_date}）</div>`
+        ?`<div style="font-size:12px;color:var(--orange);">🔔 ${vehicleTypeMap[upcoming.type]?.label||upcoming.type} 提醒（${upcoming.next_date}）</div>`
         :'';
       return`<div class="card" style="cursor:pointer;margin-bottom:10px;" onclick="openVehicleDet('${v.id}')">
         <div style="display:flex;align-items:center;gap:12px;">
@@ -6632,7 +6743,7 @@ async function loadFxLog(){
         </div>
         <div class="list-right">
           <div style="font-size:13px;color:var(--text);font-weight:600;">${l.from_currency} ${Number(l.from_amount).toLocaleString()}</div>
-          <div style="font-size:11px;color:var(--gold);">\u2192 ${l.to_currency} ${Number(l.to_amount).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+          <div style="font-size:12px;color:var(--gold);">\u2192 ${l.to_currency} ${Number(l.to_amount).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
         </div>
         <button class="icon-btn" onclick="delFxLog('${l.id}','')" style="color:var(--text4);font-size:14px;"><i class="ti ti-trash" aria-hidden="true"></i></button>
       </div>`).join('');
@@ -7386,12 +7497,12 @@ async function loadReport(){
           </div>
           <div style="text-align:right;">
             <div style="font-size:13px;font-weight:600;color:${overBudget?'var(--red)':'var(--text)'};">NT$${spent.toLocaleString()}</div>
-            ${bgtAmt>0?`<div style="font-size:11px;color:var(--text3);">預算 NT$${bgtAmt.toLocaleString()} · ${pct}%</div>`:`<div style="font-size:11px;color:var(--text3);">${pct}%</div>`}
+            ${bgtAmt>0?`<div style="font-size:12px;color:var(--text3);">預算 NT$${bgtAmt.toLocaleString()} · ${pct}%</div>`:`<div style="font-size:12px;color:var(--text3);">${pct}%</div>`}
           </div>
         </div>
         ${bgtAmt>0?`<div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;">
           <div style="height:100%;width:${bgtPct}%;background:${overBudget?'var(--red)':'var(--green)'};border-radius:2px;transition:width .3s;"></div>
-        </div>${overBudget?`<div style="font-size:11px;color:var(--red);margin-top:3px;">⚠️ 超出預算 NT$${(spent-bgtAmt).toLocaleString()}</div>`:''}`:''}
+        </div>${overBudget?`<div style="font-size:12px;color:var(--red);margin-top:3px;">⚠️ 超出預算 NT$${(spent-bgtAmt).toLocaleString()}</div>`:''}`:''}
       </div>`;
     }).join('');
 
@@ -7426,10 +7537,10 @@ async function loadReport(){
       },
       options:{
         responsive:true,
-        plugins:{legend:{labels:{color:'#aaa',font:{size:12}}}},
+        plugins:{legend:{labels:{color:getChartColors().text,font:{size:12}}}},
         scales:{
-          x:{ticks:{color:'#666',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},
-          y:{ticks:{color:'#666',font:{size:10},callback:v=>'$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,0.05)'}}
+          x:{ticks:{color:getChartColors().text,font:{size:10}},grid:{color:getChartColors().grid}},
+          y:{ticks:{color:'#666',font:{size:10},callback:v=>'$'+v.toLocaleString()},grid:{color:getChartColors().grid}}
         }
       }
     });
@@ -7483,10 +7594,10 @@ async function loadReport(){
       },
       options:{
         responsive:true,
-        plugins:{legend:{labels:{color:'#aaa',font:{size:12}}}},
+        plugins:{legend:{labels:{color:getChartColors().text,font:{size:12}}}},
         scales:{
-          x:{ticks:{color:'#666',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}},
-          y:{ticks:{color:'#666',font:{size:10},callback:v=>'NT$'+Math.round(v).toLocaleString()},grid:{color:'rgba(255,255,255,0.05)'}}
+          x:{ticks:{color:getChartColors().text,font:{size:10}},grid:{color:getChartColors().grid}},
+          y:{ticks:{color:'#666',font:{size:10},callback:v=>'NT$'+Math.round(v).toLocaleString()},grid:{color:getChartColors().grid}}
         }
       }
     });
@@ -7548,7 +7659,7 @@ async function loadReport(){
       top5El.innerHTML=top5.map(t=>{
         const cat=cats.find(c=>c.id===t.category_id);
         return`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
-          <div><div style="font-weight:500;">${t.note||'（無備註）'}</div><div style="font-size:11px;color:var(--text3);">${t.date} · ${cat?.name||'未分類'}</div></div>
+          <div><div style="font-weight:500;">${t.note||'（無備註）'}</div><div style="font-size:12px;color:var(--text3);">${t.date} · ${cat?.name||'未分類'}</div></div>
           <div style="font-weight:600;color:var(--red);white-space:nowrap;margin-left:8px;">NT$${Number(t.amount).toLocaleString()}</div>
         </div>`;
       }).join('');
@@ -7573,24 +7684,24 @@ async function loadReport(){
       trendEl.innerHTML=`
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
           <div style="background:var(--bg4);border-radius:12px;padding:12px;">
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">vs 上月支出</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">vs 上月支出</div>
             <div style="font-size:16px;font-weight:700;color:${expDiff>0?'var(--red)':'var(--green)'};">${expDiff>0?'↑':'↓'} NT$${Math.abs(Math.round(expDiff)).toLocaleString()}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">上月 NT$${Math.round(prevExp).toLocaleString()}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">上月 NT$${Math.round(prevExp).toLocaleString()}</div>
           </div>
           <div style="background:var(--bg4);border-radius:12px;padding:12px;">
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">vs 上月收入</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">vs 上月收入</div>
             <div style="font-size:16px;font-weight:700;color:${incDiff>=0?'var(--green)':'var(--red)'};">${incDiff>=0?'↑':'↓'} NT$${Math.abs(Math.round(incDiff)).toLocaleString()}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">上月 NT$${Math.round(prevInc).toLocaleString()}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">上月 NT$${Math.round(prevInc).toLocaleString()}</div>
           </div>
           <div style="background:var(--bg4);border-radius:12px;padding:12px;">
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">日均消費</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">日均消費</div>
             <div style="font-size:16px;font-weight:700;color:var(--text);">NT$${Math.round(avgDaily).toLocaleString()}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">共 ${daysInMonthTrend} 天</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">共 ${daysInMonthTrend} 天</div>
           </div>
           <div style="background:var(--bg4);border-radius:12px;padding:12px;">
-            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">儲蓄率</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">儲蓄率</div>
             <div style="font-size:16px;font-weight:700;color:${income>0&&(income-expense)/income>=0.2?'var(--green)':'var(--orange)'};">${income>0?Math.round((income-expense)/income*100):0}%</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">（收入 - 支出）/ 收入</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">（收入 - 支出）/ 收入</div>
           </div>
         </div>`;
     }
@@ -7771,8 +7882,8 @@ async function loadExpCats(){
         <div style="flex:1;min-width:0;">
           <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             ${p.name}
-            ${isDefault?'<span class="tag tag-gold" style="font-size:10px;">預設</span>':''}
-            ${!isActive?'<span class="tag" style="background:rgba(136,136,136,.15);color:var(--text3);font-size:10px;">已停用</span>':''}
+            ${isDefault?'<span class="tag tag-gold" style="font-size:12px;">預設</span>':''}
+            ${!isActive?'<span class="tag" style="background:rgba(136,136,136,.15);color:var(--text3);font-size:12px;">已停用</span>':''}
           </div>
           <div style="font-size:12px;color:var(--text3);margin-top:2px;">${typeLabel[p.type]||''}</div>
         </div>
@@ -7794,7 +7905,7 @@ async function loadExpCats(){
         return`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0 7px 16px;border-top:0.5px solid var(--border);opacity:${sActive?'1':'0.6'};">
           <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;">
             <span style="color:var(--text4);">└</span> ${s.name}
-            ${!sActive?'<span style="font-size:10px;color:var(--text3);">(停用)</span>':''}
+            ${!sActive?'<span style="font-size:12px;color:var(--text3);">(停用)</span>':''}
             ${sDefault?'<span class="tag tag-gold" style="font-size:9px;">預設</span>':''}
           </div>
           <div style="display:flex;gap:4px;align-items:center;">
@@ -7909,6 +8020,47 @@ function avatarHTML(profile,size=48){
   return`<div style="width:${size}px;height:${size}px;border-radius:${radius}px;background:#0a0a0a;border:1.5px solid ${cfg.color};display:inline-flex;align-items:center;justify-content:center;font-size:${fontSize}px;font-weight:600;color:${cfg.color};font-family:Georgia,'Times New Roman',serif;letter-spacing:-1px;box-shadow:inset 0 0 ${Math.round(size*0.3)}px ${cfg.shadow};flex-shrink:0;">${char}</div>`;
 }
 // ─── END 頭像系統 ───────────────────────────────────
+
+// ─── Chart.js 主題色彩 ───────────────────────────────
+function getChartColors(){
+  const theme=getCurrentTheme();
+  if(theme==='future'){
+    return {
+      text:'#c4cdf0',
+      grid:'rgba(99,179,237,0.15)',
+      gold:'#FFD580',
+      green:'#7CFFC4',
+      red:'#FF8585',
+      blue:'#9DC8FF',
+      purple:'#C8A8FF',
+      orange:'#FFB070'
+    };
+  }
+  if(theme==='light'){
+    return {
+      text:'#555',
+      grid:'rgba(0,0,0,0.08)',
+      gold:'#B8892A',
+      green:'#34A36A',
+      red:'#D94F4F',
+      blue:'#4A7ED4',
+      purple:'#7B5BD9',
+      orange:'#D4722A'
+    };
+  }
+  // dark
+  return {
+    text:'#aaa',
+    grid:'rgba(255,255,255,0.08)',
+    gold:'#B8892A',
+    green:'#5DBD8A',
+    red:'#E87070',
+    blue:'#6B9EF0',
+    purple:'#9B6BFF',
+    orange:'#E8894A'
+  };
+}
+// ─── END Chart.js 主題色彩 ──────────────────────────
 
 // ─── HERO 主視覺卡 ───────────────────────────────────
 async function loadHero(){
@@ -8228,7 +8380,7 @@ async function loadDocs(){
       const isSoon=diff!==null&&diff>=0&&diff<=30;
       let badge='';
       if(isExpired) badge=`<span class="tag tag-high" style="margin-left:6px;">已到期</span>`;
-      else if(isSoon) badge=`<span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(232,137,74,.12);color:var(--orange);margin-left:6px;">剩${diff}天</span>`;
+      else if(isSoon) badge=`<span style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;background:rgba(232,137,74,.12);color:var(--orange);margin-left:6px;">剩${diff}天</span>`;
       return`<div class="list-row" onclick="openDocDetail('${d.id}')" style="cursor:pointer;">
         <div class="list-icon" style="background:${cs.color}"><i class="ti ${cs.icon}" style="color:${cs.fg}" aria-hidden="true"></i></div>
         <div class="list-info">
