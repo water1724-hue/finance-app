@@ -247,6 +247,60 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 
 .card{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+/* 科幻環 — 未來模式專用 */
+@keyframes scifi-ring{
+  0%{transform:rotate(0deg);opacity:1;}
+  50%{opacity:0.5;}
+  100%{transform:rotate(360deg);opacity:1;}
+}
+@keyframes scifi-pulse{
+  0%,100%{box-shadow:0 0 8px rgba(255,213,128,0.4),0 0 16px rgba(255,213,128,0.2);}
+  50%{box-shadow:0 0 16px rgba(255,213,128,0.6),0 0 32px rgba(255,213,128,0.3);}
+}
+.scifi-loader{
+  display:inline-block;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--gold);
+  border-right-color:var(--gold);
+  animation:scifi-ring 1s linear infinite;
+  position:relative;
+}
+.scifi-loader::before{
+  content:'';
+  position:absolute;
+  inset:-4px;
+  border-radius:50%;
+  border:1px solid rgba(255,213,128,0.3);
+  animation:scifi-ring 2s linear infinite reverse;
+}
+.scifi-loader::after{
+  content:'';
+  position:absolute;
+  inset:4px;
+  border-radius:50%;
+  background:rgba(255,213,128,0.15);
+  animation:scifi-pulse 1.5s ease-in-out infinite;
+}
+/* 未來模式下 ti-loader-2 自動變成科幻環 */
+body.future-mode .ti-loader-2{
+  width:24px;
+  height:24px;
+  font-size:0;
+  border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--gold);
+  border-right-color:var(--gold);
+  display:inline-block;
+  vertical-align:middle;
+  filter:drop-shadow(0 0 6px rgba(255,213,128,0.6));
+}
+body.future-mode .ti-loader-2::before,
+body.future-mode .ti-loader-2::after{
+  content:none !important;
+}
 /* 未來色：光波擴散 */
 @keyframes ripple{
   from{box-shadow:0 0 0 0 rgba(255,213,128,0.5);}
@@ -1275,6 +1329,33 @@ select.inp option{background:var(--bg2);}
   <div class="card"><div id="view-as-list"></div></div>
 </div>
 
+<div class="det" id="det-activity">
+  <div class="det-back" onclick="hideDet('det-activity')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:16px;">系統使用紀錄</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+    <select class="inp" id="act-user-filter" style="flex:1;min-width:120px;padding:8px 12px;" onchange="loadActivityLogs()">
+      <option value="">所有成員</option>
+    </select>
+    <select class="inp" id="act-cat-filter" style="width:110px;padding:8px 12px;" onchange="loadActivityLogs()">
+      <option value="">所有類別</option>
+      <option value="交易">交易</option>
+      <option value="行程">行程</option>
+      <option value="待辦">待辦</option>
+      <option value="帳戶">帳戶</option>
+      <option value="系統">系統</option>
+    </select>
+    <select class="inp" id="act-days-filter" style="width:110px;padding:8px 12px;" onchange="loadActivityLogs()">
+      <option value="7">近 7 天</option>
+      <option value="30" selected>近 30 天</option>
+      <option value="90">近 90 天</option>
+      <option value="365">近 1 年</option>
+    </select>
+  </div>
+  <div class="card" id="act-list-wrap">
+    <div id="act-list"></div>
+  </div>
+</div>
+
 <div class="det" id="det-budget">
   <div class="det-back" onclick="hideDet('det-budget')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -2294,6 +2375,7 @@ async function doLogin(){
     me=d.user;me.token=d.access_token;
     localStorage.setItem('lifeos_session',JSON.stringify({prof,token:d.access_token,refresh:d.refresh_token}));
     initApp();
+    logActivity('系統','登入','');
     setTimeout(()=>copyDefaultCats(),1500);
   }catch(e){err.textContent=e.message.includes('Invalid')?'密碼錯誤':e.message;}
 }
@@ -2627,6 +2709,11 @@ function initApp(){
       <div class="menu-item" onclick="showDet('det-exp-cats')">
         <div class="mi-icon" style="background:var(--gold-dim)"><i class="ti ti-tag" style="color:var(--gold)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">消費類別管理</div><div class="mi-sub">新增、編輯、設定預設分類</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="openActivityLogs()">
+        <div class="mi-icon" style="background:rgba(232,137,74,.1)"><i class="ti ti-history" style="color:var(--orange)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">系統使用紀錄</div><div class="mi-sub">查看所有成員操作軌跡</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
     </div>`:''}
@@ -3954,7 +4041,7 @@ async function saveAccount(){
   }
   body.note=document.getElementById('acc-note').value.trim();
   if(!body.name){toast('請填寫帳戶名稱','err');return;}
-  try{await sb('/rest/v1/accounts',{method:'POST',body:JSON.stringify(body)});closeSheet('sh-account');toast('帳戶已新增');loadFinance();}
+  try{await sb('/rest/v1/accounts',{method:'POST',body:JSON.stringify(body)});closeSheet('sh-account');toast('帳戶已新增');logActivity('帳戶','新增',body.name);loadFinance();}
   catch(e){toast(friendlyError(e),'err');}
 }
 
@@ -4021,6 +4108,7 @@ async function saveTxn(){
     document.getElementById('sh-txn-title').textContent='新增記帳';
     clearCache('monthly');clearCache('networth');clearCache('budget');clearCache('hero');
     toast(id?'已更新':'記帳成功');
+    logActivity('交易',id?'編輯':'新增',`${type==='income'?'收入':'支出'} NT$${amt}`);
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
     if(document.getElementById('det-account').classList.contains('on'))openAccDetail(accId);
@@ -4164,11 +4252,12 @@ async function saveEvent(){
     closeSheet('sh-event');
     document.getElementById('ev-repeat').value='none';
     document.getElementById('ev-repeat-end-field').style.display='none';
+    logActivity('行程',evId?'編輯':'新增',title);
     await renderCal();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
   }catch(e){toast(friendlyError(e),'err');}
 }
-async function delEvent(id){if(!await customConfirm('確定刪除？','確認刪除','刪除',true))return;try{await sb(`/rest/v1/events?id=eq.${id}`,{method:'DELETE'});toast('已刪除');renderCal();}catch(e){}}
+async function delEvent(id){if(!await customConfirm('確定刪除？','確認刪除','刪除',true))return;try{await sb(`/rest/v1/events?id=eq.${id}`,{method:'DELETE'});logActivity('行程','刪除','');toast('已刪除');renderCal();}catch(e){}}
 
 // TODOS
 async function loadTodos(){
@@ -4252,11 +4341,13 @@ async function saveTodo(){
     if(id)await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
     else await sb('/rest/v1/todos',{method:'POST',body:JSON.stringify(body)});
     closeSheet('sh-todo');document.getElementById('todo-id').value='';document.getElementById('sh-todo-title').textContent='新增待辦';
-    toast('儲存成功');loadTodos();
+    toast('儲存成功');
+    logActivity('待辦',id?'編輯':'新增',body.title);
+    loadTodos();
   }catch(e){toast(friendlyError(e),'err');}
 }
-async function toggleTodo(id,cur){try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({completed:!cur,completed_at:!cur?new Date().toISOString():null})});loadTodos();}catch(e){}}
-async function delTodo(id){if(!await customConfirm('確定刪除？','確認刪除','刪除',true))return;try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadTodos();}catch(e){}}
+async function toggleTodo(id,cur){try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({completed:!cur,completed_at:!cur?new Date().toISOString():null})});if(!cur)logActivity('待辦','完成','');loadTodos();}catch(e){}}
+async function delTodo(id){if(!await customConfirm('確定刪除？','確認刪除','刪除',true))return;try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'DELETE'});logActivity('待辦','刪除','');toast('已刪除');loadTodos();}catch(e){}}
 
 // ANNOUNCEMENTS
 async function loadAnnouncements(){
@@ -8146,6 +8237,88 @@ function avatarHTML(profile,size=48){
   return`<div style="width:${size}px;height:${size}px;border-radius:${radius}px;background:#0a0a0a;border:1.5px solid ${cfg.color};display:inline-flex;align-items:center;justify-content:center;font-size:${fontSize}px;font-weight:600;color:${cfg.color};font-family:Georgia,'Times New Roman',serif;letter-spacing:-1px;box-shadow:inset 0 0 ${Math.round(size*0.3)}px ${cfg.shadow};flex-shrink:0;">${char}</div>`;
 }
 // ─── END 頭像系統 ───────────────────────────────────
+
+// ─── 系統使用紀錄 ───────────────────────────────────
+async function logActivity(category,action,detail=''){
+  if(!prof?.id)return;
+  try{
+    await sb('/rest/v1/activity_logs',{
+      method:'POST',
+      body:JSON.stringify({user_id:prof.id,category,action,detail:detail||null})
+    });
+  }catch(e){/* 不影響主流程 */}
+}
+
+async function openActivityLogs(){
+  showDet('det-activity');
+  // 載入使用者選單
+  if(!allUsers.length)await loadAllUsers();
+  const filter=document.getElementById('act-user-filter');
+  filter.innerHTML='<option value="">所有成員</option>'+allUsers.map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');
+  loadActivityLogs();
+}
+
+const CAT_ICONS={
+  '交易':'ti-wallet',
+  '行程':'ti-calendar',
+  '待辦':'ti-checklist',
+  '帳戶':'ti-credit-card',
+  '系統':'ti-shield-lock'
+};
+const CAT_COLORS={
+  '交易':'var(--gold)',
+  '行程':'var(--blue)',
+  '待辦':'var(--green)',
+  '帳戶':'#9C6BFF',
+  '系統':'var(--orange)'
+};
+
+async function loadActivityLogs(){
+  const userFilter=document.getElementById('act-user-filter').value;
+  const catFilter=document.getElementById('act-cat-filter').value;
+  const days=parseInt(document.getElementById('act-days-filter').value);
+  const since=new Date(Date.now()-days*86400000).toISOString();
+  let url=`/rest/v1/activity_logs?created_at=gte.${since}&order=created_at.desc&limit=300`;
+  if(userFilter)url+=`&user_id=eq.${userFilter}`;
+  if(catFilter)url+=`&category=eq.${encodeURIComponent(catFilter)}`;
+  const listEl=document.getElementById('act-list');
+  listEl.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite;"></i> 載入中...</div>';
+  try{
+    const logs=await sb(url,{});
+    if(!logs.length){
+      listEl.innerHTML='<div class="empty"><i class="ti ti-history"></i><p>沒有紀錄</p></div>';
+      return;
+    }
+    if(!allUsers.length)await loadAllUsers();
+    // 按日期分組
+    const groups={};
+    logs.forEach(l=>{
+      const d=l.created_at.slice(0,10);
+      if(!groups[d])groups[d]=[];
+      groups[d].push(l);
+    });
+    listEl.innerHTML=Object.entries(groups).map(([date,items])=>{
+      return`<div style="font-size:12px;color:var(--text3);padding:10px 0 6px;font-weight:600;letter-spacing:0.5px;">${date}</div>`+
+        items.map(l=>{
+          const u=allUsers.find(x=>x.id===l.user_id);
+          const name=u?(u.display_name||u.username):'未知';
+          const time=new Date(l.created_at).toTimeString().slice(0,5);
+          const icon=CAT_ICONS[l.category]||'ti-circle';
+          const color=CAT_COLORS[l.category]||'var(--text2)';
+          return`<div class="list-row" style="cursor:default;">
+            <div class="list-icon" style="background:${color}22;color:${color};"><i class="ti ${icon}"></i></div>
+            <div class="list-info">
+              <div class="list-title"><span style="color:var(--gold);font-weight:600;">${name}</span> · ${l.category} ${l.action}</div>
+              <div class="list-sub">${l.detail||''} · ${time}</div>
+            </div>
+          </div>`;
+        }).join('');
+    }).join('');
+  }catch(e){
+    listEl.innerHTML='<div class="empty"><p>'+friendlyError(e)+'</p></div>';
+  }
+}
+// ─── END 系統使用紀錄 ──────────────────────────────
 
 // ─── Chart.js 主題色彩 ───────────────────────────────
 function getChartColors(){
