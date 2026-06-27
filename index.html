@@ -2205,9 +2205,63 @@ let chatHistory=[];
 let allUsers=[];
 
 // API — 所有請求使用使用者 JWT Token，由 Supabase RLS 控制存取權限
+
+// 解析 JWT 取得 exp（到期時間，秒）
+function getTokenExp(token){
+  if(!token)return 0;
+  try{
+    const payload=JSON.parse(atob(token.split('.')[1]));
+    return payload.exp||0;
+  }catch(e){return 0;}
+}
+
+// 檢查 token 是否快過期（剩 5 分鐘內視為快過期）
+function isTokenExpiring(token){
+  const exp=getTokenExp(token);
+  if(!exp)return true;
+  const now=Math.floor(Date.now()/1000);
+  return (exp-now)<300; // 剩 5 分鐘內
+}
+
+// 自動續期：用 refresh_token 換新的 access_token
+let _refreshing=null; // 防止並發呼叫
+async function refreshTokenIfNeeded(force=false){
+  if(!me?.token)return false;
+  if(!force&&!isTokenExpiring(me.token))return true;
+  if(_refreshing)return _refreshing;
+  _refreshing=(async()=>{
+    try{
+      const sess=JSON.parse(localStorage.getItem('lifeos_session')||'{}');
+      if(!sess.refresh)return false;
+      const d=await sbAuth('/auth/v1/token?grant_type=refresh_token',{refresh_token:sess.refresh});
+      me.token=d.access_token;
+      localStorage.setItem('lifeos_session',JSON.stringify({prof,token:d.access_token,refresh:d.refresh_token}));
+      console.log('[Session] Token 已自動續期');
+      return true;
+    }catch(e){
+      console.error('[Session] 續期失敗:',e);
+      return false;
+    }finally{
+      _refreshing=null;
+    }
+  })();
+  return _refreshing;
+}
+
 async function sb(path,opt={}){
+  // 進場前主動檢查並續期
+  if(me?.token&&isTokenExpiring(me.token)){
+    await refreshTokenIfNeeded();
+  }
   const authToken=me?.token||PUB;
-  const r=await fetch(SB+path,{...opt,headers:{'Content-Type':'application/json','apikey':PUB,'Authorization':`Bearer ${authToken}`,'Prefer':'return=representation',...(opt.headers||{})}});
+  let r=await fetch(SB+path,{...opt,headers:{'Content-Type':'application/json','apikey':PUB,'Authorization':`Bearer ${authToken}`,'Prefer':'return=representation',...(opt.headers||{})}});
+  // 如果 401，嘗試強制續期後重試一次
+  if(r.status===401&&me?.token){
+    const refreshed=await refreshTokenIfNeeded(true);
+    if(refreshed){
+      r=await fetch(SB+path,{...opt,headers:{'Content-Type':'application/json','apikey':PUB,'Authorization':`Bearer ${me.token}`,'Prefer':'return=representation',...(opt.headers||{})}});
+    }
+  }
   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||'Error');}
   const t=await r.text();return t?JSON.parse(t):[];
 }
@@ -2253,6 +2307,8 @@ async function restoreSession(){
 }
 
 function doLogout(){
+  // 清除自動續期定時器
+  if(window._tokenTimer){clearInterval(window._tokenTimer);window._tokenTimer=null;}
   // 清除所有快取資料
   Object.keys(sessionStorage).forEach(k=>{if(k.startsWith('cache_'))sessionStorage.removeItem(k);});
   localStorage.removeItem('lifeos_session');
@@ -2404,6 +2460,12 @@ function initApp(){
   if(avatarEl)avatarEl.innerHTML=avatarHTML(prof,56);
   applyA11y(); // 套用顯微設定
   loadAppSettings(); // 載入共用設定（Gemini Key 等）
+
+  // 啟動 token 自動續期定時器（每 10 分鐘檢查一次）
+  if(window._tokenTimer)clearInterval(window._tokenTimer);
+  window._tokenTimer=setInterval(()=>{
+    if(me?.token)refreshTokenIfNeeded();
+  },10*60*1000);
 
   const isAdmin=prof.role==='admin';
 
