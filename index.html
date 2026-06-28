@@ -4114,7 +4114,7 @@ async function saveTxn(ev){const _btn=ev?.target;btnLoading(_btn,true);
     document.getElementById('sh-txn-title').textContent='新增記帳';
     clearCache('monthly');clearCache('networth');clearCache('budget');clearCache('hero');
     toast(id?'已更新':'記帳成功');
-    logActivity('交易',id?'編輯':'新增',`${type==='income'?'收入':'支出'} NT$${amt}`);
+    logActivity('交易',id?'編輯':'新增',`${txnType==='income'?'收入':'支出'} NT$${amt}`);
     if(document.getElementById('pg-finance').classList.contains('on'))loadFinance();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
     if(document.getElementById('det-account').classList.contains('on'))openAccDetail(accId);
