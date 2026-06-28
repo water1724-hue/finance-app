@@ -1418,7 +1418,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>日期</label><input class="inp" type="date" id="txn-date"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-txn')">取消</button>
-      <button class="btn btn-gold" onclick="saveTxn()">儲存</button>
+      <button class="btn btn-gold" onclick="saveTxn(event)">儲存</button>
     </div>
   </div>
 </div>
@@ -1496,7 +1496,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="acc-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-account')">取消</button>
-      <button class="btn btn-gold" onclick="saveAccount()">新增</button>
+      <button class="btn btn-gold" onclick="saveAccount(event)">新增</button>
     </div>
   </div>
 </div>
@@ -1564,7 +1564,7 @@ select.inp option{background:var(--bg2);}
     </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-event')">取消</button>
-      <button class="btn btn-gold" onclick="saveEvent()">儲存</button>
+      <button class="btn btn-gold" onclick="saveEvent(event)">儲存</button>
     </div>
   </div>
 </div>
@@ -1588,7 +1588,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>指派給</label><select class="inp" id="todo-assign"><option value="">不指派</option></select></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-todo')">取消</button>
-      <button class="btn btn-gold" onclick="saveTodo()">儲存</button>
+      <button class="btn btn-gold" onclick="saveTodo(event)">儲存</button>
     </div>
   </div>
 </div>
@@ -2691,6 +2691,11 @@ function initApp(){
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
       <input type="file" id="restore-input" accept=".json" style="display:none" onchange="importBackup(this)">
+      ${!isAdmin?`<div class="menu-item" onclick="openMyActivityLogs()">
+        <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-history" style="color:#9C6BFF" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">我的操作紀錄</div><div class="mi-sub">查看自己的活動軌跡</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>`:''}
     </div>
 
     ${isAdmin?`
@@ -4027,7 +4032,7 @@ document.getElementById('acc-cat').addEventListener('change',function(){
   document.getElementById('acc-forex-fields').style.display=cat?.type==='forex'?'block':'none';
   document.getElementById('acc-loan-fields').style.display=cat?.type==='loan'?'block':'none';
 });
-async function saveAccount(){
+async function saveAccount(ev){const _btn=ev?.target;btnLoading(_btn,true);
   const catId=document.getElementById('acc-cat').value;
   const cat=accCats.find(c=>c.id===catId);
   const currency=cat?.type==='forex'?document.getElementById('acc-currency').value:'TWD';
@@ -4040,9 +4045,10 @@ async function saveAccount(){
     body.loan_end_date=document.getElementById('acc-loan-end-date').value||null;
   }
   body.note=document.getElementById('acc-note').value.trim();
-  if(!body.name){toast('請填寫帳戶名稱','err');return;}
+  if(!body.name){toast('請填寫帳戶名稱','err');btnLoading(_btn,false);return;}
   try{await sb('/rest/v1/accounts',{method:'POST',body:JSON.stringify(body)});closeSheet('sh-account');toast('帳戶已新增');logActivity('帳戶','新增',body.name);loadFinance();}
   catch(e){toast(friendlyError(e),'err');}
+  finally{btnLoading(_btn,false);}
 }
 
 // Transaction
@@ -4072,11 +4078,11 @@ async function loadExpCatOptions(){
   });
   document.getElementById('txn-cat').innerHTML=opts;
 }
-async function saveTxn(){
+async function saveTxn(ev){const _btn=ev?.target;btnLoading(_btn,true);
   const id=document.getElementById('txn-id').value;
   const accId=document.getElementById('txn-account').value;
   const amt=parseFloat(document.getElementById('txn-amt').value);
-  if(!accId||!amt){toast('請填寫帳戶和金額','err');return;}
+  if(!accId||!amt){toast('請填寫帳戶和金額','err');btnLoading(_btn,false);return;}
   const tagsStr=document.getElementById('txn-tags').value.trim();
   const tags=tagsStr?tagsStr.split(',').map(s=>s.trim()).filter(Boolean):[];
   const body={user_id:prof.id,account_id:accId,type:txnType,amount:amt,category_id:document.getElementById('txn-cat').value||null,note:document.getElementById('txn-note').value.trim(),tags,date:document.getElementById('txn-date').value};
@@ -4113,6 +4119,7 @@ async function saveTxn(){
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
     if(document.getElementById('det-account').classList.contains('on'))openAccDetail(accId);
   }catch(e){toast(friendlyError(e),'err');}
+  finally{btnLoading(_btn,false);}
 }
 
 // CALENDAR
@@ -4139,7 +4146,6 @@ async function renderCal(){
   try{
     const lastDay=new Date(calY,calM+1,0).getDate();
     calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-${String(lastDay).padStart(2,'0')}&user_id=eq.${getViewAsId()}&order=start_time.asc`,{});
-    console.log('Events loaded:', calEvents.length, calEvents);
     calEvents.forEach(e=>{const el=document.getElementById(`cd-${e.start_date}`);if(el&&!el.querySelector('.evdot'))el.insertAdjacentHTML('beforeend',`<span class="evdot" style="background:${e.is_shared?'var(--blue)':'var(--gold)'}"></span>`);});
     showCalDay();
   }catch(er){console.error('Calendar error:', er);}
@@ -4214,12 +4220,12 @@ function editEventFromBtn(btn){
 }
 
 function openSheet_event(){setEvType(false);document.getElementById('ev-date').value=calSel;document.getElementById('ev-title').value='';document.getElementById('ev-start').value='';document.getElementById('ev-end').value='';document.getElementById('ev-desc').value='';openSheet('sh-event');}
-async function saveEvent(){
+async function saveEvent(ev){const _btn=ev?.target;btnLoading(_btn,true);
   const id=document.getElementById('ev-id').value;
   const repeatType=document.getElementById('ev-repeat').value;
   const repeatEnd=document.getElementById('ev-repeat-end').value||null;
   const body={user_id:prof.id,title:document.getElementById('ev-title').value.trim(),start_date:document.getElementById('ev-date').value,start_time:document.getElementById('ev-start').value||null,end_time:document.getElementById('ev-end').value||null,description:document.getElementById('ev-desc').value.trim(),is_shared:evIsShared,color:evIsShared?'#6B9EF0':'#D4AA6A',repeat_type:repeatType,repeat_end:repeatEnd};
-  if(!body.title||!body.start_date){toast('請填寫標題和日期','err');return;}
+  if(!body.title||!body.start_date){toast('請填寫標題和日期','err');btnLoading(_btn,false);return;}
   try{
     if(id){
       await sb(`/rest/v1/events?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
@@ -4256,6 +4262,7 @@ async function saveEvent(){
     await renderCal();
     if(document.getElementById('pg-home').classList.contains('on'))loadHome();
   }catch(e){toast(friendlyError(e),'err');}
+  finally{btnLoading(_btn,false);}
 }
 async function delEvent(id){if(!await customConfirm('確定刪除？','確認刪除','刪除',true))return;try{await sb(`/rest/v1/events?id=eq.${id}`,{method:'DELETE'});logActivity('行程','刪除','');toast('已刪除');renderCal();}catch(e){}}
 
@@ -4333,10 +4340,10 @@ function editTodo(id,title,note,due,pri,assignedTo){
   document.getElementById('todo-assign').value=assignedTo;
   openSheet('sh-todo');
 }
-async function saveTodo(){
+async function saveTodo(ev){const _btn=ev?.target;btnLoading(_btn,true);
   const id=document.getElementById('todo-id').value;
   const body={user_id:prof.id,title:document.getElementById('todo-title').value.trim(),note:document.getElementById('todo-note').value.trim(),due_date:document.getElementById('todo-due').value||null,priority:document.getElementById('todo-pri').value,assigned_to:document.getElementById('todo-assign').value||null};
-  if(!body.title){toast('請填寫標題','err');return;}
+  if(!body.title){toast('請填寫標題','err');btnLoading(_btn,false);return;}
   try{
     if(id)await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
     else await sb('/rest/v1/todos',{method:'POST',body:JSON.stringify(body)});
@@ -4345,6 +4352,7 @@ async function saveTodo(){
     logActivity('待辦',id?'編輯':'新增',body.title);
     loadTodos();
   }catch(e){toast(friendlyError(e),'err');}
+  finally{btnLoading(_btn,false);}
 }
 async function toggleTodo(id,cur){try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({completed:!cur,completed_at:!cur?new Date().toISOString():null})});if(!cur)logActivity('待辦','完成','');loadTodos();}catch(e){}}
 async function delTodo(id){if(!await customConfirm('確定刪除？','確認刪除','刪除',true))return;try{await sb(`/rest/v1/todos?id=eq.${id}`,{method:'DELETE'});logActivity('待辦','刪除','');toast('已刪除');loadTodos();}catch(e){}}
@@ -4957,8 +4965,7 @@ async function fetchWeatherGreeting(greetText, name){
         <div style="font-size:13px;font-weight:400;color:var(--text3);margin-top:2px;">${city} ${temp}°C　${desc}</div>`;
     }
   }catch(e){
-    // 位置取得失敗或 API 失敗，保留預設圖示不做任何事
-    console.warn('天氣取得失敗:',e);
+    // 位置取得失敗或 API 失敗，保留預設圖示不做任何事（靜默）
   }
 }
 // ─── END WEATHER GREETING ─────────────────────────────────────
@@ -8255,6 +8262,19 @@ async function openActivityLogs(){
   if(!allUsers.length)await loadAllUsers();
   const filter=document.getElementById('act-user-filter');
   filter.innerHTML='<option value="">所有成員</option>'+allUsers.map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');
+  filter.style.display='';
+  filter.value='';
+  loadActivityLogs();
+}
+
+// 一般使用者只看自己的紀錄
+async function openMyActivityLogs(){
+  showDet('det-activity');
+  const filter=document.getElementById('act-user-filter');
+  // 隱藏成員篩選器，鎖定為自己
+  filter.innerHTML=`<option value="${prof.id}">${prof.display_name||prof.username}</option>`;
+  filter.value=prof.id;
+  filter.style.display='none';
   loadActivityLogs();
 }
 
