@@ -1450,7 +1450,7 @@ select.inp option{background:var(--bg2);}
     </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-inv-txn')">取消</button>
-      <button class="btn btn-gold" onclick="saveInvTxn()">確認</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveInvTxn)">確認</button>
     </div>
   </div>
 </div>
@@ -1529,7 +1529,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="h-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-holding')">取消</button>
-      <button class="btn btn-gold" onclick="saveHolding()">新增</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveHolding)">新增</button>
     </div>
   </div>
 </div>
@@ -1617,7 +1617,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="an-pin" style="width:16px;height:16px;"> 置頂</label></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-announce')">取消</button>
-      <button class="btn btn-gold" id="sh-announce-save" onclick="saveAnnounce()">發佈</button>
+      <button class="btn btn-gold" id="sh-announce-save" onclick="doBtnAction(event,saveAnnounce)">發佈</button>
     </div>
   </div>
 </div>
@@ -1673,7 +1673,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="rec-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-recurring')">取消</button>
-      <button class="btn btn-gold" onclick="saveRecurring()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveRecurring)">儲存</button>
     </div>
   </div>
 </div>
@@ -1691,7 +1691,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="goal-shared" style="width:16px;height:16px;"> 共用（所有成員可見）</label></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-goal')">取消</button>
-      <button class="btn btn-gold" onclick="saveGoal()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveGoal)">儲存</button>
     </div>
   </div>
 </div>
@@ -1705,7 +1705,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>金額 (NT$)</label><input class="inp" type="number" id="goal-add-amt" placeholder="0"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-goal-add')">取消</button>
-      <button class="btn btn-gold" onclick="saveGoalContribution()">確認存入</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveGoalContribution)">確認存入</button>
     </div>
   </div>
 </div>
@@ -1735,7 +1735,7 @@ select.inp option{background:var(--bg2);}
     <input type="hidden" id="habit-icon" value="🎯">
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-habit')">取消</button>
-      <button class="btn btn-gold" onclick="saveHabit()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveHabit)">儲存</button>
     </div>
   </div>
 </div>
@@ -1766,7 +1766,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="shop-shared" checked style="width:16px;height:16px;"> 共用（所有成員可見）</label></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-shop')">取消</button>
-      <button class="btn btn-gold" onclick="saveShopItem()">新增</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveShopItem)">新增</button>
     </div>
   </div>
 </div>
@@ -1783,7 +1783,7 @@ select.inp option{background:var(--bg2);}
     </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-budget-item')">取消</button>
-      <button class="btn btn-gold" onclick="saveBudgetItem()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveBudgetItem)">儲存</button>
     </div>
   </div>
 </div>
@@ -1834,7 +1834,7 @@ select.inp option{background:var(--bg2);}
     <div id="ai-key-status" style="font-size:12px;margin-bottom:12px;"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-ai-settings')">取消</button>
-      <button class="btn btn-gold" onclick="saveAiKey()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveAiKey)">儲存</button>
     </div>
   </div>
 </div>
@@ -1874,7 +1874,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="inout-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-inout-fund')">取消</button>
-      <button class="btn btn-gold" onclick="saveInOutFund()">確認</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveInOutFund)">確認</button>
     </div>
   </div>
 </div>
@@ -1908,7 +1908,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="vehicle-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-vehicle')">取消</button>
-      <button class="btn btn-gold" onclick="saveVehicle()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveVehicle)">儲存</button>
     </div>
   </div>
 </div>
@@ -1943,7 +1943,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="vrec-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-vehicle-rec')">取消</button>
-      <button class="btn btn-gold" onclick="saveRecord()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveRecord)">儲存</button>
     </div>
   </div>
 </div>
@@ -1969,7 +1969,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="med-med-active" checked style="width:16px;height:16px;"> 目前仍在服用</label></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-med-med')">取消</button>
-      <button class="btn btn-gold" onclick="saveMed()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveMed)">儲存</button>
     </div>
   </div>
 </div>
@@ -1988,7 +1988,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="med-visit-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-med-visit')">取消</button>
-      <button class="btn btn-gold" onclick="saveVisit()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveVisit)">儲存</button>
     </div>
   </div>
 </div>
@@ -2007,7 +2007,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="med-body-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-med-body')">取消</button>
-      <button class="btn btn-gold" onclick="saveBody()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveBody)">儲存</button>
     </div>
   </div>
 </div>
@@ -2027,7 +2027,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><textarea class="inp" id="contact-note" rows="2" placeholder="選填"></textarea></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-contact')">取消</button>
-      <button class="btn btn-gold" onclick="saveContact()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveContact)">儲存</button>
     </div>
   </div>
 </div>
@@ -2056,7 +2056,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="fxlog-note" placeholder="例如：桃園機場換匯"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-fxlog')">取消</button>
-      <button class="btn btn-gold" onclick="saveFxLog()">確認換匯</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveFxLog)">確認換匯</button>
     </div>
   </div>
 </div>
@@ -2087,7 +2087,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>備註</label><input class="inp" type="text" id="tr-note" placeholder="選填"></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-transfer')">取消</button>
-      <button class="btn btn-gold" onclick="saveTransfer()">確認轉帳</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveTransfer)">確認轉帳</button>
     </div>
   </div>
 </div>
@@ -2105,7 +2105,7 @@ select.inp option{background:var(--bg2);}
     <input class="inp" type="number" id="edit-acc-bal" placeholder="0">
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-edit-account')">取消</button>
-      <button class="btn btn-gold" onclick="saveEditAccount()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveEditAccount)">儲存</button>
     </div>
   </div>
 </div>
@@ -2144,7 +2144,7 @@ select.inp option{background:var(--bg2);}
     </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-edit-profile')">取消</button>
-      <button class="btn btn-gold" onclick="saveMyProfile()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveMyProfile)">儲存</button>
     </div>
   </div>
 </div>
@@ -2164,7 +2164,7 @@ select.inp option{background:var(--bg2);}
     </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-edituser')">取消</button>
-      <button class="btn btn-gold" onclick="saveEditUser()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveEditUser)">儲存</button>
     </div>
   </div>
 </div>
@@ -2206,7 +2206,7 @@ select.inp option{background:var(--bg2);}
     </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-addcat')">取消</button>
-      <button class="btn btn-gold" onclick="saveExpCat()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveExpCat)">儲存</button>
     </div>
   </div>
 </div>
@@ -2252,7 +2252,7 @@ select.inp option{background:var(--bg2);}
     </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-doc')">取消</button>
-      <button class="btn btn-gold" onclick="saveDoc()">儲存</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveDoc)">儲存</button>
     </div>
   </div>
 </div>
@@ -8501,6 +8501,19 @@ function btnLoading(btn,loading=true){
   } else {
     btn.disabled=false;
     if(btn._origText)btn.innerHTML=btn._origText;
+  }
+}
+
+// 統一的按鈕動作包裝（自動 loading）
+async function doBtnAction(ev,fn){
+  const btn=ev?.target?.closest('button')||ev?.target;
+  btnLoading(btn,true);
+  try{
+    await fn();
+  } catch(e){
+    console.error(e);
+  } finally{
+    btnLoading(btn,false);
   }
 }
 
