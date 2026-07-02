@@ -1112,9 +1112,22 @@ select.inp option{background:var(--bg2);}
     <!-- CONTACTS -->
     <div class="page" id="pg-contacts">
       <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
-      <div class="row-between" style="margin-bottom:16px;">
-        <div class="pg-title" style="margin:0">聯絡人備忘</div>
+      <div class="row-between" style="margin-bottom:12px;">
+        <div class="pg-title" style="margin:0">通訊錄</div>
         <button class="btn btn-gold btn-sm" onclick="openAddContact()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+      </div>
+      <div style="position:relative;margin-bottom:12px;">
+        <i class="ti ti-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);"></i>
+        <input class="inp" id="contact-search" placeholder="搜尋姓名、電話、公司..." style="padding-left:36px;" oninput="renderContacts()">
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;">
+        <button class="ftab on" data-cat="all" onclick="setContactCat('all',this)">全部</button>
+        <button class="ftab" data-cat="pinned" onclick="setContactCat('pinned',this)"><i class="ti ti-pin" style="font-size:12px;"></i> 常用</button>
+        <button class="ftab" data-cat="family" onclick="setContactCat('family',this)">家人</button>
+        <button class="ftab" data-cat="friend" onclick="setContactCat('friend',this)">朋友</button>
+        <button class="ftab" data-cat="work" onclick="setContactCat('work',this)">同事</button>
+        <button class="ftab" data-cat="vendor" onclick="setContactCat('vendor',this)">廠商</button>
+        <button class="ftab" data-cat="other" onclick="setContactCat('other',this)">其他</button>
       </div>
       <div id="contacts-list"></div>
     </div>
@@ -2018,13 +2031,40 @@ select.inp option{background:var(--bg2);}
     <div class="sheet-handle"></div>
     <h3 id="sh-contact-title">新增聯絡人</h3>
     <input type="hidden" id="contact-id">
-    <div class="field"><label>姓名</label><input class="inp" type="text" id="contact-name" placeholder="名字"></div>
-    <div class="field"><label>關係</label><input class="inp" type="text" id="contact-relation" placeholder="例如：父親、同事、朋友"></div>
-    <div class="field"><label>生日</label><input class="inp" type="date" id="contact-birthday"></div>
-    <div class="field"><label>紀念日</label><input class="inp" type="date" id="contact-anniversary"></div>
-    <div class="field"><label>紀念日說明</label><input class="inp" type="text" id="contact-anniversary-note" placeholder="例如：結婚紀念日"></div>
+    <div class="field"><label>姓名 <span style="color:var(--red);">*</span></label><input class="inp" type="text" id="contact-name" placeholder="名字"></div>
+    <div style="display:flex;gap:8px;">
+      <div class="field" style="flex:1;">
+        <label>分類</label>
+        <select class="inp" id="contact-category">
+          <option value="family">家人</option>
+          <option value="friend">朋友</option>
+          <option value="work">同事</option>
+          <option value="vendor">廠商</option>
+          <option value="other" selected>其他</option>
+        </select>
+      </div>
+      <div class="field" style="flex:1;"><label>關係 / 稱謂</label><input class="inp" type="text" id="contact-relation" placeholder="父親、老闆..."></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div class="field" style="flex:1;"><label>公司</label><input class="inp" type="text" id="contact-company" placeholder="選填"></div>
+      <div class="field" style="flex:1;"><label>職稱</label><input class="inp" type="text" id="contact-title" placeholder="選填"></div>
+    </div>
     <div class="field"><label>電話</label><input class="inp" type="tel" id="contact-phone" placeholder="選填"></div>
+    <div class="field"><label>Email</label><input class="inp" type="email" id="contact-email" placeholder="選填"></div>
+    <div class="field"><label>Line ID</label><input class="inp" type="text" id="contact-lineid" placeholder="選填"></div>
+    <div class="field"><label>地址</label><input class="inp" type="text" id="contact-address" placeholder="選填"></div>
+    <div style="display:flex;gap:8px;">
+      <div class="field" style="flex:1;"><label>生日</label><input class="inp" type="date" id="contact-birthday"></div>
+      <div class="field" style="flex:1;"><label>紀念日</label><input class="inp" type="date" id="contact-anniversary"></div>
+    </div>
+    <div class="field"><label>紀念日說明</label><input class="inp" type="text" id="contact-anniversary-note" placeholder="例如：結婚紀念日"></div>
     <div class="field"><label>備註</label><textarea class="inp" id="contact-note" rows="2" placeholder="選填"></textarea></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="contact-pinned" style="width:20px;height:20px;accent-color:var(--gold);">
+        <span>置頂常用聯絡人</span>
+      </label>
+    </div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="closeSheet('sh-contact')">取消</button>
       <button class="btn btn-gold" onclick="doBtnAction(event,saveContact)">儲存</button>
@@ -2611,7 +2651,7 @@ function initApp(){
       </div>
       <div class="menu-item" onclick="goPage('contacts')">
         <div class="mi-icon" style="background:rgba(232,137,74,.1)"><i class="ti ti-users" style="color:var(--orange)" aria-hidden="true"></i></div>
-        <div class="mi-info"><div class="mi-title">聯絡人備忘</div><div class="mi-sub">生日、紀念日提醒</div></div>
+        <div class="mi-info"><div class="mi-title">通訊錄</div><div class="mi-sub">生日、聯絡方式、快速撥號</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
       <div class="menu-item" onclick="goPage('announce')">
@@ -6207,95 +6247,158 @@ async function clearDoneItems(){
 // ─── END SHOPPING LIST ────────────────────────────────────────
 
 // ─── CONTACTS（聯絡人備忘） ───────────────────────────────────
+const CONTACT_CAT_LABEL={family:'家人',friend:'朋友',work:'同事',vendor:'廠商',other:'其他'};
+const CONTACT_CAT_COLOR={family:'#E87070',friend:'#5DBD8A',work:'#6B9EF0',vendor:'#9B6BFF',other:'#B8892A'};
+let _contactCat='all';
+
 async function loadContacts(){
   const el=document.getElementById('contacts-list');
   el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
   try{
-    const contacts=await sb(`/rest/v1/contacts?user_id=eq.${prof.id}&order=name.asc`,{});
+    const contacts=await sb(`/rest/v1/contacts?user_id=eq.${prof.id}&order=is_pinned.desc,name.asc`,{});
     window._contacts=contacts;
-    if(!contacts.length){el.innerHTML='<div class="empty"><i class="ti ti-users" aria-hidden="true"></i><p>尚無聯絡人，點右上角新增</p></div>';return;}
-    const today=new Date();
-    const todayMD=`${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-    const soon=(dateStr)=>{
-      if(!dateStr)return null;
-      const md=dateStr.slice(5);
-      const thisYear=new Date(`${today.getFullYear()}-${md}`);
-      let diff=Math.ceil((thisYear-today)/(1000*60*60*24));
-      if(diff<0){const nextYear=new Date(`${today.getFullYear()+1}-${md}`);diff=Math.ceil((nextYear-today)/(1000*60*60*24));}
-      return diff;
-    };
-    el.innerHTML=contacts.map((c,i)=>{
-      const bdDiff=soon(c.birthday);
-      const annDiff=soon(c.anniversary);
-      const bdBadge=bdDiff!==null&&bdDiff<=7?`<span class="tag" style="background:rgba(232,112,112,.15);color:var(--red);font-size:12px;">${bdDiff===0?'🎂 今天生日':`🎂 ${bdDiff}天後生日`}</span>`:'';
-      const annBadge=annDiff!==null&&annDiff<=7?`<span class="tag" style="background:rgba(212,170,106,.15);color:var(--gold);font-size:12px;">${annDiff===0?`🎉 今天${c.anniversary_note||'紀念日'}`:`🎉 ${annDiff}天後${c.anniversary_note||'紀念日'}`}</span>`:'';
-      return`<div class="card" style="margin-bottom:10px;">
-        <div class="row-between">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:40px;height:40px;border-radius:50%;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--gold);">${c.name[0]}</div>
-            <div>
-              <div style="font-size:14px;font-weight:600;color:var(--text);">${c.name}</div>
-              ${c.relation?`<div style="font-size:12px;color:var(--text3);">${c.relation}</div>`:''}
-            </div>
-          </div>
-          <div style="display:flex;gap:4px;">
-            <button class="icon-btn" onclick="editContact(${i})" style="font-size:14px;"><i class="ti ti-pencil" aria-hidden="true"></i></button>
-            <button class="icon-btn" onclick="delContact('${c.id}')" style="font-size:14px;color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
-          </div>
-        </div>
-        ${bdBadge||annBadge?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${bdBadge}${annBadge}</div>`:''}
-        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
-          ${c.birthday?`<div style="font-size:12px;color:var(--text3);">🎂 ${c.birthday.slice(5).replace('-','/')}</div>`:''}
-          ${c.anniversary?`<div style="font-size:12px;color:var(--text3);">🎉 ${c.anniversary.slice(5).replace('-','/')} ${c.anniversary_note||''}</div>`:''}
-          ${c.phone?`<div style="font-size:12px;color:var(--blue);">📞 ${c.phone}</div>`:''}
-        </div>
-        ${c.note?`<div style="font-size:12px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border);">${c.note}</div>`:''}
-      </div>`;
-    }).join('');
-  }catch(e){el.innerHTML='<div class="empty"><p>載入失敗</p></div>';}
+    renderContacts();
+  }catch(e){el.innerHTML='<div class="empty"><p>'+friendlyError(e)+'</p></div>';}
 }
+
+function setContactCat(cat,btn){
+  _contactCat=cat;
+  document.querySelectorAll('#pg-contacts .ftab').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  renderContacts();
+}
+
+function renderContacts(){
+  const el=document.getElementById('contacts-list');
+  const all=window._contacts||[];
+  if(!all.length){el.innerHTML='<div class="empty"><i class="ti ti-users" aria-hidden="true"></i><p>尚無聯絡人，點右上角新增</p></div>';return;}
+  const q=(document.getElementById('contact-search')?.value||'').toLowerCase().trim();
+  let contacts=all;
+  // 分類篩選
+  if(_contactCat==='pinned')contacts=contacts.filter(c=>c.is_pinned);
+  else if(_contactCat!=='all')contacts=contacts.filter(c=>(c.category||'other')===_contactCat);
+  // 搜尋
+  if(q)contacts=contacts.filter(c=>{
+    return (c.name||'').toLowerCase().includes(q)||
+      (c.phone||'').toLowerCase().includes(q)||
+      (c.email||'').toLowerCase().includes(q)||
+      (c.company||'').toLowerCase().includes(q)||
+      (c.line_id||'').toLowerCase().includes(q)||
+      (c.relation||'').toLowerCase().includes(q);
+  });
+  if(!contacts.length){el.innerHTML='<div class="empty"><p>沒有符合的聯絡人</p></div>';return;}
+  const today=new Date();
+  const soon=(dateStr)=>{
+    if(!dateStr)return null;
+    const md=dateStr.slice(5);
+    const thisYear=new Date(`${today.getFullYear()}-${md}`);
+    let diff=Math.ceil((thisYear-today)/(1000*60*60*24));
+    if(diff<0){const nextYear=new Date(`${today.getFullYear()+1}-${md}`);diff=Math.ceil((nextYear-today)/(1000*60*60*24));}
+    return diff;
+  };
+  el.innerHTML=contacts.map((c,i)=>{
+    const idx=all.indexOf(c); // 保留原始 index for edit
+    const cat=c.category||'other';
+    const catColor=CONTACT_CAT_COLOR[cat];
+    const catLabel=CONTACT_CAT_LABEL[cat];
+    const bdDiff=soon(c.birthday);
+    const annDiff=soon(c.anniversary);
+    const bdBadge=bdDiff!==null&&bdDiff<=7?`<span class="tag" style="background:rgba(232,112,112,.15);color:var(--red);">${bdDiff===0?'🎂 今天生日':`🎂 ${bdDiff}天後生日`}</span>`:'';
+    const annBadge=annDiff!==null&&annDiff<=7?`<span class="tag" style="background:rgba(212,170,106,.15);color:var(--gold);">${annDiff===0?`🎉 今天${c.anniversary_note||'紀念日'}`:`🎉 ${annDiff}天後${c.anniversary_note||'紀念日'}`}</span>`:'';
+    return`<div class="card" style="margin-bottom:10px;">
+      <div class="row-between" style="align-items:flex-start;">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+          <div style="width:44px;height:44px;border-radius:14px;background:#0a0a0a;border:1.5px solid ${catColor};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:${catColor};font-family:Georgia,serif;box-shadow:inset 0 0 12px ${catColor}33;flex-shrink:0;">${c.name[0]}</div>
+          <div style="min-width:0;flex:1;">
+            <div style="font-size:15px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              ${c.name}
+              ${c.is_pinned?'<i class="ti ti-pin-filled" style="color:var(--gold);font-size:13px;"></i>':''}
+              <span class="tag" style="background:${catColor}22;color:${catColor};">${catLabel}</span>
+            </div>
+            ${c.relation||c.title||c.company?`<div style="font-size:12px;color:var(--text3);margin-top:2px;">${[c.relation,c.title,c.company].filter(Boolean).join(' · ')}</div>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:2px;">
+          <button class="icon-btn" onclick="editContact(${idx})"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+          <button class="icon-btn" onclick="delContact('${c.id}')" style="color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      ${bdBadge||annBadge?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${bdBadge}${annBadge}</div>`:''}
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">
+        ${c.phone?`<a href="tel:${c.phone}" style="text-decoration:none;font-size:13px;padding:6px 12px;background:rgba(107,158,240,0.12);color:var(--blue);border-radius:10px;display:inline-flex;align-items:center;gap:4px;"><i class="ti ti-phone"></i>${c.phone}</a>`:''}
+        ${c.email?`<a href="mailto:${c.email}" style="text-decoration:none;font-size:13px;padding:6px 12px;background:rgba(232,137,74,0.12);color:var(--orange);border-radius:10px;display:inline-flex;align-items:center;gap:4px;"><i class="ti ti-mail"></i>${c.email}</a>`:''}
+        ${c.line_id?`<a href="https://line.me/ti/p/~${encodeURIComponent(c.line_id)}" target="_blank" style="text-decoration:none;font-size:13px;padding:6px 12px;background:rgba(93,189,138,0.12);color:var(--green);border-radius:10px;display:inline-flex;align-items:center;gap:4px;"><i class="ti ti-brand-line"></i>${c.line_id}</a>`:''}
+        ${c.address?`<a href="https://maps.google.com/?q=${encodeURIComponent(c.address)}" target="_blank" style="text-decoration:none;font-size:13px;padding:6px 12px;background:rgba(155,107,255,0.12);color:#9C6BFF;border-radius:10px;display:inline-flex;align-items:center;gap:4px;"><i class="ti ti-map-pin"></i>${c.address}</a>`:''}
+      </div>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--text3);">
+        ${c.birthday?`<div>🎂 ${c.birthday.slice(5).replace('-','/')}</div>`:''}
+        ${c.anniversary?`<div>🎉 ${c.anniversary.slice(5).replace('-','/')} ${c.anniversary_note||''}</div>`:''}
+      </div>
+      ${c.note?`<div style="font-size:13px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">${c.note}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
 function openAddContact(){
   document.getElementById('sh-contact-title').textContent='新增聯絡人';
   document.getElementById('contact-id').value='';
-  ['contact-name','contact-relation','contact-phone','contact-anniversary-note','contact-note'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('contact-birthday').value='';
-  document.getElementById('contact-anniversary').value='';
+  ['contact-name','contact-relation','contact-phone','contact-email','contact-lineid','contact-address','contact-company','contact-title','contact-anniversary-note','contact-note','contact-birthday','contact-anniversary'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('contact-category').value='other';
+  document.getElementById('contact-pinned').checked=false;
   openSheet('sh-contact');
 }
-function editContact(idx){
-  const c=window._contacts?.[idx];if(!c)return;
+
+function editContact(i){
+  const c=window._contacts[i];if(!c)return;
   document.getElementById('sh-contact-title').textContent='編輯聯絡人';
   document.getElementById('contact-id').value=c.id;
   document.getElementById('contact-name').value=c.name||'';
   document.getElementById('contact-relation').value=c.relation||'';
+  document.getElementById('contact-phone').value=c.phone||'';
+  document.getElementById('contact-email').value=c.email||'';
+  document.getElementById('contact-lineid').value=c.line_id||'';
+  document.getElementById('contact-address').value=c.address||'';
+  document.getElementById('contact-company').value=c.company||'';
+  document.getElementById('contact-title').value=c.title||'';
   document.getElementById('contact-birthday').value=c.birthday||'';
   document.getElementById('contact-anniversary').value=c.anniversary||'';
   document.getElementById('contact-anniversary-note').value=c.anniversary_note||'';
-  document.getElementById('contact-phone').value=c.phone||'';
   document.getElementById('contact-note').value=c.note||'';
+  document.getElementById('contact-category').value=c.category||'other';
+  document.getElementById('contact-pinned').checked=!!c.is_pinned;
   openSheet('sh-contact');
 }
+
 async function saveContact(){
   const id=document.getElementById('contact-id').value;
-  const name=document.getElementById('contact-name').value.trim();
-  if(!name){toast('請填寫姓名','err');return;}
   const body={
-    user_id:prof.id,name,
+    name:document.getElementById('contact-name').value.trim(),
     relation:document.getElementById('contact-relation').value.trim()||null,
+    phone:document.getElementById('contact-phone').value.trim()||null,
+    email:document.getElementById('contact-email').value.trim()||null,
+    line_id:document.getElementById('contact-lineid').value.trim()||null,
+    address:document.getElementById('contact-address').value.trim()||null,
+    company:document.getElementById('contact-company').value.trim()||null,
+    title:document.getElementById('contact-title').value.trim()||null,
     birthday:document.getElementById('contact-birthday').value||null,
     anniversary:document.getElementById('contact-anniversary').value||null,
     anniversary_note:document.getElementById('contact-anniversary-note').value.trim()||null,
-    phone:document.getElementById('contact-phone').value.trim()||null,
-    note:document.getElementById('contact-note').value.trim()||null
+    note:document.getElementById('contact-note').value.trim()||null,
+    category:document.getElementById('contact-category').value||'other',
+    is_pinned:document.getElementById('contact-pinned').checked
   };
+  if(!body.name){toast('請填寫姓名','err');return;}
   try{
-    if(id)await sb(`/rest/v1/contacts?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
-    else await sb('/rest/v1/contacts',{method:'POST',body:JSON.stringify(body)});
+    if(id){
+      await sb(`/rest/v1/contacts?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    } else {
+      body.user_id=prof.id;
+      await sb('/rest/v1/contacts',{method:'POST',body:JSON.stringify(body)});
+    }
     closeSheet('sh-contact');toast('已儲存');loadContacts();
   }catch(e){toast(friendlyError(e),'err');}
 }
-async function delContact(id){
-  if(!await customConfirm('確定刪除此聯絡人？','確認刪除','刪除',true))return;
+async function delContact(id){if(!await customConfirm('確定刪除此聯絡人？','確認刪除','刪除',true))return;
   try{await sb(`/rest/v1/contacts?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadContacts();}catch(e){}
 }
 // ─── END CONTACTS ─────────────────────────────────────────────
