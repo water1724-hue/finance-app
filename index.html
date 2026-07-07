@@ -6713,7 +6713,7 @@ async function loadPeriodPage(){
   const listEl=document.getElementById('period-history-list');
   statusEl.innerHTML='<div style="color:var(--text3);font-size:13px;">載入中...</div>';
   try{
-    const logs=await sb(`/rest/v1/period_logs?user_id=eq.${prof.id}&order=start_date.desc&limit=24`,{});
+    const logs=await sb(`/rest/v1/period_logs?user_id=eq.${getViewAsId()}&order=start_date.desc&limit=24`,{});
     window._periodLogs=logs;
     renderPeriodStatus(logs);
     renderPeriodHistory(logs);
@@ -6840,7 +6840,7 @@ async function savePeriod(){
     if(id){
       await sb(`/rest/v1/period_logs?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
     } else {
-      body.user_id=prof.id;
+      body.user_id=getViewAsId();
       await sb('/rest/v1/period_logs',{method:'POST',body:JSON.stringify(body)});
     }
     closeSheet('sh-period');toast('已儲存');loadPeriodPage();
@@ -8709,7 +8709,7 @@ async function loadHomeTide(){
   const el=document.getElementById('h-tide-widget');
   if(!el)return;
   try{
-    const logs=await sb(`/rest/v1/period_logs?user_id=eq.${prof.id}&order=start_date.desc&limit=6`,{});
+    const logs=await sb(`/rest/v1/period_logs?user_id=eq.${getViewAsId()}&order=start_date.desc&limit=6`,{});
     if(!logs.length){
       el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚無紀錄</div>';
       return;
