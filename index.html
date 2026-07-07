@@ -247,6 +247,9 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 
 .card{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.period-symptom-chip{cursor:pointer;}
+.period-symptom-chip span{display:inline-block;padding:7px 14px;border-radius:16px;font-size:13px;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);transition:all .15s;}
+.period-symptom-chip input:checked + span{background:rgba(232,112,157,0.15);border-color:#E8709D;color:#E8709D;font-weight:600;}
 /* 科幻環 — 未來模式專用 */
 @keyframes scifi-ring{
   0%{transform:rotate(0deg);opacity:1;}
@@ -702,6 +705,12 @@ select.inp option{background:var(--bg2);}
       <div class="card" id="hw-docs" style="display:none;margin-bottom:12px;">
         <div class="sec-label" style="margin-bottom:8px;">文件到期</div>
         <div id="h-docs-widget"></div>
+      </div>
+
+      <!-- 身體的潮汐（生理期委婉提醒） -->
+      <div class="card" id="hw-tide" style="display:none;margin-bottom:12px;cursor:pointer;" onclick="goPage('period')">
+        <div class="sec-label" style="margin-bottom:8px;">身體的潮汐</div>
+        <div id="h-tide-widget"></div>
       </div>
 
       <!-- 信用卡帳單 -->
@@ -1177,6 +1186,23 @@ select.inp option{background:var(--bg2);}
         <div class="card" style="margin-bottom:12px;"><canvas id="med-body-chart" height="160"></canvas></div>
         <div class="card"><div id="med-body-list"></div></div>
       </div>
+    </div>
+
+    <!-- PERIOD TRACKER -->
+    <div class="page" id="pg-period">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">生理期記錄</div>
+        <button class="btn btn-gold btn-sm" onclick="doBtnAction(event,openAddPeriod)"><i class="ti ti-plus" aria-hidden="true"></i> 記錄</button>
+      </div>
+
+      <!-- 狀態卡 -->
+      <div class="card" id="period-status-card" style="background:linear-gradient(135deg,rgba(232,112,157,0.12),rgba(232,112,157,0.04));border:1px solid rgba(232,112,157,0.3);margin-bottom:14px;">
+        <div id="period-status-content"></div>
+      </div>
+
+      <div class="sec-label">週期歷史</div>
+      <div class="card"><div id="period-history-list"></div></div>
     </div>
 
     <!-- VEHICLE -->
@@ -2025,6 +2051,43 @@ select.inp option{background:var(--bg2);}
   </div>
 </div>
 
+<!-- Period Log -->
+<div class="overlay" id="sh-period">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-period-title">記錄經期</h3>
+    <input type="hidden" id="period-id">
+    <div style="display:flex;gap:8px;">
+      <div class="field" style="flex:1;"><label>開始日期 <span style="color:var(--red);">*</span></label><input class="inp" type="date" id="period-start"></div>
+      <div class="field" style="flex:1;"><label>結束日期</label><input class="inp" type="date" id="period-end" placeholder="尚未結束可留空"></div>
+    </div>
+    <div class="field">
+      <label>流量</label>
+      <select class="inp" id="period-flow">
+        <option value="light">少量</option>
+        <option value="medium" selected>中等</option>
+        <option value="heavy">大量</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>症狀（可複選）</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
+        <label class="period-symptom-chip"><input type="checkbox" value="經痛" style="display:none;"><span>經痛</span></label>
+        <label class="period-symptom-chip"><input type="checkbox" value="情緒波動" style="display:none;"><span>情緒波動</span></label>
+        <label class="period-symptom-chip"><input type="checkbox" value="頭痛" style="display:none;"><span>頭痛</span></label>
+        <label class="period-symptom-chip"><input type="checkbox" value="腰痠" style="display:none;"><span>腰痠</span></label>
+        <label class="period-symptom-chip"><input type="checkbox" value="疲勞" style="display:none;"><span>疲勞</span></label>
+        <label class="period-symptom-chip"><input type="checkbox" value="水腫" style="display:none;"><span>水腫</span></label>
+      </div>
+    </div>
+    <div class="field"><label>備註</label><textarea class="inp" id="period-note" rows="2" placeholder="選填"></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-period')">取消</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,savePeriod)">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- Contact -->
 <div class="overlay" id="sh-contact">
   <div class="sheet">
@@ -2630,6 +2693,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">醫療記錄</div><div class="mi-sub">用藥管理、回診提醒、身體數據</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="goPage('period')">
+        <div class="mi-icon" style="background:rgba(232,112,157,.1)"><i class="ti ti-droplet-half-2" style="color:#E8709D" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">生理期記錄</div><div class="mi-sub">週期追蹤、症狀記錄、預測提醒</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="goPage('vehicle')">
         <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-car" style="color:var(--blue)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">車輛管理</div><div class="mi-sub">保養記錄、保險到期提醒</div></div>
@@ -2800,6 +2868,7 @@ function goPage(p){
   if(p==='contacts')loadContacts();
   if(p==='fxlog')loadFxLog();
   if(p==='medical')initMedical();
+  if(p==='period')loadPeriodPage();
   if(p==='vehicle')loadVehicles();
   if(p==='vehicle-det')loadVehicleDetail();
   if(p==='search')initSearch();
@@ -3002,6 +3071,7 @@ async function loadHome(){
   if(w.medical)loadHomeMedical();
   if(w.vehicle)loadHomeVehicle();
   if(w.docs)loadHomeDocs();
+  if(w.tide)loadHomeTide();
   // 最後套版面（顯示+排序+半寬）
   applyHomeLayout();
 }
@@ -5253,7 +5323,8 @@ const HW_META={
   birthday:  {name:'生日/紀念日',sub:'近期生日提醒',    group:'生活', defaultOn:false},
   medical:   {name:'回診提醒',  sub:'近期回診日期',     group:'生活', defaultOn:false},
   vehicle:   {name:'車輛保養',  sub:'保養/保險到期',    group:'生活', defaultOn:false},
-  docs:      {name:'文件到期',  sub:'即將到期文件',     group:'生活', defaultOn:false}
+  docs:      {name:'文件到期',  sub:'即將到期文件',     group:'生活', defaultOn:false},
+  tide:      {name:'身體的潮汐',sub:'私人週期提醒',     group:'生活', defaultOn:false}
 };
 const HW_DEFAULTS=Object.fromEntries(Object.entries(HW_META).map(([k,v])=>[k,v.defaultOn]));
 const HW_DEFAULT_ORDER=Object.keys(HW_META);
@@ -5494,6 +5565,7 @@ function saveHomeSettings(){
   if(w.medical)loadHomeMedical();
   if(w.vehicle)loadHomeVehicle();
   if(w.docs)loadHomeDocs();
+  if(w.tide)loadHomeTide();
   if(w.habits)loadHomeHabits();
 }
 // ─── END 首頁小工具自訂 ───────────────────────────────────────
@@ -6633,6 +6705,154 @@ async function delBody(id){
   if(!await customConfirm('確定刪除此記錄？','確認刪除','刪除',true))return;
   try{await sb(`/rest/v1/medical_body?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadBody();}catch(e){toast(friendlyError(e),'err');}
 }
+// ─── PERIOD TRACKER（生理期記錄） ───────────────────────────────
+const PERIOD_FLOW_LABEL={light:'少量',medium:'中等',heavy:'大量'};
+
+async function loadPeriodPage(){
+  const statusEl=document.getElementById('period-status-content');
+  const listEl=document.getElementById('period-history-list');
+  statusEl.innerHTML='<div style="color:var(--text3);font-size:13px;">載入中...</div>';
+  try{
+    const logs=await sb(`/rest/v1/period_logs?user_id=eq.${prof.id}&order=start_date.desc&limit=24`,{});
+    window._periodLogs=logs;
+    renderPeriodStatus(logs);
+    renderPeriodHistory(logs);
+  }catch(e){
+    statusEl.innerHTML='<div style="color:var(--text3);font-size:13px;">'+friendlyError(e)+'</div>';
+  }
+}
+
+function renderPeriodStatus(logs){
+  const el=document.getElementById('period-status-content');
+  if(!logs.length){
+    el.innerHTML=`<div style="text-align:center;padding:8px 0;">
+      <i class="ti ti-droplet-half-2" style="font-size:32px;color:#E8709D;" aria-hidden="true"></i>
+      <div style="font-size:14px;color:var(--text2);margin-top:8px;">尚無記錄，點右上角開始記錄</div>
+    </div>`;
+    return;
+  }
+  const today=new Date();today.setHours(0,0,0,0);
+  const latest=logs[0];
+  const startD=new Date(latest.start_date);
+  const endD=latest.end_date?new Date(latest.end_date):null;
+  const isOngoing=!endD && (today-startD)/86400000 < 10; // 保守判斷：10天內沒填結束都算進行中
+
+  // 計算平均週期長度（用開始日期間隔）
+  let avgCycle=28;
+  if(logs.length>=2){
+    const diffs=[];
+    for(let i=0;i<logs.length-1;i++){
+      const d1=new Date(logs[i].start_date);
+      const d2=new Date(logs[i+1].start_date);
+      const diff=Math.round((d1-d2)/86400000);
+      if(diff>10&&diff<60)diffs.push(diff);
+    }
+    if(diffs.length)avgCycle=Math.round(diffs.reduce((a,b)=>a+b,0)/diffs.length);
+  }
+
+  if(isOngoing){
+    const dayNum=Math.floor((today-startD)/86400000)+1;
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:52px;height:52px;border-radius:16px;background:#E8709D;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 16px rgba(232,112,157,0.3);">
+        <i class="ti ti-droplet-half-2" style="font-size:26px;color:#fff;" aria-hidden="true"></i>
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#E8709D;">經期進行中</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">第 ${dayNum} 天 · ${PERIOD_FLOW_LABEL[latest.flow]||'中等'}流量</div>
+      </div>
+    </div>`;
+  } else {
+    const nextStart=new Date(startD);nextStart.setDate(nextStart.getDate()+avgCycle);
+    const diffDays=Math.ceil((nextStart-today)/86400000);
+    let statusText,statusColor;
+    if(diffDays<=0){statusText='已超過預測日期，請留意';statusColor='var(--orange)';}
+    else if(diffDays<=3){statusText=`預計 ${diffDays} 天後來潮`;statusColor='#E8709D';}
+    else{statusText=`預計 ${diffDays} 天後來潮`;statusColor='var(--text2)';}
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:52px;height:52px;border-radius:16px;background:rgba(232,112,157,0.12);border:1px solid rgba(232,112,157,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="ti ti-calendar-event" style="font-size:24px;color:#E8709D;" aria-hidden="true"></i>
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:${statusColor};">${statusText}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">平均週期 ${avgCycle} 天 · 預計 ${nextStart.toISOString().slice(0,10).replace(/-/g,'/')}</div>
+      </div>
+    </div>`;
+  }
+}
+
+function renderPeriodHistory(logs){
+  const el=document.getElementById('period-history-list');
+  if(!logs.length){el.innerHTML='<div class="empty"><p>尚無週期紀錄</p></div>';return;}
+  el.innerHTML=logs.map((l,i)=>{
+    const days=l.end_date?Math.round((new Date(l.end_date)-new Date(l.start_date))/86400000)+1:null;
+    const symptoms=(l.symptoms||[]).join('、');
+    return`<div class="list-row">
+      <div class="list-icon" style="background:rgba(232,112,157,0.12);color:#E8709D;"><i class="ti ti-droplet-half-2" aria-hidden="true"></i></div>
+      <div class="list-info">
+        <div class="list-title">${l.start_date.replace(/-/g,'/')}${l.end_date?' - '+l.end_date.slice(5).replace('-','/'):' (進行中)'}</div>
+        <div class="list-sub">${days?`共 ${days} 天 · `:''}${PERIOD_FLOW_LABEL[l.flow]||'中等'}流量${symptoms?' · '+symptoms:''}</div>
+      </div>
+      <div style="display:flex;gap:2px;">
+        <button class="icon-btn" onclick="editPeriod(${i})"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+        <button class="icon-btn" onclick="delPeriod('${l.id}')" style="color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddPeriod(){
+  document.getElementById('sh-period-title').textContent='記錄經期';
+  document.getElementById('period-id').value='';
+  document.getElementById('period-start').value=new Date().toISOString().slice(0,10);
+  document.getElementById('period-end').value='';
+  document.getElementById('period-flow').value='medium';
+  document.getElementById('period-note').value='';
+  document.querySelectorAll('#sh-period .period-symptom-chip input').forEach(cb=>cb.checked=false);
+  openSheet('sh-period');
+}
+
+function editPeriod(i){
+  const l=window._periodLogs[i];if(!l)return;
+  document.getElementById('sh-period-title').textContent='編輯經期記錄';
+  document.getElementById('period-id').value=l.id;
+  document.getElementById('period-start').value=l.start_date;
+  document.getElementById('period-end').value=l.end_date||'';
+  document.getElementById('period-flow').value=l.flow||'medium';
+  document.getElementById('period-note').value=l.note||'';
+  const symptomSet=new Set(l.symptoms||[]);
+  document.querySelectorAll('#sh-period .period-symptom-chip input').forEach(cb=>{cb.checked=symptomSet.has(cb.value);});
+  openSheet('sh-period');
+}
+
+async function savePeriod(){
+  const id=document.getElementById('period-id').value;
+  const start=document.getElementById('period-start').value;
+  if(!start){toast('請填寫開始日期','err');return;}
+  const symptoms=Array.from(document.querySelectorAll('#sh-period .period-symptom-chip input:checked')).map(cb=>cb.value);
+  const body={
+    start_date:start,
+    end_date:document.getElementById('period-end').value||null,
+    flow:document.getElementById('period-flow').value,
+    symptoms,
+    note:document.getElementById('period-note').value.trim()||null
+  };
+  try{
+    if(id){
+      await sb(`/rest/v1/period_logs?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    } else {
+      body.user_id=prof.id;
+      await sb('/rest/v1/period_logs',{method:'POST',body:JSON.stringify(body)});
+    }
+    closeSheet('sh-period');toast('已儲存');loadPeriodPage();
+  }catch(e){toast(friendlyError(e),'err');}
+}
+
+async function delPeriod(id){
+  if(!await customConfirm('確定刪除此筆記錄？','確認刪除','刪除',true))return;
+  try{await sb(`/rest/v1/period_logs?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadPeriodPage();}catch(e){}
+}
+// ─── END PERIOD TRACKER ─────────────────────────────────────────
+
 // ─── VEHICLE（車輛管理） ───────────────────────────────────────
 let currentVehicleId=null;
 let currentVehicleTab='all';
@@ -8483,6 +8703,60 @@ function getChartColors(){
   };
 }
 // ─── END Chart.js 主題色彩 ──────────────────────────
+
+// ─── PERIOD TRACKER（生理期記錄） ───────────────────────────────
+async function loadHomeTide(){
+  const el=document.getElementById('h-tide-widget');
+  if(!el)return;
+  try{
+    const logs=await sb(`/rest/v1/period_logs?user_id=eq.${prof.id}&order=start_date.desc&limit=6`,{});
+    if(!logs.length){
+      el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚無紀錄</div>';
+      return;
+    }
+    const today=new Date();today.setHours(0,0,0,0);
+    const latest=logs[0];
+    const startD=new Date(latest.start_date);
+    const isOngoing=!latest.end_date && (today-startD)/86400000 < 10;
+
+    let avgCycle=28;
+    if(logs.length>=2){
+      const diffs=[];
+      for(let i=0;i<logs.length-1;i++){
+        const diff=Math.round((new Date(logs[i].start_date)-new Date(logs[i+1].start_date))/86400000);
+        if(diff>10&&diff<60)diffs.push(diff);
+      }
+      if(diffs.length)avgCycle=Math.round(diffs.reduce((a,b)=>a+b,0)/diffs.length);
+    }
+
+    if(isOngoing){
+      const dayNum=Math.floor((today-startD)/86400000)+1;
+      el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:11px;background:#E8709D;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="ti ti-moon" style="font-size:17px;color:#fff;" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#E8709D;">潮汐進行中</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">第 ${dayNum} 天</div>
+        </div>
+      </div>`;
+    } else {
+      const nextStart=new Date(startD);nextStart.setDate(nextStart.getDate()+avgCycle);
+      const diffDays=Math.ceil((nextStart-today)/86400000);
+      const text=diffDays<=0?'請留意近期變化':`預計 ${diffDays} 天後`;
+      el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:11px;background:rgba(232,112,157,0.12);border:1px solid rgba(232,112,157,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="ti ti-moon" style="font-size:16px;color:#E8709D;" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text2);">${text}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">個人週期提醒</div>
+        </div>
+      </div>`;
+    }
+  }catch(e){el.innerHTML='';}
+}
+// ─── END PERIOD TRACKER（首頁小工具）───────────────────────────
 
 // ─── HERO 主視覺卡 ───────────────────────────────────
 async function loadHero(){
