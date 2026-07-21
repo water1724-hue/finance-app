@@ -495,7 +495,8 @@ select.inp option{background:var(--bg2);}
 .cal-d.today{background:var(--gold-dim);color:var(--gold);font-weight:700;border:0.5px solid var(--gold-border);}
 .cal-d.sel:not(.today){background:var(--bg4);color:var(--text);font-weight:600;}
 .cal-d.other{opacity:.3;}
-.cal-d .evdot{position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:var(--gold);}
+.cal-d .evdot-wrap{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);display:flex;gap:2px;}
+.cal-d .evdot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
 
 /* CHAT */
 .chat-wrap{position:absolute;inset:0;display:flex;flex-direction:column;}
@@ -2960,7 +2961,7 @@ async function loadHome(){
   try{
     const [todos,events,announces,memos]=await Promise.all([
       (async()=>{const t1=await sb(`/rest/v1/todos?user_id=eq.${getViewAsId()}&completed=eq.false`,{});const t2=await sb(`/rest/v1/todos?assigned_to=eq.${getViewAsId()}&completed=eq.false`,{});const seen=new Set(t1.map(t=>t.id));return [...t1,...t2.filter(t=>!seen.has(t.id))];})(),
-      sb(`/rest/v1/events?start_date=eq.${today}&user_id=eq.${getViewAsId()}&order=start_time.asc`,{}),
+      sb(`/rest/v1/events?start_date=eq.${today}&or=(user_id.eq.${getViewAsId()},is_shared.eq.true)&order=start_time.asc`,{}),
       sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{}),
       sb('/rest/v1/memos?order=created_at.desc&limit=3',{})
     ]);
@@ -3004,16 +3005,25 @@ async function loadHome(){
     const evEl=document.getElementById('h-events');
     if(!events.length){evEl.innerHTML='<div class="empty"><div class="empty-icon-wrap"><i class="ti ti-calendar" aria-hidden="true"></i></div><p>今日無行程</p></div>';}
     else{
-      evEl.innerHTML='<div class="tl-wrap"><div class="tl-vline"></div>'+events.map(e=>`
+      if(!allUsers.length)await loadAllUsers();
+      evEl.innerHTML='<div class="tl-wrap"><div class="tl-vline"></div>'+events.map(e=>{
+        const ownerColor=getUserColor(e.user_id);
+        const ownerName=getUserName(e.user_id);
+        const isMe=e.user_id===prof.id;
+        return`
         <div class="tl-item">
-          <div class="tl-dot" style="background:${e.color||'var(--gold)'}"></div>
+          <div class="tl-dot" style="background:${ownerColor}"></div>
           <div class="tl-time">${e.start_time?e.start_time.slice(0,5):'全天'}</div>
-          <div class="tl-card">
+          <div class="tl-card" style="border-left:3px solid ${ownerColor};">
             <div class="tl-title">${e.title}</div>
             ${e.description?`<div class="tl-desc">${e.description}</div>`:''}
-            <div style="margin-top:4px;">${e.is_shared?'<span class="tag tag-blue">共用</span>':'<span class="tag tag-gold">個人</span>'}</div>
+            <div style="margin-top:4px;display:flex;gap:6px;">
+              <span class="tag" style="background:${ownerColor}22;color:${ownerColor};">${isMe?'我':ownerName}</span>
+              ${e.is_shared?'<span class="tag tag-blue">共用</span>':''}
+            </div>
           </div>
-        </div>`).join('')+'</div>';
+        </div>`;
+      }).join('')+'</div>';
     }
     // Announce
     const anEl=document.getElementById('h-announce');
@@ -4268,8 +4278,21 @@ async function renderCal(){
   const ms=`${calY}-${String(calM+1).padStart(2,'0')}`;
   try{
     const lastDay=new Date(calY,calM+1,0).getDate();
-    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-${String(lastDay).padStart(2,'0')}&user_id=eq.${getViewAsId()}&order=start_time.asc`,{});
-    calEvents.forEach(e=>{const el=document.getElementById(`cd-${e.start_date}`);if(el&&!el.querySelector('.evdot'))el.insertAdjacentHTML('beforeend',`<span class="evdot" style="background:${e.is_shared?'var(--blue)':'var(--gold)'}"></span>`);});
+    calEvents=await sb(`/rest/v1/events?start_date=gte.${ms}-01&start_date=lte.${ms}-${String(lastDay).padStart(2,'0')}&or=(user_id.eq.${getViewAsId()},is_shared.eq.true)&order=start_time.asc`,{});
+    if(!allUsers.length)await loadAllUsers();
+    // 依日期分組，取當天不同成員的顏色（最多顯示3個點）
+    const byDate={};
+    calEvents.forEach(e=>{
+      if(!byDate[e.start_date])byDate[e.start_date]=new Set();
+      byDate[e.start_date].add(e.user_id);
+    });
+    Object.entries(byDate).forEach(([date,userIds])=>{
+      const el=document.getElementById(`cd-${date}`);
+      if(!el||el.querySelector('.evdot'))return;
+      const colors=Array.from(userIds).slice(0,3).map(uid=>getUserColor(uid));
+      const dotsHtml=colors.map(c=>`<span class="evdot" style="background:${c}"></span>`).join('');
+      el.insertAdjacentHTML('beforeend',`<span class="evdot-wrap">${dotsHtml}</span>`);
+    });
     showCalDay();
   }catch(er){console.error('Calendar error:', er);}
 }
@@ -4284,23 +4307,29 @@ function showCalDay(){
   if(evFilter==='shared')evs=evs.filter(e=>e.is_shared);
   const el=document.getElementById('cal-ev-list');
   if(!evs.length){el.innerHTML='<div class="empty"><div class="empty-icon-wrap"><i class="ti ti-calendar-off" aria-hidden="true"></i></div><p>這天沒有行程</p></div>';return;}
-  el.innerHTML='<div class="tl-wrap"><div class="tl-vline"></div>'+evs.map((e,i)=>`
+  el.innerHTML='<div class="tl-wrap"><div class="tl-vline"></div>'+evs.map((e,i)=>{
+    const ownerColor=getUserColor(e.user_id);
+    const ownerName=getUserName(e.user_id);
+    const isMe=e.user_id===prof.id;
+    return`
     <div class="tl-item" style="align-items:flex-start;">
-      <div class="tl-dot" style="background:${e.color||'var(--gold)'}"></div>
+      <div class="tl-dot" style="background:${ownerColor}"></div>
       <div class="tl-time">${e.start_time?e.start_time.slice(0,5):'全天'}</div>
-      <div class="tl-card" style="flex:1;">
+      <div class="tl-card" style="flex:1;border-left:3px solid ${ownerColor};">
         <div class="tl-title">${e.title}</div>
         ${e.description?`<div class="tl-desc">${e.description}</div>`:''}
         ${e.end_time?`<div class="tl-desc">結束 ${e.end_time.slice(0,5)}</div>`:''}
-        <div style="margin-top:6px;">
-          ${e.is_shared?'<span class="tag tag-blue">共用</span>':'<span class="tag tag-gold">個人</span>'}
+        <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span class="tag" style="background:${ownerColor}22;color:${ownerColor};">${isMe?'我':ownerName}</span>
+          ${e.is_shared?'<span class="tag tag-blue">共用</span>':''}
         </div>
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0;padding-top:4px;">
-        <button class="icon-btn" onclick="editCalEvent(${i})"><i class="ti ti-pencil" aria-hidden="true"></i></button>
-        <button class="icon-btn" onclick="delEvent('${e.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        ${isMe?`<button class="icon-btn" onclick="editCalEvent(${i})"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+        <button class="icon-btn" onclick="delEvent('${e.id}')"><i class="ti ti-trash" aria-hidden="true"></i></button>`:''}
       </div>
-    </div>`).join('')+'</div>';
+    </div>`;
+  }).join('')+'</div>';
 }
 function editCalEvent(idx){
   const e=window._calEventsData?.[idx];
@@ -8599,6 +8628,17 @@ const AVATAR_COLORS={
   orange:{color:'#E8894A',shadow:'rgba(232,137,74,0.3)'},
   red:   {color:'#E87070',shadow:'rgba(232,112,112,0.3)'}
 };
+
+// 依 user_id 取得該成員的代表色（跟頭像顏色系統共用）
+function getUserColor(userId){
+  const u=allUsers.find(x=>x.id===userId);
+  const key=u?.avatar_color||'gold';
+  return (AVATAR_COLORS[key]||AVATAR_COLORS.gold).color;
+}
+function getUserName(userId){
+  const u=allUsers.find(x=>x.id===userId);
+  return u?(u.display_name||u.username):'未知';
+}
 
 function getAvatarChar(name){
   if(!name)return '?';
