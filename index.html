@@ -247,6 +247,39 @@ body{font-family:'DM Sans','Noto Sans TC',sans-serif;background:var(--bg);color:
 
 .card{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:12px;}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* 應用內提醒卡片 */
+.in-app-reminder{position:fixed;top:12px;left:12px;right:12px;max-width:420px;margin:0 auto;background:var(--bg3);border:1px solid var(--gold-border);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,0.25);opacity:0;transform:translateY(-20px);transition:all .3s ease;cursor:pointer;}
+.in-app-reminder.on{opacity:1;transform:translateY(0);}
+.in-app-reminder-icon{width:38px;height:38px;border-radius:11px;background:var(--gold-dim);color:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;}
+.in-app-reminder-body{flex:1;min-width:0;}
+.in-app-reminder-title{font-size:14px;font-weight:600;color:var(--text);}
+.in-app-reminder-sub{font-size:12px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.in-app-reminder-close{background:none;border:none;color:var(--text3);cursor:pointer;padding:6px;flex-shrink:0;}
+body.future-mode .in-app-reminder{background:linear-gradient(135deg,rgba(20,28,60,0.95),rgba(15,21,49,0.95));border:1px solid rgba(255,213,128,0.4);box-shadow:0 0 24px rgba(255,213,128,0.2);backdrop-filter:blur(10px);}
+
+.quick-merchant-chip{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;background:var(--bg4);border:1px solid var(--border2);border-radius:14px;cursor:pointer;min-width:64px;transition:all .15s;}
+.quick-merchant-chip:active{transform:scale(0.96);background:var(--gold-dim);}
+.quick-merchant-chip .qm-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;}
+.quick-merchant-chip .qm-amt{font-size:11px;color:var(--gold);font-weight:600;}
+
+.pin-dot{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);transition:all .15s;}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold);}
+.pin-dot.shake{animation:pin-shake .4s;}
+@keyframes pin-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.pin-key{aspect-ratio:1;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);font-size:22px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;}
+.pin-key:active{background:var(--gold-dim);transform:scale(0.94);}
+
+/* Wrapped 年度回顧 */
+.wrapped-hero{background:linear-gradient(135deg,var(--gold),#9C6BFF);color:#fff;border-radius:20px;padding:28px 22px;margin-bottom:16px;text-align:center;box-shadow:0 8px 24px rgba(184,137,42,0.25);}
+.wrapped-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.wrapped-stat-card{background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:16px;}
+.wrapped-stat-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px;}
+.wrapped-stat-val{font-size:19px;font-weight:700;color:var(--text);}
+.wrapped-stat-lbl{font-size:12px;color:var(--text3);margin-top:2px;}
+.wrapped-highlight-list{display:flex;flex-direction:column;gap:12px;}
+.wrapped-highlight-row{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2);line-height:1.5;}
+.wrapped-highlight-row i{font-size:18px;margin-top:1px;flex-shrink:0;}
 .period-symptom-chip{cursor:pointer;}
 .period-symptom-chip span{display:inline-block;padding:7px 14px;border-radius:16px;font-size:13px;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);transition:all .15s;}
 .period-symptom-chip input:checked + span{background:rgba(232,112,157,0.15);border-color:#E8709D;color:#E8709D;font-weight:600;}
@@ -384,6 +417,23 @@ body.light-mode #toast{background:#2c2c2e;color:#fff;border:none;box-shadow:0 4p
 body.light-mode #confirm-dialog>div{background:#fff;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
 body.light-mode .empty i{opacity:0.25;}
 body.light-mode ::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);}
+
+/* 深色模式細節優化 */
+body:not(.light-mode):not(.future-mode) .card{box-shadow:0 1px 2px rgba(0,0,0,0.15),0 4px 12px rgba(0,0,0,0.12);}
+body:not(.light-mode):not(.future-mode) .inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,170,106,0.12);}
+body:not(.light-mode):not(.future-mode) .bnav{background:rgba(28,28,30,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
+body:not(.light-mode):not(.future-mode) .sheet{box-shadow:0 -8px 40px rgba(0,0,0,0.4);}
+body:not(.light-mode):not(.future-mode) #hw-networth{box-shadow:0 4px 20px rgba(212,170,106,0.1);}
+body:not(.light-mode):not(.future-mode) .mi-icon,
+body:not(.light-mode):not(.future-mode) .list-icon{box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+body:not(.light-mode):not(.future-mode) .btn:active,
+body:not(.light-mode):not(.future-mode) .menu-item:active,
+body:not(.light-mode):not(.future-mode) .list-row:active{background:rgba(255,255,255,0.03);}
+body:not(.light-mode):not(.future-mode) .overlay{background:rgba(0,0,0,0.6);}
+body:not(.light-mode):not(.future-mode) #confirm-dialog>div{box-shadow:0 12px 40px rgba(0,0,0,0.5);}
+body:not(.light-mode):not(.future-mode) .empty i{opacity:0.7;}
+body:not(.light-mode):not(.future-mode) .stat-card{box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+body:not(.light-mode):not(.future-mode) ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);}
 .pg-title{font-size:22px;font-weight:700;margin-bottom:18px;letter-spacing:-0.3px;}
 .sec-label{font-size:12px;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
 .home-tab{font-size:14px;font-weight:600;color:var(--text3);cursor:pointer;padding-bottom:2px;border-bottom:2px solid transparent;transition:all .15s;}
@@ -912,6 +962,7 @@ select.inp option{background:var(--bg2);}
         <button class="ftab" onclick="setTodoFilter('i_assigned',this)">我指派的</button>
         <button class="ftab" onclick="setTodoFilter('done',this)">已完成</button>
       </div>
+      <div id="todo-tag-filters" style="display:none;margin-bottom:12px;"></div>
       <div class="card"><div id="todo-list"></div></div>
     </div>
 
@@ -1023,6 +1074,16 @@ select.inp option{background:var(--bg2);}
         <div class="sec-label">成員消費比較</div>
         <div id="rpt-members-summary"></div>
       </div>
+    </div>
+
+    <!-- WRAPPED（年度回顧） -->
+    <div class="page" id="pg-wrapped">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">年度回顧</div>
+        <select class="inp" id="wrapped-year" style="width:100px;padding:8px 12px;" onchange="loadWrapped()"></select>
+      </div>
+      <div id="wrapped-content"></div>
     </div>
 
     <!-- DOCS -->
@@ -1459,6 +1520,10 @@ select.inp option{background:var(--bg2);}
     <div class="sheet-handle"></div>
     <h3 id="sh-txn-title">新增記帳</h3>
     <input type="hidden" id="txn-id">
+    <div id="quick-merchant-row" style="display:none;margin-bottom:14px;">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">常用</div>
+      <div id="quick-merchant-chips" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;"></div>
+    </div>
     <div class="field"><label>帳戶</label><select class="inp" id="txn-account"></select></div>
     <div style="display:flex;gap:8px;margin-bottom:12px;">
       <button class="btn btn-ghost" id="txn-type-exp" onclick="setTxnType('expense')" style="flex:1;">支出</button>
@@ -1631,6 +1696,7 @@ select.inp option{background:var(--bg2);}
     <div class="field"><label>標題</label><input class="inp" type="text" id="todo-title" placeholder="待辦事項"></div>
     <div class="field"><label>截止日期</label><input class="inp" type="date" id="todo-due"></div>
     <div class="field"><label>備註</label><input class="inp" type="text" id="todo-note" placeholder="選填"></div>
+    <div class="field"><label>標籤</label><input class="inp" type="text" id="todo-tags" placeholder="用逗號分隔，例如：工作,緊急"></div>
     <div class="field"><label>優先度</label>
       <select class="inp" id="todo-pri">
         <option value="normal">一般</option>
@@ -1867,6 +1933,89 @@ select.inp option{background:var(--bg2);}
     </div>
     <div class="btn-row">
       <button class="btn btn-gold" style="width:100%;" onclick="closeSheet('sh-a11y')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 提醒設定 -->
+<div class="overlay" id="sh-reminder-settings">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>提醒設定</h3>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      App 開啟時會主動提示，關閉後不會收到通知。
+    </div>
+    <div class="card" style="padding:4px 0;margin-bottom:12px;">
+      <div style="padding:14px 16px;border-bottom:0.5px solid var(--border);">
+        <div style="font-size:15px;font-weight:500;margin-bottom:8px;">待辦／行程提前提醒</div>
+        <select class="inp" id="reminder-minutes-select" onchange="saveReminderMinutes()" style="padding:10px 12px;">
+          <option value="10">提前 10 分鐘</option>
+          <option value="30">提前 30 分鐘</option>
+          <option value="60">提前 1 小時</option>
+          <option value="180">提前 3 小時</option>
+          <option value="1440">提前 1 天</option>
+        </select>
+      </div>
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:14px 16px;border-bottom:0.5px solid var(--border);">
+        <div>
+          <div style="font-size:15px;font-weight:500;">習慣打卡提醒</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">每天固定時間提醒未完成的習慣</div>
+        </div>
+        <input type="checkbox" id="habit-reminder-toggle" onchange="toggleHabitReminder(this.checked)" style="width:22px;height:22px;accent-color:var(--gold);">
+      </label>
+      <div style="padding:14px 16px;" id="habit-reminder-time-field">
+        <div style="font-size:13px;color:var(--text3);margin-bottom:8px;">提醒時間</div>
+        <select class="inp" id="habit-reminder-hour" onchange="saveHabitReminderHour()" style="padding:10px 12px;">
+          ${Array.from({length:24},(_,h)=>`<option value="${h}">${String(h).padStart(2,'0')}:00</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      💡 若想關閉分頁也能收到通知，可以額外開啟瀏覽器通知權限。
+    </div>
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:12px;" onclick="requestNotificationPermission()">
+      <i class="ti ti-bell" aria-hidden="true"></i> 開啟瀏覽器通知權限
+    </button>
+    <div class="btn-row">
+      <button class="btn btn-gold" style="width:100%;" onclick="closeSheet('sh-reminder-settings')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN 碼鎖設定 -->
+<div class="overlay" id="sh-pin-settings">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>PIN 碼鎖</h3>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6;" id="pin-settings-desc">
+      設定 4 位數 PIN 碼，重新開啟 App 時需要輸入才能進入。
+    </div>
+    <div id="pin-settings-body"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" style="width:100%;" onclick="closeSheet('sh-pin-settings')">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN 碼鎖畫面（App 啟動時顯示） -->
+<div class="overlay" id="pin-lock-screen" style="background:var(--bg);align-items:center;justify-content:center;z-index:5000;">
+  <div style="text-align:center;padding:20px;width:100%;max-width:340px;">
+    <div style="width:64px;height:64px;border-radius:18px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <i class="ti ti-lock" style="font-size:30px;color:var(--gold);" aria-hidden="true"></i>
+    </div>
+    <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;">輸入 PIN 碼</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:24px;" id="pin-lock-sub">請輸入 4 位數 PIN 碼解鎖</div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:28px;" id="pin-dots">
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:280px;margin:0 auto;">
+      ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" onclick="pinKeyPress('${n}')">${n}</button>`).join('')}
+      <div></div>
+      <button class="pin-key" onclick="pinKeyPress('0')">0</button>
+      <button class="pin-key" onclick="pinKeyPress('back')"><i class="ti ti-backspace" aria-hidden="true"></i></button>
+    </div>
+    <div style="margin-top:20px;">
+      <button class="btn btn-ghost" onclick="doLogout()" style="font-size:13px;">登出改用其他帳號</button>
     </div>
   </div>
 </div>
@@ -2513,6 +2662,8 @@ async function restoreSession(){
 function doLogout(){
   // 清除自動續期定時器
   if(window._tokenTimer){clearInterval(window._tokenTimer);window._tokenTimer=null;}
+  if(window._reminderTimer){clearInterval(window._reminderTimer);window._reminderTimer=null;}
+  sessionStorage.removeItem('lifeos_pin_unlocked');
   // 清除所有快取資料
   Object.keys(sessionStorage).forEach(k=>{if(k.startsWith('cache_'))sessionStorage.removeItem(k);});
   localStorage.removeItem('lifeos_session');
@@ -2671,6 +2822,14 @@ function initApp(){
     if(me?.token)refreshTokenIfNeeded();
   },10*60*1000);
 
+  // 啟動應用內提醒檢查（每 60 秒檢查一次，App 開著時有效）
+  if(window._reminderTimer)clearInterval(window._reminderTimer);
+  checkInAppReminders(); // 進 App 先跑一次
+  window._reminderTimer=setInterval(checkInAppReminders,60*1000);
+
+  // 檢查 PIN 碼鎖
+  checkPinLockOnStart();
+
   const isAdmin=prof.role==='admin';
 
   // 動態注入更多頁選單
@@ -2681,6 +2840,11 @@ function initApp(){
       <div class="menu-item" onclick="goPage('report')">
         <div class="mi-icon" style="background:rgba(107,158,240,.1)"><i class="ti ti-chart-bar" style="color:var(--blue)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">月報表</div><div class="mi-sub">收支統計與趨勢分析</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="goPage('wrapped')">
+        <div class="mi-icon" style="background:linear-gradient(135deg,rgba(184,137,42,.15),rgba(155,107,255,.15))"><i class="ti ti-sparkles" style="color:var(--gold)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">年度回顧</div><div class="mi-sub">今年的生活與財務總結</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
       <div class="menu-item" onclick="goPage('recurring')">
@@ -2800,6 +2964,20 @@ function initApp(){
       </div>
     </div>
 
+    <div class="menu-sec-lbl">通知與安全</div>
+    <div class="card" style="padding:4px 16px;margin-bottom:16px;">
+      <div class="menu-item" onclick="openReminderSettings()">
+        <div class="mi-icon" style="background:rgba(232,137,74,.1)"><i class="ti ti-bell-ringing" style="color:var(--orange)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">提醒設定</div><div class="mi-sub">待辦、行程、習慣提醒</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="openPinSettings()">
+        <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-lock" style="color:var(--green)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">PIN 碼鎖</div><div class="mi-sub" id="pin-status-sub">未設定</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+    </div>
+
     <div class="menu-sec-lbl">資料</div>
     <div class="card" style="padding:4px 16px;margin-bottom:16px;">
       <div class="menu-item" onclick="exportBackup()">
@@ -2872,6 +3050,7 @@ function goPage(p){
   if(p==='todo')loadTodos();
   if(p==='announce')loadAnnouncements();
   if(p==='report')initReport();
+  if(p==='wrapped')initWrapped();
   if(p==='docs')loadDocs();
   if(p==='memo')loadMemos();
   if(p==='notify')loadNotifyCenter();
@@ -2919,6 +3098,10 @@ async function openSheet(id){
       document.getElementById('txn-date').value=new Date().toISOString().slice(0,10);
       document.getElementById('txn-amt').value='';
       document.getElementById('txn-note').value='';
+      loadQuickMerchants();
+    } else {
+      const row=document.getElementById('quick-merchant-row');
+      if(row)row.style.display='none';
     }
     await loadExpCatOptions();
   }
@@ -4211,6 +4394,49 @@ async function loadExpCatOptions(){
   });
   document.getElementById('txn-cat').innerHTML=opts;
 }
+// ─── 快速記帳（常用商家）───────────────────────────────────────
+async function loadQuickMerchants(){
+  const row=document.getElementById('quick-merchant-row');
+  const chipsEl=document.getElementById('quick-merchant-chips');
+  if(!row||!chipsEl)return;
+  try{
+    const merchants=await sb(`/rest/v1/quick_merchants?user_id=eq.${prof.id}&order=use_count.desc,last_used_at.desc&limit=8`,{});
+    if(!merchants.length){row.style.display='none';return;}
+    row.style.display='block';
+    chipsEl.innerHTML=merchants.map(m=>`
+      <div class="quick-merchant-chip" onclick="applyQuickMerchant('${m.id}','${(m.name||'').replace(/'/g,"\\'")}',${m.amount||0},'${m.category_id||''}','${m.account_id||''}')">
+        <div class="qm-name">${m.name}</div>
+        ${m.amount?`<div class="qm-amt">$${Math.round(m.amount).toLocaleString()}</div>`:''}
+      </div>`).join('');
+  }catch(e){row.style.display='none';}
+}
+
+function applyQuickMerchant(id,name,amount,categoryId,accountId){
+  document.getElementById('txn-note').value=name;
+  if(amount)document.getElementById('txn-amt').value=amount;
+  if(categoryId){const catSel=document.getElementById('txn-cat');if(catSel.querySelector(`option[value="${categoryId}"]`))catSel.value=categoryId;}
+  if(accountId){const accSel=document.getElementById('txn-account');if(accSel.querySelector(`option[value="${accountId}"]`))accSel.value=accountId;}
+  setTxnType('expense');
+}
+
+async function updateQuickMerchant(name,amount,categoryId,accountId){
+  try{
+    const existing=await sb(`/rest/v1/quick_merchants?user_id=eq.${prof.id}&name=eq.${encodeURIComponent(name)}`,{});
+    if(existing.length){
+      const m=existing[0];
+      await sb(`/rest/v1/quick_merchants?id=eq.${m.id}`,{method:'PATCH',body:JSON.stringify({
+        amount,category_id:categoryId,account_id:accountId,
+        use_count:(m.use_count||1)+1,last_used_at:new Date().toISOString()
+      })});
+    } else {
+      await sb('/rest/v1/quick_merchants',{method:'POST',body:JSON.stringify({
+        user_id:prof.id,name,amount,category_id:categoryId,account_id:accountId
+      })});
+    }
+  }catch(e){/* 靜默失敗 */}
+}
+// ─── END 快速記帳 ──────────────────────────────────────────────
+
 async function saveTxn(ev){const _btn=ev?.target;btnLoading(_btn,true);
   const id=document.getElementById('txn-id').value;
   const accId=document.getElementById('txn-account').value;
@@ -4241,6 +4467,10 @@ async function saveTxn(ev){const _btn=ev?.target;btnLoading(_btn,true);
     if(accs.length){
       const delta=txnType==='income'?amt:-amt;
       await sb(`/rest/v1/accounts?id=eq.${accId}`,{method:'PATCH',body:JSON.stringify({balance:Number(accs[0].balance)+delta})});
+    }
+    // 記錄常用商家（僅支出且有備註時）
+    if(!id&&txnType==='expense'&&body.note){
+      updateQuickMerchant(body.note,amt,body.category_id,accId);
     }
     closeSheet('sh-txn');
     document.getElementById('txn-id').value='';
@@ -4419,6 +4649,7 @@ async function saveEvent(ev){const _btn=ev?.target;btnLoading(_btn,true);
 async function delEvent(id){if(!await customConfirm('確定刪除？','確認刪除','刪除',true))return;try{await sb(`/rest/v1/events?id=eq.${id}`,{method:'DELETE'});logActivity('行程','刪除','');toast('已刪除');renderCal();}catch(e){}}
 
 // TODOS
+let todoTagFilter='';
 async function loadTodos(){
   try{
     let url=`/rest/v1/todos?order=completed.asc,priority.desc,created_at.desc`;
@@ -4428,7 +4659,22 @@ async function loadTodos(){
     else if(todoFilter==='done')url+=`&completed=eq.true&user_id=eq.${getViewAsId()}`;
     else url+=`&user_id=eq.${getViewAsId()}`;
     if(todoFilter!=='done')url+='&completed=eq.false';
-    const todos=await sb(url,{});
+    let todos=await sb(url,{});
+
+    // 收集所有標籤，渲染標籤篩選列
+    const allTags=new Set();
+    todos.forEach(t=>(t.tags||[]).forEach(tag=>allTags.add(tag)));
+    const tagFilterEl=document.getElementById('todo-tag-filters');
+    if(allTags.size){
+      tagFilterEl.style.display='flex';
+      tagFilterEl.style.cssText='display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;';
+      tagFilterEl.innerHTML=`<button class="ftab ${!todoTagFilter?'on':''}" style="flex-shrink:0;" onclick="setTodoTagFilter('')">全部標籤</button>`+
+        Array.from(allTags).map(tag=>`<button class="ftab ${todoTagFilter===tag?'on':''}" style="flex-shrink:0;" onclick="setTodoTagFilter('${tag.replace(/'/g,"\\'")}')">${tag}</button>`).join('');
+    } else {
+      tagFilterEl.style.display='none';
+    }
+    if(todoTagFilter)todos=todos.filter(t=>(t.tags||[]).includes(todoTagFilter));
+
     const el=document.getElementById('todo-list');
     if(!todos.length){el.innerHTML='<div class="empty"><div class="empty-icon-wrap"><i class="ti ti-checklist" aria-hidden="true"></i></div><p>沒有待辦事項</p></div>';return;}
     const priLabel={high:'高',normal:'一般',low:'低'};
@@ -4438,6 +4684,7 @@ async function loadTodos(){
     el.innerHTML=todos.map((t,i)=>{
       const assignee=allUsers.find(u=>u.id===t.assigned_to);
       const owner=allUsers.find(u=>u.id===t.user_id);
+      const tagChips=(t.tags||[]).map(tag=>`<span class="tag" style="background:rgba(107,158,240,0.12);color:var(--blue);">#${tag}</span>`).join('');
       return`<div class="list-row" style="cursor:default;">
         <div style="width:22px;height:22px;border-radius:6px;border:1.5px solid ${t.completed?'var(--green)':'var(--text3)'};flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:${t.completed?'var(--green)':'transparent'};" onclick="toggleTodo('${t.id}',${t.completed})">
           ${t.completed?'<i class="ti ti-check" style="font-size:12px;color:#fff" aria-hidden="true"></i>':''}
@@ -4449,6 +4696,7 @@ async function loadTodos(){
             ${t.due_date?`<span style="font-size:12px;color:var(--text3);">截止 ${t.due_date}</span>`:''}
             ${t.assigned_to&&assignee?`<span class="tag tag-gold">→ ${assignee.display_name||assignee.username}</span>`:t.assigned_to?`<span class="tag tag-gold">→ 已指派</span>`:''}
             ${t.user_id!==prof.id&&owner?`<span class="tag tag-blue">來自 ${owner.display_name||owner.username}</span>`:''}
+            ${tagChips}
           </div>
         </div>
         <div style="display:flex;gap:4px;">
@@ -4459,12 +4707,14 @@ async function loadTodos(){
     }).join('');
   }catch(e){toast(friendlyError(e),'err');}
 }
+function setTodoTagFilter(tag){todoTagFilter=tag;loadTodos();}
 function openNewTodo(){
   document.getElementById('sh-todo-title').textContent='新增待辦';
   document.getElementById('todo-id').value='';
   document.getElementById('todo-title').value='';
   document.getElementById('todo-due').value='';
   document.getElementById('todo-note').value='';
+  document.getElementById('todo-tags').value='';
   document.getElementById('todo-pri').value='normal';
   openSheet('sh-todo');
 }
@@ -4477,6 +4727,7 @@ function editTodoByIdx(idx){
   document.getElementById('todo-title').value=t.title;
   document.getElementById('todo-due').value=t.due_date||'';
   document.getElementById('todo-note').value=t.note||'';
+  document.getElementById('todo-tags').value=(t.tags||[]).join(',');
   document.getElementById('todo-pri').value=t.priority;
   document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}" ${u.id===t.assigned_to?'selected':''}>${u.display_name||u.username}</option>`).join('');
   openSheet('sh-todo');
@@ -4494,7 +4745,9 @@ function editTodo(id,title,note,due,pri,assignedTo){
 }
 async function saveTodo(ev){const _btn=ev?.target;btnLoading(_btn,true);
   const id=document.getElementById('todo-id').value;
-  const body={user_id:prof.id,title:document.getElementById('todo-title').value.trim(),note:document.getElementById('todo-note').value.trim(),due_date:document.getElementById('todo-due').value||null,priority:document.getElementById('todo-pri').value,assigned_to:document.getElementById('todo-assign').value||null};
+  const tagsStr=document.getElementById('todo-tags').value.trim();
+  const tags=tagsStr?tagsStr.split(',').map(s=>s.trim()).filter(Boolean):[];
+  const body={user_id:prof.id,title:document.getElementById('todo-title').value.trim(),note:document.getElementById('todo-note').value.trim(),due_date:document.getElementById('todo-due').value||null,priority:document.getElementById('todo-pri').value,assigned_to:document.getElementById('todo-assign').value||null,tags};
   if(!body.title){toast('請填寫標題','err');btnLoading(_btn,false);return;}
   try{
     if(id)await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
@@ -6931,6 +7184,164 @@ async function delPeriod(id){
 }
 // ─── END PERIOD TRACKER ─────────────────────────────────────────
 
+// ─── WRAPPED（年度回顧） ─────────────────────────────────────────
+function initWrapped(){
+  const sel=document.getElementById('wrapped-year');
+  const curYear=new Date().getFullYear();
+  sel.innerHTML=Array.from({length:5},(_,i)=>curYear-i).map(y=>`<option value="${y}">${y} 年</option>`).join('');
+  loadWrapped();
+}
+
+async function loadWrapped(){
+  const year=parseInt(document.getElementById('wrapped-year').value)||new Date().getFullYear();
+  const contentEl=document.getElementById('wrapped-content');
+  contentEl.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--text3);"><i class="ti ti-loader-2" style="font-size:28px;animation:spin 1s linear infinite;"></i><div style="margin-top:12px;">整理這一年的紀錄中...</div></div>';
+
+  try{
+    const from=`${year}-01-01`;
+    const to=`${year}-12-31`;
+
+    const [txns,events,todos,goals,habits,habitLogs] = await Promise.all([
+      sb(`/rest/v1/transactions?user_id=eq.${prof.id}&date=gte.${from}&date=lte.${to}`,{}),
+      sb(`/rest/v1/events?user_id=eq.${prof.id}&start_date=gte.${from}&start_date=lte.${to}`,{}),
+      sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.true&completed_at=gte.${from}T00:00:00&completed_at=lte.${to}T23:59:59`,{}),
+      sb(`/rest/v1/savings_goals?user_id=eq.${prof.id}`,{}),
+      sb(`/rest/v1/habits?user_id=eq.${prof.id}`,{}),
+      sb(`/rest/v1/habit_logs?user_id=eq.${prof.id}&date=gte.${from}&date=lte.${to}`,{})
+    ]);
+
+    if(!txns.length&&!events.length&&!todos.length){
+      contentEl.innerHTML=`<div class="empty"><div class="empty-icon-wrap"><i class="ti ti-calendar-off" aria-hidden="true"></i></div><p>${year} 年還沒有足夠的紀錄</p><div class="empty-sub">開始記錄，年底就能看到屬於你的回顧</div></div>`;
+      return;
+    }
+
+    // 財務統計
+    const income=txns.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+    const expense=txns.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+    const expenseTxns=txns.filter(t=>t.type==='expense');
+
+    // 類別統計
+    const catTotals={};
+    for(const t of expenseTxns){
+      const cid=t.category_id||'other';
+      catTotals[cid]=(catTotals[cid]||0)+Number(t.amount);
+    }
+    let expCats=[];
+    try{expCats=await sb('/rest/v1/expense_categories?select=id,name,icon',{});}catch(e){}
+    const catNameMap={};expCats.forEach(c=>catNameMap[c.id]=c.name);
+    const topCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+    // 最大單筆消費
+    const biggestTxn=expenseTxns.sort((a,b)=>Number(b.amount)-Number(a.amount))[0];
+
+    // 消費最多的月份
+    const monthTotals={};
+    expenseTxns.forEach(t=>{
+      const m=t.date.slice(0,7);
+      monthTotals[m]=(monthTotals[m]||0)+Number(t.amount);
+    });
+    const topMonth=Object.entries(monthTotals).sort((a,b)=>b[1]-a[1])[0];
+
+    // 記帳天數（不重複日期）
+    const activeDays=new Set(txns.map(t=>t.date)).size;
+
+    // 行程統計
+    const eventCount=events.length;
+    const sharedEventCount=events.filter(e=>e.is_shared).length;
+
+    // 待辦完成數
+    const todoCount=todos.length;
+
+    // 目標完成數
+    const completedGoals=(goals||[]).filter(g=>Number(g.current_amount||0)>=Number(g.target_amount||0)).length;
+
+    // 習慣總打卡次數 + 最佳習慣
+    const habitLogCounts={};
+    (habitLogs||[]).forEach(l=>{habitLogCounts[l.habit_id]=(habitLogCounts[l.habit_id]||0)+1;});
+    const bestHabit=Object.entries(habitLogCounts).sort((a,b)=>b[1]-a[1])[0];
+    const bestHabitObj=bestHabit?(habits||[]).find(h=>h.id===bestHabit[0]):null;
+
+    const monthLabel=(ym)=>{const m=parseInt(ym.split('-')[1]);return`${m}月`;};
+
+    contentEl.innerHTML=`
+      <div class="wrapped-hero">
+        <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:0.85;margin-bottom:6px;">${year}</div>
+        <div style="font-size:26px;font-weight:700;">你的一年回顧</div>
+        <div style="font-size:13px;opacity:0.85;margin-top:6px;">${prof.display_name||prof.username} 的生活足跡</div>
+      </div>
+
+      <div class="wrapped-stat-grid">
+        <div class="wrapped-stat-card">
+          <div class="wrapped-stat-icon" style="background:rgba(93,189,138,0.15);color:var(--green);"><i class="ti ti-arrow-up" aria-hidden="true"></i></div>
+          <div class="wrapped-stat-val">NT$${Math.round(income).toLocaleString()}</div>
+          <div class="wrapped-stat-lbl">全年收入</div>
+        </div>
+        <div class="wrapped-stat-card">
+          <div class="wrapped-stat-icon" style="background:rgba(232,112,112,0.15);color:var(--red);"><i class="ti ti-arrow-down" aria-hidden="true"></i></div>
+          <div class="wrapped-stat-val">NT$${Math.round(expense).toLocaleString()}</div>
+          <div class="wrapped-stat-lbl">全年支出</div>
+        </div>
+        <div class="wrapped-stat-card">
+          <div class="wrapped-stat-icon" style="background:var(--gold-dim);color:var(--gold);"><i class="ti ti-calendar-stats" aria-hidden="true"></i></div>
+          <div class="wrapped-stat-val">${activeDays}</div>
+          <div class="wrapped-stat-lbl">天有記帳</div>
+        </div>
+        <div class="wrapped-stat-card">
+          <div class="wrapped-stat-icon" style="background:rgba(107,158,240,0.15);color:var(--blue);"><i class="ti ti-calendar-event" aria-hidden="true"></i></div>
+          <div class="wrapped-stat-val">${eventCount}</div>
+          <div class="wrapped-stat-lbl">個行程</div>
+        </div>
+        <div class="wrapped-stat-card">
+          <div class="wrapped-stat-icon" style="background:rgba(155,107,255,0.15);color:#9C6BFF;"><i class="ti ti-checklist" aria-hidden="true"></i></div>
+          <div class="wrapped-stat-val">${todoCount}</div>
+          <div class="wrapped-stat-lbl">個待辦完成</div>
+        </div>
+        <div class="wrapped-stat-card">
+          <div class="wrapped-stat-icon" style="background:rgba(232,137,74,0.15);color:var(--orange);"><i class="ti ti-target-arrow" aria-hidden="true"></i></div>
+          <div class="wrapped-stat-val">${completedGoals}</div>
+          <div class="wrapped-stat-lbl">個目標達成</div>
+        </div>
+      </div>
+
+      ${topCats.length?`
+      <div class="card" style="margin-bottom:12px;">
+        <div class="sec-label">花費最多的類別</div>
+        ${topCats.map(([cid,amt],i)=>{
+          const pct=Math.round(amt/expense*100);
+          const name=catNameMap[cid]||'其他';
+          return`<div style="margin-bottom:${i<topCats.length-1?'12px':'0'};">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+              <span style="color:var(--text2);">${i===0?'🏆 ':''}${name}</span>
+              <span style="color:var(--gold);font-weight:600;">NT$${Math.round(amt).toLocaleString()}</span>
+            </div>
+            <div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${pct}%;background:var(--gold);border-radius:3px;"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`:''}
+
+      <div class="card" style="margin-bottom:12px;">
+        <div class="sec-label">年度亮點</div>
+        <div class="wrapped-highlight-list">
+          ${biggestTxn?`<div class="wrapped-highlight-row"><i class="ti ti-flame" style="color:var(--orange);" aria-hidden="true"></i><div>單筆最大消費是 <b>${biggestTxn.note||'一筆支出'}</b>，花了 <b style="color:var(--gold);">NT$${Math.round(biggestTxn.amount).toLocaleString()}</b></div></div>`:''}
+          ${topMonth?`<div class="wrapped-highlight-row"><i class="ti ti-calendar-dollar" style="color:var(--red);" aria-hidden="true"></i><div><b>${monthLabel(topMonth[0])}</b> 是花費最高的月份，共 <b style="color:var(--gold);">NT$${Math.round(topMonth[1]).toLocaleString()}</b></div></div>`:''}
+          ${sharedEventCount?`<div class="wrapped-highlight-row"><i class="ti ti-users" style="color:var(--blue);" aria-hidden="true"></i><div>與家人共享了 <b style="color:var(--gold);">${sharedEventCount}</b> 個行程</div></div>`:''}
+          ${bestHabitObj?`<div class="wrapped-highlight-row"><i class="ti ti-medal" style="color:var(--green);" aria-hidden="true"></i><div>最常完成的習慣是 <b>${bestHabitObj.name}</b>，打卡 <b style="color:var(--gold);">${bestHabit[1]}</b> 次</div></div>`:''}
+          ${income-expense>=0?`<div class="wrapped-highlight-row"><i class="ti ti-piggy-bank" style="color:var(--green);" aria-hidden="true"></i><div>今年結餘 <b style="color:var(--green);">NT$${Math.round(income-expense).toLocaleString()}</b>，做得很好！</div></div>`:`<div class="wrapped-highlight-row"><i class="ti ti-alert-triangle" style="color:var(--orange);" aria-hidden="true"></i><div>今年支出略高於收入，差額 <b style="color:var(--orange);">NT$${Math.round(expense-income).toLocaleString()}</b></div></div>`}
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px;">
+        感謝這一年的每一筆記錄 · Life OS
+      </div>
+    `;
+  }catch(e){
+    contentEl.innerHTML='<div class="empty"><p>'+friendlyError(e)+'</p></div>';
+  }
+}
+// ─── END WRAPPED ────────────────────────────────────────────────
+
 // ─── VEHICLE（車輛管理） ───────────────────────────────────────
 let currentVehicleId=null;
 let currentVehicleTab='all';
@@ -8970,6 +9381,284 @@ function btnLoading(btn,loading=true){
   }
 }
 
+// ─── 應用內提醒系統（待辦/行程/習慣，App開著時有效）───────────────
+function getReminderNotifiedSet(){
+  try{return new Set(JSON.parse(localStorage.getItem('lifeos_notified')||'[]'));}
+  catch(e){return new Set();}
+}
+function markReminderNotified(key){
+  const set=getReminderNotifiedSet();
+  set.add(key);
+  // 只保留最近 500 筆，避免無限增長
+  const arr=Array.from(set).slice(-500);
+  localStorage.setItem('lifeos_notified',JSON.stringify(arr));
+}
+function showInAppReminder(title,body,onClick){
+  const wrap=document.createElement('div');
+  wrap.className='in-app-reminder';
+  wrap.innerHTML=`
+    <div class="in-app-reminder-icon"><i class="ti ti-bell-ringing" aria-hidden="true"></i></div>
+    <div class="in-app-reminder-body">
+      <div class="in-app-reminder-title">${title}</div>
+      <div class="in-app-reminder-sub">${body}</div>
+    </div>
+    <button class="in-app-reminder-close"><i class="ti ti-x" aria-hidden="true"></i></button>
+  `;
+  document.body.appendChild(wrap);
+  requestAnimationFrame(()=>wrap.classList.add('on'));
+  const remove=()=>{wrap.classList.remove('on');setTimeout(()=>wrap.remove(),300);};
+  wrap.querySelector('.in-app-reminder-close').onclick=(e)=>{e.stopPropagation();remove();};
+  wrap.onclick=()=>{if(onClick)onClick();remove();};
+  setTimeout(remove,8000);
+  // 嘗試用瀏覽器原生通知（若已授權且分頁在背景）
+  try{
+    if('Notification' in window && Notification.permission==='granted' && document.hidden){
+      new Notification(title,{body,icon:'/icon-512.png'});
+    }
+  }catch(e){}
+}
+
+async function checkInAppReminders(){
+  if(!prof?.id)return;
+  const minutesBefore=prof.reminder_minutes_before||30;
+  const notified=getReminderNotifiedSet();
+  const now=new Date();
+
+  try{
+    // 待辦提醒
+    const todos=await sb(`/rest/v1/todos?user_id=eq.${prof.id}&completed=eq.false&due_date=not.is.null`,{});
+    todos.forEach(t=>{
+      if(!t.due_date)return;
+      const due=new Date(t.due_date);
+      const diffMin=(due-now)/60000;
+      const key=`todo_${t.id}_${t.due_date}`;
+      if(diffMin>0&&diffMin<=minutesBefore&&!notified.has(key)){
+        showInAppReminder('待辦即將到期',t.title,()=>goPage('todo'));
+        markReminderNotified(key);
+      }
+    });
+
+    // 今日行程提醒
+    const todayStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const events=await sb(`/rest/v1/events?start_date=eq.${todayStr}&or=(user_id.eq.${prof.id},is_shared.eq.true)`,{});
+    events.forEach(ev=>{
+      if(!ev.start_time)return;
+      const [h,m]=ev.start_time.split(':').map(Number);
+      const evTime=new Date(now);evTime.setHours(h,m,0,0);
+      const diffMin=(evTime-now)/60000;
+      const key=`event_${ev.id}_${todayStr}`;
+      if(diffMin>0&&diffMin<=minutesBefore&&!notified.has(key)){
+        showInAppReminder('行程即將開始',`${ev.title} · ${ev.start_time.slice(0,5)}`,()=>goPage('cal'));
+        markReminderNotified(key);
+      }
+    });
+
+    // 習慣提醒（固定時間，例如晚上 9 點提醒還沒打卡的習慣）
+    const habitReminderHour=parseInt(localStorage.getItem('lifeos_habit_reminder_hour')||'21');
+    const habitReminderOn=localStorage.getItem('lifeos_habit_reminder_on')!=='0';
+    if(habitReminderOn && now.getHours()===habitReminderHour && now.getMinutes()<5){
+      const key=`habit_daily_${todayStr}`;
+      if(!notified.has(key)){
+        const habits=await sb(`/rest/v1/habits?user_id=eq.${prof.id}&is_active=eq.true`,{});
+        if(habits.length){
+          const todayLogs=await sb(`/rest/v1/habit_logs?user_id=eq.${prof.id}&date=eq.${todayStr}`,{});
+          const doneCount=todayLogs.length;
+          if(doneCount<habits.length){
+            showInAppReminder('今日習慣提醒',`還有 ${habits.length-doneCount} 項習慣尚未完成`,()=>goPage('home'));
+          }
+        }
+        markReminderNotified(key);
+      }
+    }
+  }catch(e){/* 靜默失敗，不影響主流程 */}
+}
+
+// ─── 提醒設定 UI ────────────────────────────────────────────────
+function openReminderSettings(){
+  const minutes=prof.reminder_minutes_before||30;
+  document.getElementById('reminder-minutes-select').value=String(minutes);
+  const habitOn=localStorage.getItem('lifeos_habit_reminder_on')!=='0';
+  document.getElementById('habit-reminder-toggle').checked=habitOn;
+  document.getElementById('habit-reminder-hour').value=localStorage.getItem('lifeos_habit_reminder_hour')||'21';
+  document.getElementById('habit-reminder-time-field').style.display=habitOn?'block':'none';
+  openSheet('sh-reminder-settings');
+}
+async function saveReminderMinutes(){
+  const minutes=parseInt(document.getElementById('reminder-minutes-select').value);
+  try{
+    await sb(`/rest/v1/user_profiles?id=eq.${prof.id}`,{method:'PATCH',body:JSON.stringify({reminder_minutes_before:minutes})});
+    prof.reminder_minutes_before=minutes;
+    const session=JSON.parse(localStorage.getItem('lifeos_session')||'{}');
+    session.prof=prof;
+    localStorage.setItem('lifeos_session',JSON.stringify(session));
+    toast('提醒時間已更新');
+  }catch(e){toast(friendlyError(e),'err');}
+}
+function toggleHabitReminder(on){
+  localStorage.setItem('lifeos_habit_reminder_on',on?'1':'0');
+  document.getElementById('habit-reminder-time-field').style.display=on?'block':'none';
+}
+function saveHabitReminderHour(){
+  const hour=document.getElementById('habit-reminder-hour').value;
+  localStorage.setItem('lifeos_habit_reminder_hour',hour);
+  toast('已更新提醒時間');
+}
+// ─── END 提醒設定 UI ───────────────────────────────────────────
+
+// ─── PIN 碼鎖 ───────────────────────────────────────────────────
+let _pinInput='';
+let _pinMode=''; // 'setup1' | 'setup2' | 'unlock' | 'change1' | 'change2' | 'disable'
+let _pinTempFirst='';
+
+function getPinHash(){return localStorage.getItem('lifeos_pin_hash');}
+function simpleHash(str){
+  let hash=0;
+  for(let i=0;i<str.length;i++){hash=((hash<<5)-hash)+str.charCodeAt(i);hash|=0;}
+  return String(hash);
+}
+
+function openPinSettings(){
+  renderPinSettingsBody();
+  openSheet('sh-pin-settings');
+}
+function renderPinSettingsBody(){
+  const has=!!getPinHash();
+  document.getElementById('pin-status-sub').textContent=has?'已啟用':'未設定';
+  document.getElementById('pin-settings-desc').textContent=has
+    ?'PIN 碼鎖已啟用，重新開啟 App 時需要輸入 PIN 碼。'
+    :'設定 4 位數 PIN 碼，重新開啟 App 時需要輸入才能進入。';
+  const body=document.getElementById('pin-settings-body');
+  if(has){
+    body.innerHTML=`
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:10px;" onclick="closeSheet('sh-pin-settings');startPinFlow('change1')">
+        <i class="ti ti-key" aria-hidden="true"></i> 變更 PIN 碼
+      </button>
+      <button class="btn btn-ghost" style="width:100%;color:var(--red);" onclick="closeSheet('sh-pin-settings');startPinFlow('disable')">
+        <i class="ti ti-lock-open" aria-hidden="true"></i> 關閉 PIN 碼鎖
+      </button>`;
+  } else {
+    body.innerHTML=`
+      <button class="btn btn-gold" style="width:100%;" onclick="closeSheet('sh-pin-settings');startPinFlow('setup1')">
+        <i class="ti ti-lock" aria-hidden="true"></i> 設定 PIN 碼
+      </button>`;
+  }
+}
+
+function startPinFlow(mode){
+  _pinMode=mode;
+  _pinInput='';
+  if(mode!=='setup2')_pinTempFirst='';
+  updatePinDots();
+  const subEl=document.getElementById('pin-lock-sub');
+  const subs={
+    setup1:'請設定 4 位數 PIN 碼',
+    setup2:'請再輸入一次以確認',
+    change1:'請先輸入目前的 PIN 碼',
+    change2:'請設定新的 PIN 碼',
+    disable:'請輸入 PIN 碼以關閉鎖定',
+    unlock:'請輸入 PIN 碼解鎖'
+  };
+  subEl.textContent=subs[mode]||'請輸入 PIN 碼';
+  document.getElementById('pin-lock-screen').classList.add('on');
+  document.querySelector('#pin-lock-screen .btn-ghost').style.display=(mode==='unlock')?'inline-flex':'none';
+}
+
+function updatePinDots(){
+  const dots=document.querySelectorAll('#pin-dots .pin-dot');
+  dots.forEach((d,i)=>d.classList.toggle('filled',i<_pinInput.length));
+}
+
+function shakePinDots(){
+  const wrap=document.getElementById('pin-dots');
+  wrap.querySelectorAll('.pin-dot').forEach(d=>d.classList.add('shake'));
+  setTimeout(()=>wrap.querySelectorAll('.pin-dot').forEach(d=>d.classList.remove('shake')),400);
+}
+
+function pinKeyPress(key){
+  if(key==='back'){_pinInput=_pinInput.slice(0,-1);updatePinDots();return;}
+  if(_pinInput.length>=4)return;
+  _pinInput+=key;
+  updatePinDots();
+  if(_pinInput.length===4)setTimeout(processPinComplete,150);
+}
+
+function processPinComplete(){
+  const hash=simpleHash(_pinInput);
+  if(_pinMode==='setup1'){
+    _pinTempFirst=_pinInput;
+    _pinInput='';
+    updatePinDots();
+    startPinFlow('setup2');
+    return;
+  }
+  if(_pinMode==='setup2'){
+    if(_pinInput===_pinTempFirst){
+      localStorage.setItem('lifeos_pin_hash',simpleHash(_pinInput));
+      localStorage.setItem('lifeos_pin_enabled','1');
+      document.getElementById('pin-lock-screen').classList.remove('on');
+      toast('PIN 碼已設定');
+    } else {
+      shakePinDots();
+      _pinInput='';
+      updatePinDots();
+      toast('兩次輸入不一致，請重新設定','err');
+      setTimeout(()=>startPinFlow('setup1'),600);
+    }
+    return;
+  }
+  if(_pinMode==='change1'){
+    if(hash===getPinHash()){
+      _pinInput='';updatePinDots();
+      startPinFlow('change2');
+    } else {
+      shakePinDots();_pinInput='';updatePinDots();toast('PIN 碼錯誤','err');
+    }
+    return;
+  }
+  if(_pinMode==='change2'){
+    localStorage.setItem('lifeos_pin_hash',hash);
+    document.getElementById('pin-lock-screen').classList.remove('on');
+    toast('PIN 碼已更新');
+    return;
+  }
+  if(_pinMode==='disable'){
+    if(hash===getPinHash()){
+      localStorage.removeItem('lifeos_pin_hash');
+      localStorage.setItem('lifeos_pin_enabled','0');
+      document.getElementById('pin-lock-screen').classList.remove('on');
+      toast('PIN 碼鎖已關閉');
+    } else {
+      shakePinDots();_pinInput='';updatePinDots();toast('PIN 碼錯誤','err');
+    }
+    return;
+  }
+  if(_pinMode==='unlock'){
+    if(hash===getPinHash()){
+      document.getElementById('pin-lock-screen').classList.remove('on');
+      sessionStorage.setItem('lifeos_pin_unlocked','1');
+    } else {
+      shakePinDots();_pinInput='';updatePinDots();toast('PIN 碼錯誤','err');
+    }
+    return;
+  }
+}
+
+function checkPinLockOnStart(){
+  const enabled=localStorage.getItem('lifeos_pin_enabled')==='1'&&getPinHash();
+  if(!enabled)return;
+  if(sessionStorage.getItem('lifeos_pin_unlocked')==='1')return; // 同一個分頁session內已解鎖過
+  startPinFlow('unlock');
+}
+// ─── END PIN 碼鎖 ──────────────────────────────────────────────
+
+async function requestNotificationPermission(){
+  if(!('Notification' in window)){toast('此瀏覽器不支援通知','err');return;}
+  const perm=await Notification.requestPermission();
+  if(perm==='granted')toast('通知權限已開啟');
+  else toast('未取得通知權限');
+}
+// ─── END 應用內提醒系統 ─────────────────────────────────────────
+
 // 統一的按鈕動作包裝（自動 loading）
 async function doBtnAction(ev,fn){
   const btn=ev?.target?.closest('button')||ev?.target;
@@ -9403,6 +10092,7 @@ window.openSheet=async function(id){
       document.getElementById('sh-todo-title').textContent='新增待辦';
       document.getElementById('todo-title').value='';
       document.getElementById('todo-note').value='';
+      document.getElementById('todo-tags').value='';
       document.getElementById('todo-due').value='';
       document.getElementById('todo-pri').value='normal';
       document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');
@@ -9416,6 +10106,10 @@ window.openSheet=async function(id){
       document.getElementById('txn-amt').value='';
       document.getElementById('txn-note').value='';
       document.getElementById('txn-tags').value='';
+      loadQuickMerchants();
+    } else {
+      const row=document.getElementById('quick-merchant-row');
+      if(row)row.style.display='none';
     }
     // Load accounts if not already loaded
     const accSel=document.getElementById('txn-account');
