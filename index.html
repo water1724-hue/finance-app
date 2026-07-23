@@ -6204,26 +6204,22 @@ async function doSearch(){
     const enc=encodeURIComponent(q);
     const results=[];
 
-    // 交易
-    if(searchType==='all'||searchType==='transactions'){
-      const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&note=ilike.*${enc}*&order=date.desc&limit=20`,{});
-      txns.forEach(t=>results.push({type:'transaction',icon:'ti-cash',color:'var(--gold)',title:t.note||'（無備註）',sub:`${t.date} · NT$${Number(t.amount).toLocaleString()} · ${t.type==='income'?'收入':'支出'}`,action:()=>goPage('finance')}));
-    }
-    // 聯絡人
-    if(searchType==='all'||searchType==='contacts'){
-      const contacts=await sb(`/rest/v1/contacts?user_id=eq.${prof.id}&name=ilike.*${enc}*&limit=10`,{});
-      contacts.forEach(c=>results.push({type:'contact',icon:'ti-user',color:'var(--orange)',title:c.name,sub:`${c.relation||''}${c.phone?' · '+c.phone:''}${c.birthday?' · 生日 '+c.birthday:''}`,action:()=>goPage('contacts')}));
-    }
-    // 文件
-    if(searchType==='all'||searchType==='documents'){
-      const docs=await sb(`/rest/v1/documents?user_id=eq.${prof.id}&title=ilike.*${enc}*&limit=10`,{});
-      docs.forEach(d=>results.push({type:'document',icon:'ti-file-text',color:'var(--blue)',title:d.title,sub:`${d.category||''}${d.expiry_date?' · 到期 '+d.expiry_date:''}`,action:()=>{goPage('report');setTimeout(()=>openDocDetail(d.id),300);}}));
-    }
-    // 待辦
-    if(searchType==='all'||searchType==='todos'){
-      const todos=await sb(`/rest/v1/todos?user_id=eq.${prof.id}&title=ilike.*${enc}*&limit=10`,{});
-      todos.forEach(t=>results.push({type:'todo',icon:'ti-checklist',color:'var(--green)',title:t.title,sub:`${t.completed?'已完成':'未完成'}${t.due_date?' · 截止 '+t.due_date:''}`,action:()=>goPage('todo')}));
-    }
+    const needTxns=searchType==='all'||searchType==='transactions';
+    const needContacts=searchType==='all'||searchType==='contacts';
+    const needDocs=searchType==='all'||searchType==='documents';
+    const needTodos=searchType==='all'||searchType==='todos';
+
+    const [txns,contacts,docs,todos]=await Promise.all([
+      needTxns?sb(`/rest/v1/transactions?user_id=eq.${prof.id}&note=ilike.*${enc}*&order=date.desc&limit=20`,{}):Promise.resolve([]),
+      needContacts?sb(`/rest/v1/contacts?user_id=eq.${prof.id}&name=ilike.*${enc}*&limit=10`,{}):Promise.resolve([]),
+      needDocs?sb(`/rest/v1/documents?user_id=eq.${prof.id}&title=ilike.*${enc}*&limit=10`,{}):Promise.resolve([]),
+      needTodos?sb(`/rest/v1/todos?user_id=eq.${prof.id}&title=ilike.*${enc}*&limit=10`,{}):Promise.resolve([])
+    ]);
+
+    txns.forEach(t=>results.push({type:'transaction',icon:'ti-cash',color:'var(--gold)',title:t.note||'（無備註）',sub:`${t.date} · NT$${Number(t.amount).toLocaleString()} · ${t.type==='income'?'收入':'支出'}`,action:()=>goPage('finance')}));
+    contacts.forEach(c=>results.push({type:'contact',icon:'ti-user',color:'var(--orange)',title:c.name,sub:`${c.relation||''}${c.phone?' · '+c.phone:''}${c.birthday?' · 生日 '+c.birthday:''}`,action:()=>goPage('contacts')}));
+    docs.forEach(d=>results.push({type:'document',icon:'ti-file-text',color:'var(--blue)',title:d.title,sub:`${d.category||''}${d.expiry_date?' · 到期 '+d.expiry_date:''}`,action:()=>{goPage('report');setTimeout(()=>openDocDetail(d.id),300);}}));
+    todos.forEach(t=>results.push({type:'todo',icon:'ti-checklist',color:'var(--green)',title:t.title,sub:`${t.completed?'已完成':'未完成'}${t.due_date?' · 截止 '+t.due_date:''}`,action:()=>goPage('todo')}));
 
     if(!results.length){
       el.innerHTML=`<div class="empty"><div class="empty-icon-wrap"><i class="ti ti-mood-empty" aria-hidden="true"></i></div><p>找不到「${q}」的相關結果</p></div>`;
@@ -9375,7 +9371,7 @@ async function loadBudgetItems(){
 }
 
 async function openAddBudgetItem(){
-  const cats=await sb(`/rest/v1/expense_categories?parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
+  const cats=await sb(`/rest/v1/expense_categories?or=(user_id.eq.${prof.id},is_default.eq.true)&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
   const expCats=cats.filter(c=>c.type==='expense'||c.type==='both');
   const sel=document.getElementById('bitem-cat');
   sel.innerHTML=`<option value="">（不連結，僅手動記錄）</option>`+expCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
@@ -9387,7 +9383,7 @@ async function openAddBudgetItem(){
 }
 
 async function editBudgetItem(id, name, catId){
-  const cats=await sb(`/rest/v1/expense_categories?parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
+  const cats=await sb(`/rest/v1/expense_categories?or=(user_id.eq.${prof.id},is_default.eq.true)&parent_id=is.null&is_active=neq.false&order=sort_order.asc`,{});
   const expCats=cats.filter(c=>c.type==='expense'||c.type==='both');
   const sel=document.getElementById('bitem-cat');
   sel.innerHTML=`<option value="">（不連結，僅手動記錄）</option>`+expCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
@@ -11086,8 +11082,8 @@ async function loadDocs(){
   const el=document.getElementById('doc-list');
   el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
   try{
-    const docs=await sb(`/rest/v1/documents?order=expiry_date.asc.nullslast,created_at.desc`,{});
-    const myDocs=docs.filter(d=>d.user_id===getViewAsId()||d.is_shared);
+    const docs=await sb(`/rest/v1/documents?or=(user_id.eq.${getViewAsId()},is_shared.eq.true)&order=expiry_date.asc.nullslast,created_at.desc`,{});
+    const myDocs=docs;
     const filtered=docCatFilter==='all'?myDocs:myDocs.filter(d=>d.category===docCatFilter);
 
     // 到期提醒（30天內）
