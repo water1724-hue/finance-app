@@ -270,6 +270,10 @@ body.future-mode .in-app-reminder{background:linear-gradient(135deg,rgba(20,28,6
 .pin-key{aspect-ratio:1;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);font-size:22px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;}
 .pin-key:active{background:var(--gold-dim);transform:scale(0.94);}
 
+/* 語音記帳收音動畫 */
+@keyframes voice-pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,112,112,0.4);}50%{box-shadow:0 0 0 8px rgba(232,112,112,0);}}
+#voice-txn-btn.voice-listening{background:rgba(232,112,112,0.15);border-color:rgba(232,112,112,0.4);color:var(--red);animation:voice-pulse 1.2s infinite;}
+
 /* Wrapped 年度回顧 */
 .wrapped-hero{background:linear-gradient(135deg,var(--gold),#9C6BFF);color:#fff;border-radius:20px;padding:28px 22px;margin-bottom:16px;text-align:center;box-shadow:0 8px 24px rgba(184,137,42,0.25);}
 .wrapped-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
@@ -1518,7 +1522,13 @@ select.inp option{background:var(--bg2);}
 <div class="overlay" id="sh-txn">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <h3 id="sh-txn-title">新增記帳</h3>
+    <div class="row-between" style="margin-bottom:0;">
+      <h3 id="sh-txn-title" style="margin-bottom:0;">新增記帳</h3>
+      <button type="button" id="voice-txn-btn" onclick="startVoiceExpense()" style="width:40px;height:40px;border-radius:12px;background:var(--gold-dim);border:1px solid var(--gold-border);color:var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+        <i class="ti ti-microphone" style="font-size:18px;" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div style="height:18px;"></div>
     <input type="hidden" id="txn-id">
     <div id="quick-merchant-row" style="display:none;margin-bottom:14px;">
       <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">常用</div>
@@ -1695,6 +1705,17 @@ select.inp option{background:var(--bg2);}
     <input type="hidden" id="todo-id">
     <div class="field"><label>標題</label><input class="inp" type="text" id="todo-title" placeholder="待辦事項"></div>
     <div class="field"><label>截止日期</label><input class="inp" type="date" id="todo-due"></div>
+    <div class="field"><label>重複</label>
+      <select class="inp" id="todo-repeat" onchange="document.getElementById('todo-repeat-end-field').style.display=this.value!=='none'?'block':'none';">
+        <option value="none">不重複</option>
+        <option value="daily">每天</option>
+        <option value="weekly">每週</option>
+        <option value="monthly">每月</option>
+      </select>
+    </div>
+    <div id="todo-repeat-end-field" style="display:none;">
+      <div class="field"><label>重複結束日期</label><input class="inp" type="date" id="todo-repeat-end"></div>
+    </div>
     <div class="field"><label>備註</label><input class="inp" type="text" id="todo-note" placeholder="選填"></div>
     <div class="field"><label>標籤</label><input class="inp" type="text" id="todo-tags" placeholder="用逗號分隔，例如：工作,緊急"></div>
     <div class="field"><label>優先度</label>
@@ -2022,8 +2043,33 @@ select.inp option{background:var(--bg2);}
       <button class="pin-key" onclick="pinKeyPress('0')">0</button>
       <button class="pin-key" onclick="pinKeyPress('back')"><i class="ti ti-backspace" aria-hidden="true"></i></button>
     </div>
-    <div style="margin-top:20px;">
-      <button class="btn btn-ghost" onclick="doLogout()" style="font-size:13px;">登出改用其他帳號</button>
+    <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px;">
+      <button class="btn btn-ghost" onclick="openForgotPin()" style="font-size:13px;">忘記 PIN 碼？</button>
+      <button class="btn btn-ghost" onclick="doLogout()" style="font-size:13px;color:var(--text3);">登出改用其他帳號</button>
+    </div>
+  </div>
+</div>
+
+<!-- 忘記 PIN：驗證密碼 -->
+<div class="overlay" id="sh-forgot-pin">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>重設 PIN 碼</h3>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      請輸入登入密碼以驗證身份，驗證成功後即可設定新的 PIN 碼。
+    </div>
+    <div class="field"><label>密碼</label>
+      <div style="position:relative;">
+        <input class="inp" type="password" id="forgot-pin-pwd" placeholder="輸入你的登入密碼" style="padding-right:44px;">
+        <button type="button" onclick="togglePwd('forgot-pin-pwd',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;">
+          <i class="ti ti-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div id="forgot-pin-err" style="font-size:13px;color:var(--red);margin-bottom:8px;display:none;"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-forgot-pin')">取消</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,verifyPasswordForPinReset)">驗證</button>
     </div>
   </div>
 </div>
@@ -3150,11 +3196,29 @@ async function loadHome(){
   document.getElementById('home-date').textContent=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 週${wds[now.getDay()]}`;
   const today=now.toISOString().slice(0,10);
   try{
-    const [todos,events,announces,memos]=await Promise.all([
-      (async()=>{const t1=await sb(`/rest/v1/todos?user_id=eq.${getViewAsId()}&completed=eq.false`,{});const t2=await sb(`/rest/v1/todos?assigned_to=eq.${getViewAsId()}&completed=eq.false`,{});const seen=new Set(t1.map(t=>t.id));return [...t1,...t2.filter(t=>!seen.has(t.id))];})(),
+    const [todos,events,announces,memos,creditReminders]=await Promise.all([
+      sb(`/rest/v1/todos?or=(user_id.eq.${getViewAsId()},assigned_to.eq.${getViewAsId()})&completed=eq.false`,{}),
       sb(`/rest/v1/events?start_date=eq.${today}&or=(user_id.eq.${getViewAsId()},is_shared.eq.true)&order=start_time.asc`,{}),
       sb('/rest/v1/announcements?order=pinned.desc,created_at.desc&limit=3',{}),
-      sb('/rest/v1/memos?order=created_at.desc&limit=3',{})
+      sb('/rest/v1/memos?order=created_at.desc&limit=3',{}),
+      (async()=>{
+        try{
+          const [allAccs,cats]=await Promise.all([
+            sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{}),
+            accCats.length?Promise.resolve(accCats):sb('/rest/v1/account_categories?order=sort_order.asc',{})
+          ]);
+          const creditAccs=allAccs.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type==='credit'||c?.type==='loan';});
+          const todayDay=new Date().getDate();
+          const reminders=[];
+          creditAccs.forEach(acc=>{
+            const cat=cats.find(x=>x.id===acc.category_id);
+            if(acc.statement_day&&cat?.type==='credit'){const diff=acc.statement_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'帳單日',diff});}
+            if(acc.payment_day&&cat?.type==='credit'){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'繳款日',diff});}
+            if(cat?.type==='loan'&&acc.payment_day){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'貸款繳款日',diff});}
+          });
+          return reminders;
+        }catch(e){return [];}
+      })()
     ]);
     document.getElementById('h-todo-count')&&(document.getElementById('h-todo-count').textContent=todos.length);
     document.getElementById('h-event-count')&&(document.getElementById('h-event-count').textContent=events.length);
@@ -3244,21 +3308,11 @@ async function loadHome(){
         </div>`;
       }).join('');
     }
-    // Credit card reminders
-    try{
-      const allAccs=await sb(`/rest/v1/accounts?user_id=eq.${getViewAsId()}&is_active=eq.true`,{});
-      const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
-      const creditAccs=allAccs.filter(a=>{const c=cats.find(x=>x.id===a.category_id);return c?.type==='credit';});
-      const todayDay=new Date().getDate();
-      const reminders=[];
-      creditAccs.forEach(acc=>{
-        if(acc.statement_day){const diff=acc.statement_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'帳單日',diff});}
-        if(acc.payment_day&&cat?.type==='credit'){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'繳款日',diff});}
-        if(cat?.type==='loan'&&acc.payment_day){const diff=acc.payment_day-todayDay;if(diff>=0&&diff<=3)reminders.push({name:acc.name,type:'貸款繳款日',diff});}
-      });
-      if(reminders.length){
-        const aiStats=document.getElementById('ai-stats');
-        reminders.forEach(r=>{
+    // Credit card reminders（資料已在上面平行取得）
+    if(creditReminders&&creditReminders.length){
+      const aiStats=document.getElementById('ai-stats');
+      if(aiStats){
+        creditReminders.forEach(r=>{
           const div=document.createElement('div');
           div.className='ai-stat';
           div.style.cssText='background:rgba(232,112,112,0.15);border:0.5px solid rgba(232,112,112,0.3);';
@@ -3266,12 +3320,12 @@ async function loadHome(){
           aiStats.appendChild(div);
         });
       }
-    }catch(e){}
+    }
   }catch(e){console.error(e);}
   updateHomeNotifyBadge();
   const w=getHomeWidgets();
-  // 先載入資料
-  if(w.habits)await loadHomeHabits();
+  // 平行載入所有小工具（不互相阻塞）
+  if(w.habits)loadHomeHabits();
   if(w.todos)loadHomeTodos();
   if(w.monthly)loadHomeMonthly();
   if(w.networth)loadHero();
@@ -4402,6 +4456,105 @@ async function loadExpCatOptions(){
   });
   document.getElementById('txn-cat').innerHTML=opts;
 }
+// ─── 語音記帳 ───────────────────────────────────────────────────
+let _voiceRecognition=null;
+let _voiceListening=false;
+
+function getSpeechRecognition(){
+  return window.SpeechRecognition||window.webkitSpeechRecognition||null;
+}
+
+function startVoiceExpense(){
+  const SR=getSpeechRecognition();
+  const btn=document.getElementById('voice-txn-btn');
+  if(!SR){
+    toast('此瀏覽器不支援語音輸入，建議改用 Chrome','err');
+    return;
+  }
+  if(_voiceListening){
+    // 再次點擊 = 停止收音
+    if(_voiceRecognition)_voiceRecognition.stop();
+    return;
+  }
+  try{
+    _voiceRecognition=new SR();
+    _voiceRecognition.lang='zh-TW';
+    _voiceRecognition.continuous=false;
+    _voiceRecognition.interimResults=false;
+    _voiceRecognition.maxAlternatives=1;
+
+    _voiceListening=true;
+    btn.classList.add('voice-listening');
+    btn.innerHTML='<i class="ti ti-microphone" style="font-size:18px;" aria-hidden="true"></i>';
+    toast('請開始說話，例如「午餐 120 元」');
+
+    _voiceRecognition.onresult=(event)=>{
+      const text=event.results[0][0].transcript;
+      parseVoiceExpense(text);
+    };
+    _voiceRecognition.onerror=(event)=>{
+      _voiceListening=false;
+      btn.classList.remove('voice-listening');
+      if(event.error==='not-allowed'){
+        toast('請允許麥克風權限才能使用語音記帳','err');
+      } else if(event.error==='no-speech'){
+        toast('沒有偵測到語音，請再試一次','err');
+      } else {
+        toast('語音辨識發生問題，請再試一次','err');
+      }
+    };
+    _voiceRecognition.onend=()=>{
+      _voiceListening=false;
+      btn.classList.remove('voice-listening');
+    };
+    _voiceRecognition.start();
+  }catch(e){
+    _voiceListening=false;
+    btn.classList.remove('voice-listening');
+    toast('語音功能啟動失敗','err');
+  }
+}
+
+function parseVoiceExpense(text){
+  // 從語音文字中解析金額（抓數字）
+  const amountMatch=text.match(/(\d+)\s*[元塊]?/);
+  const amount=amountMatch?parseInt(amountMatch[1]):null;
+
+  // 移除數字和常見的量詞單位，剩下的當作商家/備註
+  let note=text
+    .replace(/(\d+)\s*[元塊]?/g,'')
+    .replace(/花了|花費|支出|買了|付了/g,'')
+    .trim();
+  if(!note)note=text.trim();
+
+  // 簡易關鍵字比對消費類別
+  const catKeywords={
+    '餐飲':['早餐','午餐','晚餐','宵夜','吃飯','咖啡','飲料','外送','餐廳','小吃'],
+    '交通':['計程車','公車','捷運','高鐵','火車','停車','加油','uber','油錢'],
+    '購物':['衣服','鞋子','買','購物','網購','蝦皮','momo'],
+    '娛樂':['電影','唱歌','ktv','遊戲','旅遊','門票'],
+    '醫療':['看病','藥','醫院','診所','掛號']
+  };
+  let matchedCatName=null;
+  for(const [cat,keywords] of Object.entries(catKeywords)){
+    if(keywords.some(k=>text.includes(k))){matchedCatName=cat;break;}
+  }
+
+  // 帶入表單
+  if(amount)document.getElementById('txn-amt').value=amount;
+  document.getElementById('txn-note').value=note;
+  setTxnType('expense');
+
+  if(matchedCatName){
+    const catSel=document.getElementById('txn-cat');
+    const opt=Array.from(catSel.options).find(o=>o.textContent.includes(matchedCatName));
+    if(opt)catSel.value=opt.value;
+  }
+
+  toast(`已辨識：${note} ${amount?'NT$'+amount:''}，請確認後儲存`);
+}
+// ─── END 語音記帳 ──────────────────────────────────────────────
+
 // ─── 快速記帳（常用商家）───────────────────────────────────────
 async function loadQuickMerchants(){
   const row=document.getElementById('quick-merchant-row');
@@ -4724,6 +4877,9 @@ function openNewTodo(){
   document.getElementById('todo-note').value='';
   document.getElementById('todo-tags').value='';
   document.getElementById('todo-pri').value='normal';
+  document.getElementById('todo-repeat').value='none';
+  document.getElementById('todo-repeat-end-field').style.display='none';
+  document.getElementById('todo-repeat-end').value='';
   openSheet('sh-todo');
 }
 
@@ -4737,6 +4893,9 @@ function editTodoByIdx(idx){
   document.getElementById('todo-note').value=t.note||'';
   document.getElementById('todo-tags').value=(t.tags||[]).join(',');
   document.getElementById('todo-pri').value=t.priority;
+  document.getElementById('todo-repeat').value=t.repeat_type||'none';
+  document.getElementById('todo-repeat-end-field').style.display=(t.repeat_type&&t.repeat_type!=='none')?'block':'none';
+  document.getElementById('todo-repeat-end').value=t.repeat_end||'';
   document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}" ${u.id===t.assigned_to?'selected':''}>${u.display_name||u.username}</option>`).join('');
   openSheet('sh-todo');
 }
@@ -4755,13 +4914,41 @@ async function saveTodo(ev){const _btn=ev?.target;btnLoading(_btn,true);
   const id=document.getElementById('todo-id').value;
   const tagsStr=document.getElementById('todo-tags').value.trim();
   const tags=tagsStr?tagsStr.split(',').map(s=>s.trim()).filter(Boolean):[];
-  const body={user_id:prof.id,title:document.getElementById('todo-title').value.trim(),note:document.getElementById('todo-note').value.trim(),due_date:document.getElementById('todo-due').value||null,priority:document.getElementById('todo-pri').value,assigned_to:document.getElementById('todo-assign').value||null,tags};
+  const repeatType=document.getElementById('todo-repeat').value;
+  const repeatEnd=document.getElementById('todo-repeat-end').value||null;
+  const dueDate=document.getElementById('todo-due').value||null;
+  const body={user_id:prof.id,title:document.getElementById('todo-title').value.trim(),note:document.getElementById('todo-note').value.trim(),due_date:dueDate,priority:document.getElementById('todo-pri').value,assigned_to:document.getElementById('todo-assign').value||null,tags,repeat_type:repeatType,repeat_end:repeatEnd};
   if(!body.title){toast('請填寫標題','err');btnLoading(_btn,false);return;}
+  if(repeatType!=='none'&&!dueDate){toast('設定重複時請填寫截止日期','err');btnLoading(_btn,false);return;}
   try{
-    if(id)await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
-    else await sb('/rest/v1/todos',{method:'POST',body:JSON.stringify(body)});
+    if(id){
+      await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    } else {
+      const saved=await sb('/rest/v1/todos',{method:'POST',body:JSON.stringify(body)});
+      // 產生重複的待辦（跟行程重複規則同邏輯）
+      if(repeatType!=='none'&&repeatEnd&&saved.length){
+        const parentId=saved[0].id;
+        const startDate=new Date(dueDate+'T00:00:00');
+        const endDate=new Date(repeatEnd+'T00:00:00');
+        const repeatTodos=[];
+        let current=new Date(startDate);
+        while(true){
+          if(repeatType==='daily')current.setDate(current.getDate()+1);
+          else if(repeatType==='weekly')current.setDate(current.getDate()+7);
+          else if(repeatType==='monthly')current.setMonth(current.getMonth()+1);
+          if(current>endDate)break;
+          const ds=`${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,'0')}-${String(current.getDate()).padStart(2,'0')}`;
+          repeatTodos.push({...body,due_date:ds,parent_todo_id:parentId,repeat_type:'none',repeat_end:null});
+        }
+        for(const rt of repeatTodos){
+          await sb('/rest/v1/todos',{method:'POST',body:JSON.stringify(rt)});
+        }
+      }
+    }
     closeSheet('sh-todo');document.getElementById('todo-id').value='';document.getElementById('sh-todo-title').textContent='新增待辦';
-    toast('儲存成功');
+    document.getElementById('todo-repeat').value='none';
+    document.getElementById('todo-repeat-end-field').style.display='none';
+    toast(`儲存成功${repeatType!=='none'?'（含重複）':''}`);
     logActivity('待辦',id?'編輯':'新增',body.title);
     loadTodos();
   }catch(e){toast(friendlyError(e),'err');}
@@ -8801,56 +8988,132 @@ async function exportMonthReport(format='txt'){
     });
 
     if(format==='pdf'){
-      // PDF 匯出（用瀏覽器列印）
+      // 準備每日收支資料（用於簡易走勢圖）
+      const dailyMap={};
+      txns.forEach(t=>{
+        if(!dailyMap[t.date])dailyMap[t.date]={income:0,expense:0};
+        if(t.type==='income')dailyMap[t.date].income+=Number(t.amount);
+        else dailyMap[t.date].expense+=Number(t.amount);
+      });
+      const balance=income-expense;
+      const savingsRate=income>0?Math.round(balance/income*100):0;
+      const topCat=Object.entries(catMap).sort((a,b)=>b[1]-a[1])[0];
+      const avgDailyExpense=txns.length?Math.round(expense/lastDay):0;
+
+      // PDF 用瀏覽器列印（A4 正式報告排版）
       const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
 <title>Life OS 月結報告 ${year}年${month}月</title>
 <style>
-  body{font-family:'PingFang TC','Microsoft JhengHei',sans-serif;padding:30px;color:#1c1c1e;max-width:800px;margin:0 auto;}
-  h1{font-size:22px;font-weight:700;margin-bottom:4px;}
-  .sub{font-size:13px;color:#888;margin-bottom:24px;}
-  .section{margin-bottom:24px;}
-  .section-title{font-size:13px;font-weight:700;color:#888;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:6px;}
-  .stat-row{display:flex;justify-content:space-between;padding:6px 0;font-size:15px;border-bottom:0.5px solid #f0f0f0;}
-  .income{color:#34A36A;font-weight:700;}
-  .expense{color:#D94F4F;font-weight:700;}
-  .balance{color:#B8892A;font-weight:700;}
-  .cat-bar{margin-bottom:8px;}
-  .cat-name{font-size:13px;margin-bottom:3px;display:flex;justify-content:space-between;}
-  .bar-bg{height:6px;background:#f0f0f0;border-radius:3px;}
-  .bar-fill{height:100%;background:#B8892A;border-radius:3px;}
-  .txn-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:0.5px solid #f5f5f5;}
-  @media print{body{padding:20px;}}
+  @page{size:A4;margin:0;}
+  *{box-sizing:border-box;}
+  body{font-family:'PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif;color:#1c1c1e;margin:0;background:#f5f5f7;}
+  .page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:18mm 16mm;position:relative;}
+
+  /* 封面式頁首 */
+  .report-header{background:linear-gradient(135deg,#1c1c1e,#2c2416);color:#fff;border-radius:16px;padding:28px 26px;margin-bottom:24px;position:relative;overflow:hidden;}
+  .report-header::after{content:'';position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(184,137,42,0.35),transparent 70%);}
+  .report-brand{font-size:11px;letter-spacing:3px;text-transform:uppercase;opacity:0.7;margin-bottom:10px;position:relative;}
+  .report-title{font-size:26px;font-weight:700;margin-bottom:6px;position:relative;}
+  .report-meta{font-size:12px;opacity:0.75;position:relative;}
+
+  /* 摘要卡片列 */
+  .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px;}
+  .summary-card{background:#fafafa;border:1px solid #eee;border-radius:12px;padding:16px;}
+  .summary-lbl{font-size:11px;color:#999;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+  .summary-val{font-size:20px;font-weight:700;}
+  .income-c{color:#2E9260;}
+  .expense-c{color:#D14F4F;}
+  .balance-c{color:#B8892A;}
+
+  .section{margin-bottom:26px;page-break-inside:avoid;}
+  .section-title{font-size:13px;font-weight:700;color:#333;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #1c1c1e;display:flex;justify-content:space-between;align-items:center;}
+  .section-title .badge{font-size:11px;font-weight:500;color:#999;letter-spacing:0;text-transform:none;}
+
+  .insight-row{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#444;line-height:1.7;margin-bottom:8px;padding:10px 12px;background:#fafafa;border-radius:8px;}
+  .insight-row .dot{width:6px;height:6px;border-radius:50%;background:#B8892A;margin-top:6px;flex-shrink:0;}
+
+  .cat-bar{margin-bottom:12px;}
+  .cat-name{font-size:13px;margin-bottom:5px;display:flex;justify-content:space-between;color:#333;}
+  .cat-name b{font-weight:700;}
+  .bar-bg{height:8px;background:#eee;border-radius:4px;overflow:hidden;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,#B8892A,#D4AF6A);border-radius:4px;}
+
+  table.txn-table{width:100%;border-collapse:collapse;font-size:12px;}
+  table.txn-table th{text-align:left;padding:8px 10px;background:#1c1c1e;color:#fff;font-weight:600;font-size:11px;letter-spacing:0.5px;}
+  table.txn-table th:last-child,table.txn-table td:last-child{text-align:right;}
+  table.txn-table td{padding:7px 10px;border-bottom:1px solid #f0f0f0;color:#333;}
+  table.txn-table tr:nth-child(even){background:#fafafa;}
+  .amt-income{color:#2E9260;font-weight:600;}
+  .amt-expense{color:#D14F4F;font-weight:600;}
+
+  .report-footer{margin-top:32px;padding-top:16px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#aaa;}
+
+  @media print{
+    body{background:#fff;}
+    .page{width:auto;min-height:0;padding:12mm 14mm;}
+    .section{page-break-inside:avoid;}
+  }
 </style></head><body>
-<h1>Life OS 月結報告</h1>
-<div class="sub">${year}年${month}月　使用者：${prof.display_name||prof.username}　匯出：${new Date().toLocaleString('zh-TW')}</div>
+<div class="page">
 
-<div class="section">
-  <div class="section-title">收支摘要</div>
-  <div class="stat-row"><span>收入</span><span class="income">NT$${income.toLocaleString()}</span></div>
-  <div class="stat-row"><span>支出</span><span class="expense">NT$${expense.toLocaleString()}</span></div>
-  <div class="stat-row"><span>結餘</span><span class="balance">NT$${(income-expense).toLocaleString()}</span></div>
-</div>
+  <div class="report-header">
+    <div class="report-brand">Life OS · Financial Report</div>
+    <div class="report-title">${year} 年 ${month} 月結報告</div>
+    <div class="report-meta">使用者：${prof.display_name||prof.username}　·　產製時間：${new Date().toLocaleString('zh-TW')}</div>
+  </div>
 
-<div class="section">
-  <div class="section-title">支出分類</div>
-  ${Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([n,a])=>{
-    const pct=expense>0?Math.round(a/expense*100):0;
-    return`<div class="cat-bar">
-      <div class="cat-name"><span>${n}</span><span>NT$${a.toLocaleString()} (${pct}%)</span></div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;"></div></div>
-    </div>`;
-  }).join('')}
-</div>
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-lbl">總收入</div>
+      <div class="summary-val income-c">NT$${income.toLocaleString()}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-lbl">總支出</div>
+      <div class="summary-val expense-c">NT$${expense.toLocaleString()}</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-lbl">本月結餘</div>
+      <div class="summary-val balance-c">NT$${balance.toLocaleString()}</div>
+    </div>
+  </div>
 
-<div class="section">
-  <div class="section-title">交易明細（${txns.length}筆）</div>
-  ${txns.map(t=>{
-    const cat=cats.find(c=>c.id===t.category_id);
-    return`<div class="txn-row">
-      <span>${t.date}　${cat?.name||'未分類'}　${t.note||'—'}</span>
-      <span style="color:${t.type==='income'?'#34A36A':'#D94F4F'};font-weight:600;">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</span>
-    </div>`;
-  }).join('')}
+  <div class="section">
+    <div class="section-title">本月洞察 <span class="badge">Insights</span></div>
+    ${savingsRate>=0?`<div class="insight-row"><div class="dot"></div><div>本月儲蓄率為 <b>${savingsRate}%</b>，${savingsRate>=20?'表現相當不錯，持續保持！':savingsRate>=0?'收支平衡，可以再努力一點。':''}</div></div>`:`<div class="insight-row"><div class="dot" style="background:#D14F4F;"></div><div>本月支出超過收入 <b>NT$${Math.abs(balance).toLocaleString()}</b>，建議檢視非必要開銷。</div></div>`}
+    ${topCat?`<div class="insight-row"><div class="dot"></div><div>花費最多的類別是 <b>${topCat[0]}</b>，共 <b>NT$${topCat[1].toLocaleString()}</b>，佔總支出 <b>${expense>0?Math.round(topCat[1]/expense*100):0}%</b></div></div>`:''}
+    <div class="insight-row"><div class="dot"></div><div>本月共有 <b>${txns.length}</b> 筆交易記錄，平均每日支出約 <b>NT$${avgDailyExpense.toLocaleString()}</b></div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">支出分類佔比 <span class="badge">Categories</span></div>
+    ${Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([n,a])=>{
+      const pct=expense>0?Math.round(a/expense*100):0;
+      return`<div class="cat-bar">
+        <div class="cat-name"><span>${n}</span><span><b>NT$${a.toLocaleString()}</b>　(${pct}%)</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;"></div></div>
+      </div>`;
+    }).join('')||'<div style="color:#999;font-size:13px;">本月無支出記錄</div>'}
+  </div>
+
+  <div class="section">
+    <div class="section-title">交易明細 <span class="badge">${txns.length} 筆</span></div>
+    <table class="txn-table">
+      <thead><tr><th>日期</th><th>類別</th><th>備註</th><th>金額</th></tr></thead>
+      <tbody>
+        ${txns.map(t=>{
+          const cat=cats.find(c=>c.id===t.category_id);
+          return`<tr>
+            <td>${t.date}</td>
+            <td>${cat?.name||'未分類'}</td>
+            <td>${t.note||'—'}</td>
+            <td class="${t.type==='income'?'amt-income':'amt-expense'}">${t.type==='income'?'+':'-'}NT$${Number(t.amount).toLocaleString()}</td>
+          </tr>`;
+        }).join('')||'<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">本月無交易記錄</td></tr>'}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="report-footer">此報告由 Life OS 自動產製　·　僅供個人財務管理參考</div>
 </div>
 </body></html>`;
       const win=window.open('','_blank');
@@ -9657,6 +9920,32 @@ function checkPinLockOnStart(){
   if(sessionStorage.getItem('lifeos_pin_unlocked')==='1')return; // 同一個分頁session內已解鎖過
   startPinFlow('unlock');
 }
+
+// 忘記 PIN：驗證密碼後允許重設
+function openForgotPin(){
+  document.getElementById('forgot-pin-pwd').value='';
+  document.getElementById('forgot-pin-err').style.display='none';
+  openSheet('sh-forgot-pin');
+}
+async function verifyPasswordForPinReset(){
+  const pwd=document.getElementById('forgot-pin-pwd').value;
+  const errEl=document.getElementById('forgot-pin-err');
+  errEl.style.display='none';
+  if(!pwd){errEl.textContent='請輸入密碼';errEl.style.display='block';return;}
+  try{
+    const email=prof.email||`${prof.username}@lifeos.internal`;
+    const d=await sbAuth('/auth/v1/token?grant_type=password',{email,password:pwd});
+    // 密碼正確：更新 token（順便讓 session 保持有效），關閉此 Sheet，直接進入設定新 PIN 流程
+    me.token=d.access_token;
+    localStorage.setItem('lifeos_session',JSON.stringify({prof,token:d.access_token,refresh:d.refresh_token}));
+    closeSheet('sh-forgot-pin');
+    toast('驗證成功，請設定新的 PIN 碼');
+    startPinFlow('setup1');
+  }catch(e){
+    errEl.textContent=e.message.includes('Invalid')?'密碼錯誤':friendlyError(e);
+    errEl.style.display='block';
+  }
+}
 // ─── END PIN 碼鎖 ──────────────────────────────────────────────
 
 async function requestNotificationPermission(){
@@ -10103,6 +10392,9 @@ window.openSheet=async function(id){
       document.getElementById('todo-tags').value='';
       document.getElementById('todo-due').value='';
       document.getElementById('todo-pri').value='normal';
+      document.getElementById('todo-repeat').value='none';
+      document.getElementById('todo-repeat-end-field').style.display='none';
+      document.getElementById('todo-repeat-end').value='';
       document.getElementById('todo-assign').innerHTML='<option value="">不指派</option>'+allUsers.filter(u=>u.id!==prof.id).map(u=>`<option value="${u.id}">${u.display_name||u.username}</option>`).join('');
     }
   }
