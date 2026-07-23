@@ -26,6 +26,15 @@
   --green:#5DBD8A;--red:#E87070;--orange:#E8894A;--blue:#6B9EF0;
   --r:20px;--r-sm:14px;
 }
+/* 節慶主題：只微調 Hero 卡與強調色的光暈，不影響整體配色骨架 */
+body.festival-mode #hw-networth,
+body.festival-mode .card-gold{
+  box-shadow:0 0 20px var(--festival-color,transparent);
+}
+body.festival-mode .bnav-item.on{
+  color:var(--festival-color,var(--gold));
+}
+
 body.light-mode{
   --bg:#f5f5f8;--bg2:#ffffff;--bg3:#ffffff;--bg4:#f0f0f4;
   --border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.12);
@@ -273,6 +282,32 @@ body.future-mode .in-app-reminder{background:linear-gradient(135deg,rgba(20,28,6
 /* 語音記帳收音動畫 */
 @keyframes voice-pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,112,112,0.4);}50%{box-shadow:0 0 0 8px rgba(232,112,112,0);}}
 #voice-txn-btn.voice-listening{background:rgba(232,112,112,0.15);border-color:rgba(232,112,112,0.4);color:var(--red);animation:voice-pulse 1.2s infinite;}
+
+/* 待辦看板模式 */
+.todo-view-btn{padding:7px 10px;border:none;background:none;color:var(--text3);border-radius:8px;cursor:pointer;font-size:15px;}
+.todo-view-btn.on{background:var(--bg3);color:var(--gold);box-shadow:0 1px 2px rgba(0,0,0,0.08);}
+.todo-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;}
+.todo-board-col{flex:0 0 260px;background:var(--bg4);border-radius:14px;padding:12px;min-height:200px;}
+.todo-board-col-title{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;padding:0 4px;}
+.todo-board-count{background:var(--bg3);color:var(--text2);border-radius:10px;padding:1px 8px;font-size:11px;}
+.todo-board-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:grab;}
+.todo-board-card:active{cursor:grabbing;}
+.todo-board-card.dragging{opacity:0.4;}
+.todo-board-col.drag-over{background:var(--gold-dim);}
+.todo-board-card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.todo-board-card-meta{display:flex;gap:4px;flex-wrap:wrap;}
+.todo-board-move-row{display:flex;gap:4px;margin-top:8px;}
+.todo-board-move-btn{flex:1;font-size:11px;padding:5px;border-radius:7px;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);cursor:pointer;text-align:center;}
+.todo-board-move-btn:active{background:var(--gold-dim);}
+
+/* 信封預算 */
+.envelope-icon-opt{width:40px;height:40px;border-radius:11px;background:var(--bg4);border:1px solid var(--border2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.envelope-icon-opt.on{background:var(--gold-dim);border-color:var(--gold-border);}
+.envelope-card{background:var(--bg3);border:1px solid var(--border2);border-radius:16px;padding:16px;margin-bottom:12px;}
+.envelope-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.envelope-icon-big{width:44px;height:44px;border-radius:13px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.envelope-progress-bg{height:10px;background:var(--bg4);border-radius:5px;overflow:hidden;margin-bottom:6px;}
+.envelope-progress-fill{height:100%;border-radius:5px;transition:width .3s;}
 
 /* Wrapped 年度回顧 */
 .wrapped-hero{background:linear-gradient(135deg,var(--gold),#9C6BFF);color:#fff;border-radius:20px;padding:28px 22px;margin-bottom:16px;text-align:center;box-shadow:0 8px 24px rgba(184,137,42,0.25);}
@@ -957,9 +992,15 @@ select.inp option{background:var(--bg2);}
     <div class="page" id="pg-todo">
       <div class="row-between" style="margin-bottom:16px;">
         <div class="pg-title" style="margin:0">待辦清單</div>
-        <button class="btn btn-gold btn-sm" onclick="openNewTodo()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <div style="display:flex;background:var(--bg4);border-radius:10px;padding:2px;">
+            <button class="todo-view-btn on" id="todo-view-list-btn" onclick="setTodoView('list')"><i class="ti ti-list" aria-hidden="true"></i></button>
+            <button class="todo-view-btn" id="todo-view-board-btn" onclick="setTodoView('board')"><i class="ti ti-layout-kanban" aria-hidden="true"></i></button>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="openNewTodo()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+        </div>
       </div>
-      <div class="ftabs">
+      <div class="ftabs" id="todo-list-filters">
         <button class="ftab on" onclick="setTodoFilter('all',this)">全部</button>
         <button class="ftab" onclick="setTodoFilter('mine',this)">我的</button>
         <button class="ftab" onclick="setTodoFilter('assigned_to_me',this)">指派給我</button>
@@ -967,7 +1008,8 @@ select.inp option{background:var(--bg2);}
         <button class="ftab" onclick="setTodoFilter('done',this)">已完成</button>
       </div>
       <div id="todo-tag-filters" style="display:none;margin-bottom:12px;"></div>
-      <div class="card"><div id="todo-list"></div></div>
+      <div class="card" id="todo-list-view"><div id="todo-list"></div></div>
+      <div id="todo-board-view" style="display:none;"></div>
     </div>
 
     <!-- ANNOUNCEMENTS -->
@@ -1118,8 +1160,10 @@ select.inp option{background:var(--bg2);}
       <div class="pg-title">留言板</div>
       <!-- 發布留言 -->
       <div class="card" style="margin-bottom:14px;">
-        <textarea class="inp" id="memo-input" rows="3" placeholder="在這裡留言給家人……" style="resize:vertical;margin-bottom:10px;"></textarea>
-        <div style="text-align:right;">
+        <textarea class="inp" id="memo-input" rows="3" placeholder="在這裡留言給家人……（可用 @ 提及特定成員）" style="resize:vertical;margin-bottom:10px;"></textarea>
+        <div id="memo-mention-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+        <div class="row-between">
+          <button class="btn btn-ghost btn-sm" onclick="toggleMentionPicker()"><i class="ti ti-at" aria-hidden="true"></i> 提及</button>
           <button class="btn btn-gold btn-sm" onclick="postMemo()"><i class="ti ti-send" aria-hidden="true"></i> 發送</button>
         </div>
       </div>
@@ -1195,6 +1239,46 @@ select.inp option{background:var(--bg2);}
       </div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">勾選表示已購買，長按可刪除</div>
       <div class="card"><div id="shopping-list"></div></div>
+    </div>
+
+    <!-- CHORE ROTATION -->
+    <div class="page" id="pg-chores">
+      <div style="font-size:13px;color:var(--gold);cursor:pointer;margin-bottom:8px;" onclick="goPage('more')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 更多</div>
+      <div class="row-between" style="margin-bottom:16px;">
+        <div class="pg-title" style="margin:0">家事輪值表</div>
+        <button class="btn btn-gold btn-sm" onclick="openAddChore()"><i class="ti ti-plus" aria-hidden="true"></i> 新增</button>
+      </div>
+      <div id="chore-list"></div>
+    </div>
+
+    <!-- 新增/編輯家事 -->
+    <div class="overlay" id="sh-chore">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <h3 id="sh-chore-title">新增家事</h3>
+        <input type="hidden" id="chore-id">
+        <div class="field"><label>家事名稱</label><input class="inp" type="text" id="chore-name" placeholder="例如：倒垃圾、洗碗"></div>
+        <div class="field"><label>圖示</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="chore-icon-picker">
+            <button type="button" class="envelope-icon-opt" data-icon="🧹" onclick="selectChoreIcon('🧹')">🧹</button><button type="button" class="envelope-icon-opt" data-icon="🗑️" onclick="selectChoreIcon('🗑️')">🗑️</button><button type="button" class="envelope-icon-opt" data-icon="🍽️" onclick="selectChoreIcon('🍽️')">🍽️</button><button type="button" class="envelope-icon-opt" data-icon="🧺" onclick="selectChoreIcon('🧺')">🧺</button><button type="button" class="envelope-icon-opt" data-icon="🐾" onclick="selectChoreIcon('🐾')">🐾</button><button type="button" class="envelope-icon-opt" data-icon="🌱" onclick="selectChoreIcon('🌱')">🌱</button><button type="button" class="envelope-icon-opt" data-icon="🚗" onclick="selectChoreIcon('🚗')">🚗</button><button type="button" class="envelope-icon-opt" data-icon="🧽" onclick="selectChoreIcon('🧽')">🧽</button>
+          </div>
+        </div>
+        <div class="field"><label>輪值頻率</label>
+          <select class="inp" id="chore-freq">
+            <option value="daily">每天</option>
+            <option value="weekly" selected>每週</option>
+            <option value="monthly">每月</option>
+          </select>
+        </div>
+        <div class="field"><label>參與成員（依序輪值）</label>
+          <div id="chore-member-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+        <div class="field"><label>開始日期</label><input class="inp" type="date" id="chore-start-date"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="closeSheet('sh-chore')">取消</button>
+          <button class="btn btn-gold" onclick="doBtnAction(event,saveChore)">儲存</button>
+        </div>
+      </div>
     </div>
 
     <!-- CONTACTS -->
@@ -1493,6 +1577,45 @@ select.inp option{background:var(--bg2);}
     <button class="btn btn-ghost btn-sm" onclick="loadBudget()">查詢</button>
   </div>
   <div class="card"><div id="budget-list"></div></div>
+</div>
+
+<!-- 信封預算法 -->
+<div class="det" id="det-envelopes">
+  <div class="det-back" onclick="hideDet('det-envelopes')"><i class="ti ti-chevron-left" aria-hidden="true"></i> 返回</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="font-size:18px;font-weight:700;">信封預算</div>
+    <button class="btn btn-gold btn-sm" onclick="openAddEnvelope()"><i class="ti ti-plus" aria-hidden="true"></i> 新增信封</button>
+  </div>
+  <div style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.6;">
+    每月分配固定額度到不同信封，花完就是花完，更直覺掌握花費空間。
+  </div>
+  <div id="envelope-list"></div>
+</div>
+
+<!-- 新增/編輯信封 -->
+<div class="overlay" id="sh-envelope">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3 id="sh-envelope-title">新增信封</h3>
+    <input type="hidden" id="envelope-id">
+    <div class="field"><label>信封名稱</label><input class="inp" type="text" id="envelope-name" placeholder="例如：餐飲、娛樂、治裝費"></div>
+    <div class="field"><label>圖示</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="envelope-icon-picker">
+        <button type="button" class="envelope-icon-opt" data-icon="💰" onclick="selectEnvelopeIcon('💰')">💰</button><button type="button" class="envelope-icon-opt" data-icon="🍔" onclick="selectEnvelopeIcon('🍔')">🍔</button><button type="button" class="envelope-icon-opt" data-icon="🎬" onclick="selectEnvelopeIcon('🎬')">🎬</button><button type="button" class="envelope-icon-opt" data-icon="👗" onclick="selectEnvelopeIcon('👗')">👗</button><button type="button" class="envelope-icon-opt" data-icon="🚗" onclick="selectEnvelopeIcon('🚗')">🚗</button><button type="button" class="envelope-icon-opt" data-icon="🏠" onclick="selectEnvelopeIcon('🏠')">🏠</button><button type="button" class="envelope-icon-opt" data-icon="💊" onclick="selectEnvelopeIcon('💊')">💊</button><button type="button" class="envelope-icon-opt" data-icon="✈️" onclick="selectEnvelopeIcon('✈️')">✈️</button><button type="button" class="envelope-icon-opt" data-icon="🎁" onclick="selectEnvelopeIcon('🎁')">🎁</button><button type="button" class="envelope-icon-opt" data-icon="📱" onclick="selectEnvelopeIcon('📱')">📱</button><button type="button" class="envelope-icon-opt" data-icon="☕" onclick="selectEnvelopeIcon('☕')">☕</button><button type="button" class="envelope-icon-opt" data-icon="🛒" onclick="selectEnvelopeIcon('🛒')">🛒</button>
+      </div>
+    </div>
+    <div class="field"><label>每月額度</label><input class="inp" type="number" id="envelope-amount" placeholder="0"></div>
+    <div class="field"><label>連結消費類別（選填）</label>
+      <select class="inp" id="envelope-category">
+        <option value="">不連結</option>
+      </select>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;">連結後，該類別的支出會自動計入此信封</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeSheet('sh-envelope')">取消</button>
+      <button class="btn btn-gold" onclick="doBtnAction(event,saveEnvelope)">儲存</button>
+    </div>
+  </div>
 </div>
 
 <!-- 預算項目管理（管理員專用） -->
@@ -1954,6 +2077,70 @@ select.inp option{background:var(--bg2);}
     </div>
     <div class="btn-row">
       <button class="btn btn-gold" style="width:100%;" onclick="closeSheet('sh-a11y')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 深色模式排程 -->
+<div class="overlay" id="sh-theme-schedule">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>深色模式排程</h3>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      開啟後，App 會依照時間自動切換深色／淺色模式（未來色模式不受影響，仍可手動切換）。
+    </div>
+    <div class="card" style="padding:4px 0;margin-bottom:12px;">
+      <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:14px 16px;border-bottom:0.5px solid var(--border);">
+        <div>
+          <div style="font-size:15px;font-weight:500;">依時間自動切換</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;">依下方設定的時段自動切換</div>
+        </div>
+        <input type="checkbox" id="theme-schedule-toggle" onchange="toggleThemeSchedule(this.checked)" style="width:22px;height:22px;accent-color:var(--gold);">
+      </label>
+      <div id="theme-schedule-times" style="padding:14px 16px;display:none;">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+          <div style="flex:1;">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">深色開始</div>
+            <input class="inp" type="time" id="theme-schedule-dark-start" value="18:00" onchange="saveThemeSchedule()" style="padding:10px 12px;">
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">淺色開始</div>
+            <input class="inp" type="time" id="theme-schedule-light-start" value="07:00" onchange="saveThemeSchedule()" style="padding:10px 12px;">
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);">例如：晚上 6 點後自動變深色，早上 7 點後自動變淺色</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" style="width:100%;" onclick="closeSheet('sh-theme-schedule')">完成</button>
+    </div>
+  </div>
+</div>
+
+<!-- 首頁背景圖設定 -->
+<div class="overlay" id="sh-bg-settings">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h3>首頁背景圖</h3>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      上傳一張照片作為首頁背景，圖片會自動壓縮以節省空間。
+    </div>
+    <div id="bg-preview-wrap" style="display:none;margin-bottom:14px;">
+      <img id="bg-preview-img" style="width:100%;border-radius:14px;max-height:200px;object-fit:cover;">
+    </div>
+    <input type="file" id="bg-upload-input" accept="image/*" style="display:none" onchange="handleBgUpload(this)">
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:10px;" onclick="document.getElementById('bg-upload-input').click()">
+      <i class="ti ti-upload" aria-hidden="true"></i> 選擇圖片上傳
+    </button>
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:14px;color:var(--red);display:none;" id="bg-remove-btn" onclick="removeBgImage()">
+      <i class="ti ti-trash" aria-hidden="true"></i> 移除背景圖
+    </button>
+    <div class="field">
+      <label>背景透明度</label>
+      <input type="range" id="bg-opacity-slider" min="10" max="60" value="25" oninput="updateBgOpacityPreview(this.value)" onchange="saveBgOpacity(this.value)" style="width:100%;">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" style="width:100%;" onclick="closeSheet('sh-bg-settings')">完成</button>
     </div>
   </div>
 </div>
@@ -2718,6 +2905,7 @@ function doLogout(){
   if(window._tokenTimer){clearInterval(window._tokenTimer);window._tokenTimer=null;}
   if(window._reminderTimer){clearInterval(window._reminderTimer);window._reminderTimer=null;}
   sessionStorage.removeItem('lifeos_pin_unlocked');
+  unsubscribeShoppingRealtime();
   // 清除所有快取資料
   Object.keys(sessionStorage).forEach(k=>{if(k.startsWith('cache_'))sessionStorage.removeItem(k);});
   localStorage.removeItem('lifeos_session');
@@ -2770,7 +2958,230 @@ function initTheme(){
   const preferLight=window.matchMedia('(prefers-color-scheme: light)').matches;
   const theme=saved||(preferLight?'light':'dark');
   applyTheme(theme);
+  applyThemeScheduleIfEnabled();
+  // 每 5 分鐘檢查一次排程（處理跨越切換時間點的情況）
+  if(window._themeScheduleTimer)clearInterval(window._themeScheduleTimer);
+  window._themeScheduleTimer=setInterval(applyThemeScheduleIfEnabled,5*60*1000);
 }
+
+// ─── 深色模式排程 ───────────────────────────────────────────────
+function openThemeSchedule(){
+  const enabled=localStorage.getItem('lifeos_theme_schedule_on')==='1';
+  document.getElementById('theme-schedule-toggle').checked=enabled;
+  document.getElementById('theme-schedule-times').style.display=enabled?'block':'none';
+  document.getElementById('theme-schedule-dark-start').value=localStorage.getItem('lifeos_theme_dark_start')||'18:00';
+  document.getElementById('theme-schedule-light-start').value=localStorage.getItem('lifeos_theme_light_start')||'07:00';
+  openSheet('sh-theme-schedule');
+}
+function toggleThemeSchedule(on){
+  localStorage.setItem('lifeos_theme_schedule_on',on?'1':'0');
+  document.getElementById('theme-schedule-times').style.display=on?'block':'none';
+  updateThemeScheduleSub();
+  if(on)applyThemeScheduleIfEnabled();
+}
+function saveThemeSchedule(){
+  localStorage.setItem('lifeos_theme_dark_start',document.getElementById('theme-schedule-dark-start').value);
+  localStorage.setItem('lifeos_theme_light_start',document.getElementById('theme-schedule-light-start').value);
+  updateThemeScheduleSub();
+  applyThemeScheduleIfEnabled();
+  toast('排程已更新');
+}
+function updateThemeScheduleSub(){
+  const el=document.getElementById('theme-schedule-sub');
+  if(!el)return;
+  const enabled=localStorage.getItem('lifeos_theme_schedule_on')==='1';
+  if(!enabled){el.textContent='未啟用';return;}
+  const darkStart=localStorage.getItem('lifeos_theme_dark_start')||'18:00';
+  const lightStart=localStorage.getItem('lifeos_theme_light_start')||'07:00';
+  el.textContent=`${lightStart} 淺色 · ${darkStart} 深色`;
+}
+function applyThemeScheduleIfEnabled(){
+  const enabled=localStorage.getItem('lifeos_theme_schedule_on')==='1';
+  updateThemeScheduleSub();
+  if(!enabled)return;
+  // 未來色模式維持使用者手動選擇，排程只在深色/淺色之間切換
+  if(getCurrentTheme()==='future')return;
+  const darkStart=localStorage.getItem('lifeos_theme_dark_start')||'18:00';
+  const lightStart=localStorage.getItem('lifeos_theme_light_start')||'07:00';
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  const toMin=(t)=>{const [h,m]=t.split(':').map(Number);return h*60+m;};
+  const darkMin=toMin(darkStart);
+  const lightMin=toMin(lightStart);
+  let shouldBeDark;
+  if(darkMin<lightMin){
+    // 例如 18:00 開始深色，隔天 07:00 變淺色（跨午夜）
+    shouldBeDark=(nowMin>=darkMin||nowMin<lightMin);
+  } else {
+    shouldBeDark=(nowMin>=darkMin&&nowMin<lightMin);
+  }
+  const target=shouldBeDark?'dark':'light';
+  if(getCurrentTheme()!==target){
+    applyTheme(target);
+    localStorage.setItem('lifeos_theme',target);
+  }
+}
+// ─── END 深色模式排程 ──────────────────────────────────────────
+
+// ─── 首頁自訂背景圖 ─────────────────────────────────────────────
+function openBgSettings(){
+  const bgUrl=localStorage.getItem('lifeos_home_bg_url');
+  const previewWrap=document.getElementById('bg-preview-wrap');
+  const previewImg=document.getElementById('bg-preview-img');
+  const removeBtn=document.getElementById('bg-remove-btn');
+  if(bgUrl){
+    previewWrap.style.display='block';
+    previewImg.src=bgUrl;
+    removeBtn.style.display='block';
+  } else {
+    previewWrap.style.display='none';
+    removeBtn.style.display='none';
+  }
+  document.getElementById('bg-opacity-slider').value=localStorage.getItem('lifeos_home_bg_opacity')||'25';
+  openSheet('sh-bg-settings');
+}
+
+function compressImage(file,maxWidth=1080,quality=0.75){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth;}
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        canvas.toBlob(blob=>resolve(blob),'image/jpeg',quality);
+      };
+      img.onerror=reject;
+      img.src=e.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleBgUpload(input){
+  const file=input.files[0];
+  if(!file)return;
+  if(!file.type.startsWith('image/')){toast('請選擇圖片檔案','err');return;}
+  toast('處理中...');
+  try{
+    const compressedBlob=await compressImage(file);
+    const fileName=`${prof.id}/home-bg-${Date.now()}.jpg`;
+    const uploadRes=await fetch(`${SB}/storage/v1/object/backgrounds/${fileName}`,{
+      method:'POST',
+      headers:{
+        'Authorization':`Bearer ${me.token}`,
+        'apikey':PUB,
+        'Content-Type':'image/jpeg'
+      },
+      body:compressedBlob
+    });
+    if(!uploadRes.ok){
+      const errText=await uploadRes.text();
+      throw new Error('上傳失敗，請確認 Storage 設定：'+errText.slice(0,100));
+    }
+    const publicUrl=`${SB}/storage/v1/object/public/backgrounds/${fileName}`;
+    localStorage.setItem('lifeos_home_bg_url',publicUrl);
+    applyHomeBackground();
+    document.getElementById('bg-preview-wrap').style.display='block';
+    document.getElementById('bg-preview-img').src=publicUrl;
+    document.getElementById('bg-remove-btn').style.display='block';
+    toast('背景圖已更新');
+  }catch(e){
+    toast(e.message||'上傳失敗','err');
+  }
+  input.value='';
+}
+
+function removeBgImage(){
+  localStorage.removeItem('lifeos_home_bg_url');
+  applyHomeBackground();
+  document.getElementById('bg-preview-wrap').style.display='none';
+  document.getElementById('bg-remove-btn').style.display='none';
+  toast('已移除背景圖');
+}
+
+function updateBgOpacityPreview(val){
+  document.documentElement.style.setProperty('--home-bg-opacity',val/100);
+}
+function saveBgOpacity(val){
+  localStorage.setItem('lifeos_home_bg_opacity',val);
+  applyHomeBackground();
+}
+
+function applyHomeBackground(){
+  const bgUrl=localStorage.getItem('lifeos_home_bg_url');
+  const opacity=(localStorage.getItem('lifeos_home_bg_opacity')||'25')/100;
+  const homePage=document.getElementById('pg-home');
+  if(!homePage)return;
+  if(bgUrl){
+    homePage.style.backgroundImage=`linear-gradient(rgba(0,0,0,${1-opacity}),rgba(0,0,0,${1-opacity})),url('${bgUrl}')`;
+    homePage.style.backgroundSize='cover';
+    homePage.style.backgroundPosition='center';
+    homePage.style.backgroundAttachment='fixed';
+  } else {
+    homePage.style.backgroundImage='';
+  }
+}
+// ─── END 首頁自訂背景圖 ────────────────────────────────────────
+
+// ─── 節慶主題 ───────────────────────────────────────────────────
+function getActiveFestival(){
+  const now=new Date();
+  const md=`${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  // 農曆新年區間比較浮動，這裡先用國曆节日，準確的農曆日期可日後手動更新
+  const festivals=[
+    {key:'newyear',from:'12-28',to:'01-03',name:'新年',color:'#FFD580',emoji:'🎉'},
+    {key:'valentine',from:'02-13',to:'02-14',name:'情人節',color:'#FF6B9D',emoji:'💝'},
+    {key:'lunar-new-year',from:'01-20',to:'02-05',name:'農曆新年',color:'#E63946',emoji:'🧧'},
+    {key:'christmas',from:'12-20',to:'12-26',name:'聖誕節',color:'#2E9260',emoji:'🎄'},
+    {key:'halloween',from:'10-28',to:'10-31',name:'萬聖節',color:'#FF8C42',emoji:'🎃'},
+    {key:'midautumn',from:'09-15',to:'09-19',name:'中秋節',color:'#F4A261',emoji:'🌕'}
+  ];
+  for(const f of festivals){
+    if(f.from<=f.to){
+      if(md>=f.from&&md<=f.to)return f;
+    } else {
+      // 跨年份區間（例如 12-28 到 01-03）
+      if(md>=f.from||md<=f.to)return f;
+    }
+  }
+  return null;
+}
+
+function applyFestivalTheme(){
+  const enabled=localStorage.getItem('lifeos_festival_theme_on')!=='0'; // 預設開啟
+  document.body.classList.remove('festival-mode');
+  document.documentElement.style.removeProperty('--festival-color');
+  const badge=document.getElementById('festival-badge');
+  if(badge)badge.remove();
+
+  if(!enabled)return;
+  const festival=getActiveFestival();
+  if(!festival)return;
+
+  document.body.classList.add('festival-mode');
+  document.documentElement.style.setProperty('--festival-color',festival.color);
+
+  // 在首頁問候加小徽章
+  const greetEl=document.getElementById('home-greeting');
+  if(greetEl&&!document.getElementById('festival-badge')){
+    const badgeEl=document.createElement('span');
+    badgeEl.id='festival-badge';
+    badgeEl.style.cssText=`margin-left:8px;font-size:13px;padding:2px 10px;border-radius:10px;background:${festival.color}22;color:${festival.color};font-weight:600;display:inline-flex;align-items:center;gap:4px;vertical-align:middle;`;
+    badgeEl.innerHTML=`${festival.emoji} ${festival.name}`;
+    greetEl.appendChild(badgeEl);
+  }
+}
+
+function toggleFestivalTheme(on){
+  localStorage.setItem('lifeos_festival_theme_on',on?'1':'0');
+  applyFestivalTheme();
+}
+// ─── END 節慶主題 ──────────────────────────────────────────────
 
 async function copyDefaultCats(){
   // 已改為共用預設類別機制（is_default=true 直接對所有使用者顯示）
@@ -2884,6 +3295,11 @@ function initApp(){
   // 檢查 PIN 碼鎖
   checkPinLockOnStart();
 
+  // 套用首頁自訂背景圖
+  applyHomeBackground();
+  // 套用節慶主題（延遲一下確保首頁DOM已渲染）
+  setTimeout(applyFestivalTheme,300);
+
   const isAdmin=prof.role==='admin';
 
   // 動態注入更多頁選單
@@ -2949,6 +3365,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">購物清單</div><div class="mi-sub">家庭共用採購清單</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="goPage('chores')">
+        <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-refresh" style="color:var(--green)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">家事輪值表</div><div class="mi-sub">分配並輪流家事責任</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       <div class="menu-item" onclick="goPage('contacts')">
         <div class="mi-icon" style="background:rgba(232,137,74,.1)"><i class="ti ti-users" style="color:var(--orange)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">通訊錄</div><div class="mi-sub">生日、聯絡方式、快速撥號</div></div>
@@ -2997,6 +3418,11 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">預算設定</div><div class="mi-sub">設定每月各類別支出上限</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="showDet('det-envelopes');loadEnvelopes();">
+        <div class="mi-icon" style="background:rgba(184,137,42,.1)"><i class="ti ti-wallet" style="color:var(--gold)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">信封預算</div><div class="mi-sub">用信封概念分配月度花費</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
       ${!isAdmin?`<div class="menu-item" onclick="showDet('det-exp-cats')">
         <div class="mi-icon" style="background:rgba(93,189,138,.1)"><i class="ti ti-tag" style="color:var(--green)" aria-hidden="true"></i></div>
         <div class="mi-info"><div class="mi-title">消費類別</div><div class="mi-sub">管理我的收支分類</div></div>
@@ -3016,6 +3442,21 @@ function initApp(){
         <div class="mi-info"><div class="mi-title">顯微設定</div><div class="mi-sub">放大字級、提升細節對比</div></div>
         <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
       </div>
+      <div class="menu-item" onclick="openThemeSchedule()">
+        <div class="mi-icon" style="background:rgba(232,137,74,.1)"><i class="ti ti-clock-hour-9" style="color:var(--orange)" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">深色模式排程</div><div class="mi-sub" id="theme-schedule-sub">未啟用</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <div class="menu-item" onclick="openBgSettings()">
+        <div class="mi-icon" style="background:rgba(155,107,255,.1)"><i class="ti ti-photo" style="color:#9C6BFF" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">首頁背景圖</div><div class="mi-sub" id="bg-status-sub">未設定</div></div>
+        <div class="mi-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+      </div>
+      <label class="menu-item" style="cursor:pointer;">
+        <div class="mi-icon" style="background:rgba(230,57,70,.1)"><i class="ti ti-gift" style="color:#E63946" aria-hidden="true"></i></div>
+        <div class="mi-info"><div class="mi-title">節慶主題</div><div class="mi-sub">節日期間自動顯示應景裝飾</div></div>
+        <input type="checkbox" id="festival-theme-toggle" onchange="toggleFestivalTheme(this.checked)" style="width:22px;height:22px;accent-color:var(--gold);">
+      </label>
     </div>
 
     <div class="menu-sec-lbl">通知與安全</div>
@@ -3087,6 +3528,12 @@ function initApp(){
   if(isAdmin){
     document.getElementById('announce-admin-btn').innerHTML='<button class="btn btn-gold btn-sm" onclick="openAddAnnounce()"><i class="ti ti-plus" aria-hidden="true"></i> 發佈</button>';
   }
+  // 同步各項開關狀態顯示
+  updateThemeScheduleSub();
+  const festivalToggle=document.getElementById('festival-theme-toggle');
+  if(festivalToggle)festivalToggle.checked=localStorage.getItem('lifeos_festival_theme_on')!=='0';
+  const bgSub=document.getElementById('bg-status-sub');
+  if(bgSub)bgSub.textContent=localStorage.getItem('lifeos_home_bg_url')?'已設定':'未設定';
   loadAllUsers();
   goPage('home');
   processRecurringTxns().then(()=>{ if(document.getElementById('pg-home').classList.contains('on')) loadHome(); });
@@ -3101,7 +3548,14 @@ function goPage(p){
   if(p==='home')loadHome();
   if(p==='finance')loadFinance();
   if(p==='cal')renderCal();
-  if(p==='todo')loadTodos();
+  if(p==='todo'){
+    document.getElementById('todo-view-list-btn').classList.toggle('on',todoViewMode==='list');
+    document.getElementById('todo-view-board-btn').classList.toggle('on',todoViewMode==='board');
+    document.getElementById('todo-list-view').style.display=todoViewMode==='list'?'block':'none';
+    document.getElementById('todo-board-view').style.display=todoViewMode==='board'?'block':'none';
+    document.getElementById('todo-list-filters').style.display=todoViewMode==='list'?'flex':'none';
+    loadTodos();
+  }
   if(p==='announce')loadAnnouncements();
   if(p==='report')initReport();
   if(p==='wrapped')initWrapped();
@@ -3111,7 +3565,8 @@ function goPage(p){
   if(p==='recurring')loadRecurring();
   if(p==='goals')loadGoals();
   if(p==='habits')loadHabits();
-  if(p==='shopping')loadShopping();
+  if(p==='shopping'){loadShopping();subscribeShoppingRealtime();}
+  if(p==='chores')loadChores();
   if(p==='contacts')loadContacts();
   if(p==='fxlog')loadFxLog();
   if(p==='medical')initMedical();
@@ -4811,15 +5266,90 @@ async function delEvent(id){if(!await customConfirm('確定刪除？','確認刪
 
 // TODOS
 let todoTagFilter='';
+let todoViewMode=localStorage.getItem('lifeos_todo_view')||'list';
+
+function setTodoView(mode){
+  todoViewMode=mode;
+  localStorage.setItem('lifeos_todo_view',mode);
+  document.getElementById('todo-view-list-btn').classList.toggle('on',mode==='list');
+  document.getElementById('todo-view-board-btn').classList.toggle('on',mode==='board');
+  document.getElementById('todo-list-view').style.display=mode==='list'?'block':'none';
+  document.getElementById('todo-board-view').style.display=mode==='board'?'block':'none';
+  document.getElementById('todo-list-filters').style.display=mode==='list'?'flex':'none';
+  if(mode==='board')renderTodoBoard();
+}
+
+function renderTodoBoard(){
+  const boardEl=document.getElementById('todo-board-view');
+  const todos=window._todos||[];
+  const cols=[
+    {key:'todo',label:'待辦'},
+    {key:'doing',label:'進行中'},
+    {key:'done',label:'完成'}
+  ];
+  boardEl.innerHTML=`<div class="todo-board">${cols.map(col=>{
+    const items=todos.filter(t=>{
+      if(col.key==='done')return t.completed||t.status==='done';
+      return !t.completed&&(t.status||'todo')===col.key;
+    });
+    return`<div class="todo-board-col" data-status="${col.key}" ondragover="event.preventDefault();this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="onTodoBoardDrop(event,'${col.key}')">
+      <div class="todo-board-col-title"><span>${col.label}</span><span class="todo-board-count">${items.length}</span></div>
+      ${items.map(t=>{
+        const priLabel={high:'高',normal:'一般',low:'低'};
+        return`<div class="todo-board-card" draggable="true" data-todo-id="${t.id}" ondragstart="onTodoBoardDragStart(event,'${t.id}')" ondragend="this.classList.remove('dragging')" onclick="editTodoById('${t.id}')">
+          <div class="todo-board-card-title">${t.title}</div>
+          <div class="todo-board-card-meta">
+            <span class="tag tag-${t.priority}">${priLabel[t.priority]||'一般'}</span>
+            ${t.due_date?`<span style="font-size:11px;color:var(--text3);">${t.due_date.slice(5)}</span>`:''}
+          </div>
+          <div class="todo-board-move-row" onclick="event.stopPropagation()">
+            ${col.key!=='todo'?`<div class="todo-board-move-btn" onclick="moveTodoStatus('${t.id}','${col.key==='done'?'doing':'todo'}')">← </div>`:''}
+            ${col.key!=='done'?`<div class="todo-board-move-btn" onclick="moveTodoStatus('${t.id}','${col.key==='todo'?'doing':'done'}')"> →</div>`:''}
+          </div>
+        </div>`;
+      }).join('')||'<div style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px;">沒有項目</div>'}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+let _draggingTodoId=null;
+function onTodoBoardDragStart(ev,id){
+  _draggingTodoId=id;
+  ev.target.classList.add('dragging');
+}
+async function onTodoBoardDrop(ev,newStatus){
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+  if(!_draggingTodoId)return;
+  await moveTodoStatus(_draggingTodoId,newStatus);
+  _draggingTodoId=null;
+}
+async function moveTodoStatus(id,newStatus){
+  try{
+    const body={status:newStatus};
+    if(newStatus==='done'){body.completed=true;body.completed_at=new Date().toISOString();}
+    else{body.completed=false;body.completed_at=null;}
+    await sb(`/rest/v1/todos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    await loadTodos();
+    if(todoViewMode==='board')renderTodoBoard();
+  }catch(e){toast(friendlyError(e),'err');}
+}
+function editTodoById(id){
+  const idx=(window._todos||[]).findIndex(t=>t.id===id);
+  if(idx>=0)editTodoByIdx(idx);
+}
 async function loadTodos(){
   try{
     let url=`/rest/v1/todos?order=completed.asc,priority.desc,created_at.desc`;
-    if(todoFilter==='mine')url+=`&user_id=eq.${getViewAsId()}&assigned_to=is.null`;
+    if(todoViewMode==='board'){
+      // 看板模式：顯示自己相關的全部（不分完成/篩選狀態，讓三欄各自呈現）
+      url+=`&or=(user_id.eq.${getViewAsId()},assigned_to.eq.${getViewAsId()})`;
+    } else if(todoFilter==='mine')url+=`&user_id=eq.${getViewAsId()}&assigned_to=is.null`;
     else if(todoFilter==='assigned_to_me')url+=`&assigned_to=eq.${getViewAsId()}`;
     else if(todoFilter==='i_assigned')url+=`&user_id=eq.${getViewAsId()}&assigned_to=not.is.null`;
     else if(todoFilter==='done')url+=`&completed=eq.true&user_id=eq.${getViewAsId()}`;
     else url+=`&user_id=eq.${getViewAsId()}`;
-    if(todoFilter!=='done')url+='&completed=eq.false';
+    if(todoViewMode!=='board'&&todoFilter!=='done')url+='&completed=eq.false';
     let todos=await sb(url,{});
 
     // 收集所有標籤，渲染標籤篩選列
@@ -4835,13 +5365,17 @@ async function loadTodos(){
       tagFilterEl.style.display='none';
     }
     if(todoTagFilter)todos=todos.filter(t=>(t.tags||[]).includes(todoTagFilter));
+    window._todos = todos;
+    window._todoUsers = allUsers;
+
+    if(todoViewMode==='board'){
+      renderTodoBoard();
+      return;
+    }
 
     const el=document.getElementById('todo-list');
     if(!todos.length){el.innerHTML='<div class="empty"><div class="empty-icon-wrap"><i class="ti ti-checklist" aria-hidden="true"></i></div><p>沒有待辦事項</p></div>';return;}
     const priLabel={high:'高',normal:'一般',low:'低'};
-    // Store todos for click handlers
-    window._todos = todos;
-    window._todoUsers = allUsers;
     el.innerHTML=todos.map((t,i)=>{
       const assignee=allUsers.find(u=>u.id===t.assigned_to);
       const owner=allUsers.find(u=>u.id===t.user_id);
@@ -5083,6 +5617,8 @@ async function postMemoFromHome(){
 // ─── END HOME TAB SWITCH ─────────────────────────────────────
 
 // ─── MEMO BOARD（留言板） ────────────────────────────────────
+let _memoMentions=[];
+
 async function loadMemos(){
   const el=document.getElementById('memo-list');
   el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
@@ -5094,13 +5630,47 @@ async function loadMemos(){
     if(!memos.length){el.innerHTML='<div class="empty"><div class="empty-icon-wrap"><i class="ti ti-notes" aria-hidden="true"></i></div><p>還沒有人留言，來寫第一則吧！</p></div>';return;}
 
     const isAdmin=prof.role==='admin';
+    // 標記別人的留言為已讀（自動，進頁面時）
+    const toMarkRead=memos.filter(m=>m.user_id!==prof.id&&!(m.read_by||[]).includes(prof.id));
+    if(toMarkRead.length){
+      toMarkRead.forEach(async m=>{
+        const newReadBy=[...(m.read_by||[]),prof.id];
+        try{await sb(`/rest/v1/memos?id=eq.${m.id}`,{method:'PATCH',body:JSON.stringify({read_by:newReadBy})});}catch(e){}
+      });
+    }
+
     el.innerHTML=memos.map(m=>{
       const author=allUsers.find(u=>u.id===m.user_id);
       const name=author?(author.display_name||author.username):'未知使用者';
       const isMine=m.user_id===prof.id;
       const canEdit=isAdmin; // 只有管理員可編輯/刪除
-      return`<div class="card" style="margin-bottom:10px;${isMine?'border-color:var(--gold-border);':''}">
-        <div style="white-space:pre-wrap;font-size:14px;color:var(--text);line-height:1.6;margin-bottom:8px;">${escapeHtml(m.content)}</div>
+      const mentionedMe=(m.mentions||[]).includes(prof.id);
+
+      // 已讀狀態（只在自己的留言下顯示，看誰讀過）
+      let readStatus='';
+      if(isMine){
+        const readers=(m.read_by||[]).filter(uid=>uid!==prof.id).map(uid=>{
+          const u=allUsers.find(x=>x.id===uid);
+          return u?(u.display_name||u.username):null;
+        }).filter(Boolean);
+        readStatus=readers.length
+          ?`<div style="font-size:11px;color:var(--text3);margin-top:4px;"><i class="ti ti-checks" style="color:var(--blue);"></i> ${readers.join('、')} 已讀</div>`
+          :`<div style="font-size:11px;color:var(--text3);margin-top:4px;">尚未讀取</div>`;
+      }
+
+      // 內容中的 @提及 高亮顯示
+      let content=escapeHtml(m.content);
+      (m.mentions||[]).forEach(uid=>{
+        const u=allUsers.find(x=>x.id===uid);
+        if(u){
+          const uname=u.display_name||u.username;
+          content=content.replace(new RegExp(`@${uname}`,'g'),`<span style="color:var(--gold);font-weight:600;">@${uname}</span>`);
+        }
+      });
+
+      return`<div class="card" style="margin-bottom:10px;${isMine?'border-color:var(--gold-border);':''}${mentionedMe?'background:rgba(184,137,42,0.06);':''}">
+        ${mentionedMe?'<div style="font-size:11px;color:var(--gold);margin-bottom:6px;"><i class="ti ti-at"></i> 提及了你</div>':''}
+        <div style="white-space:pre-wrap;font-size:14px;color:var(--text);line-height:1.6;margin-bottom:8px;">${content}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div style="font-size:12px;color:var(--text3);">
             <span style="color:var(--gold);font-weight:600;">${name}</span>　${timeAgo(m.created_at)}${m.updated_at&&m.updated_at!==m.created_at?'（已編輯）':''}
@@ -5110,9 +5680,31 @@ async function loadMemos(){
             <button class="icon-btn" onclick="delMemo('${m.id}')" style="font-size:14px;color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
           </div>`:''}
         </div>
+        ${readStatus}
       </div>`;
     }).join('');
   }catch(e){el.innerHTML='<div class="empty"><div class="empty-icon-wrap" style="background:rgba(232,112,112,0.1);"><i class="ti ti-alert-circle" style="color:var(--red);" aria-hidden="true"></i></div><p>載入失敗</p></div>';}
+}
+
+async function toggleMentionPicker(){
+  if(!allUsers.length)await loadAllUsers();
+  const chipsEl=document.getElementById('memo-mention-chips');
+  const others=allUsers.filter(u=>u.id!==prof.id);
+  chipsEl.innerHTML=others.map(u=>{
+    const name=u.display_name||u.username;
+    const selected=_memoMentions.includes(u.id);
+    return`<button type="button" class="tag" style="cursor:pointer;background:${selected?'var(--gold-dim)':'var(--bg4)'};color:${selected?'var(--gold)':'var(--text2)'};border:1px solid ${selected?'var(--gold-border)':'var(--border2)'};" onclick="toggleMemoMention('${u.id}','${name.replace(/'/g,"\\'")}')">@${name}</button>`;
+  }).join('');
+}
+function toggleMemoMention(uid,name){
+  const idx=_memoMentions.indexOf(uid);
+  if(idx>=0)_memoMentions.splice(idx,1);
+  else{
+    _memoMentions.push(uid);
+    const input=document.getElementById('memo-input');
+    if(!input.value.includes(`@${name}`))input.value+=(input.value?' ':'')+`@${name} `;
+  }
+  toggleMentionPicker();
 }
 
 function escapeHtml(s){
@@ -5129,8 +5721,10 @@ async function postMemo(){
   const content=document.getElementById('memo-input').value.trim();
   if(!content){toast('請輸入留言內容','err');return;}
   try{
-    await sb('/rest/v1/memos',{method:'POST',body:JSON.stringify({user_id:prof.id,content})});
+    await sb('/rest/v1/memos',{method:'POST',body:JSON.stringify({user_id:prof.id,content,mentions:_memoMentions,read_by:[prof.id]})});
     document.getElementById('memo-input').value='';
+    _memoMentions=[];
+    document.getElementById('memo-mention-chips').innerHTML='';
     toast('留言已送出');
     loadMemos();
   }catch(e){toast(friendlyError(e),'err');}
@@ -5808,7 +6402,7 @@ const HW_META={
   goals:     {name:'儲蓄目標',  sub:'目標達成進度',     group:'財務', defaultOn:false},
   portfolio: {name:'投資組合',  sub:'總市值和損益',     group:'財務', defaultOn:false},
   forex:     {name:'外幣匯率',  sub:'外幣帳戶匯率',     group:'財務', defaultOn:false},
-  creditcard:{name:'信用卡帳單',sub:'近期帳單/繳款日',  group:'財務', defaultOn:false},
+  creditcard:{name:'帳單提醒',  sub:'信用卡/固定帳單統整', group:'財務', defaultOn:false},
   weather:   {name:'天氣',      sub:'當地即時天氣',     group:'生活', defaultOn:true},
   birthday:  {name:'生日/紀念日',sub:'近期生日提醒',    group:'生活', defaultOn:false},
   medical:   {name:'回診提醒',  sub:'近期回診日期',     group:'生活', defaultOn:false},
@@ -6198,20 +6792,31 @@ async function loadHomeForex(){
 async function loadHomeCreditCard(){
   const el=document.getElementById('h-creditcard-widget');if(!el)return;
   try{
-    const cats=accCats.length?accCats:await sb('/rest/v1/account_categories?order=sort_order.asc',{});
-    const accs=await sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{});
+    const [cats,accs,bills]=await Promise.all([
+      accCats.length?Promise.resolve(accCats):sb('/rest/v1/account_categories?order=sort_order.asc',{}),
+      sb(`/rest/v1/accounts?user_id=eq.${prof.id}&is_active=eq.true`,{}),
+      sb(`/rest/v1/recurring_transactions?user_id=eq.${prof.id}&is_active=eq.true&next_date=not.is.null`,{})
+    ]);
     const creditAccs=accs.filter(a=>cats.find(c=>c.id===a.category_id)?.type==='credit');
-    if(!creditAccs.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">尚無信用卡</div>';return;}
     const today=new Date().getDate();
     const items=creditAccs.map(a=>{
       const items=[];
-      if(a.statement_day){const d=a.statement_day-today;if(d>=0&&d<=7)items.push({name:a.name,type:'帳單日',diff:d});}
-      if(a.payment_day){const d=a.payment_day-today;if(d>=0&&d<=7)items.push({name:a.name,type:'繳款日',diff:d});}
+      if(a.statement_day){const d=a.statement_day-today;if(d>=0&&d<=7)items.push({name:a.name,type:'帳單日',diff:d,icon:'💳'});}
+      if(a.payment_day){const d=a.payment_day-today;if(d>=0&&d<=7)items.push({name:a.name,type:'繳款日',diff:d,icon:'💳'});}
       return items;
     }).flat();
-    if(!items.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">近7天無帳單/繳款日</div>';return;}
-    el.innerHTML=items.map(i=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
-      <span>${i.name} ${i.type}</span><span style="color:${i.diff<=2?'var(--red)':'var(--orange)'};">${i.diff===0?'今天':'還有'+i.diff+'天'}</span>
+
+    // 固定週期帳單（房租、訂閱、保險等）
+    const now=new Date();
+    const billItems=bills.map(b=>{
+      const diffDays=Math.ceil((new Date(b.next_date+'T00:00:00')-now)/86400000);
+      return diffDays>=0&&diffDays<=7?{name:b.name,type:'應繳',diff:diffDays,icon:'📄',amount:b.amount}:null;
+    }).filter(Boolean);
+
+    const allItems=[...items,...billItems].sort((a,b)=>a.diff-b.diff);
+    if(!allItems.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);">近7天無帳單到期</div>';return;}
+    el.innerHTML=allItems.map(i=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:13px;">
+      <span>${i.icon} ${i.name} ${i.type}${i.amount?` · NT$${Math.round(i.amount).toLocaleString()}`:''}</span><span style="color:${i.diff<=2?'var(--red)':'var(--orange)'};font-weight:600;">${i.diff===0?'今天':'還有'+i.diff+'天'}</span>
     </div>`).join('');
   }catch(e){}
 }
@@ -6765,6 +7370,48 @@ async function loadHomeHabits(){
 // ─── END HABIT TRACKER ────────────────────────────────────────
 
 // ─── SHOPPING LIST（購物清單） ────────────────────────────────
+// ─── 購物清單即時同步（Supabase Realtime）───────────────────────
+let _shoppingRealtimeChannel=null;
+
+function subscribeShoppingRealtime(){
+  if(_shoppingRealtimeChannel)return; // 已訂閱過
+  try{
+    if(!window.supabase){
+      // 若尚未載入 supabase-js，動態載入
+      const script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+      script.onload=()=>doSubscribeShopping();
+      document.head.appendChild(script);
+    } else {
+      doSubscribeShopping();
+    }
+  }catch(e){/* Realtime 訂閱失敗不影響主流程，退回手動重新整理 */}
+}
+function doSubscribeShopping(){
+  try{
+    const sbClient=window.supabase.createClient(SB,PUB);
+    _shoppingRealtimeChannel=sbClient
+      .channel('shopping_items_changes')
+      .on('postgres_changes',{event:'*',schema:'public',table:'shopping_items'},(payload)=>{
+        // 其他人異動時，自動重新整理清單（若目前正在購物頁）
+        if(document.getElementById('pg-shopping')?.classList.contains('on')){
+          loadShopping();
+          if(payload.eventType==='INSERT'&&payload.new?.user_id!==prof.id){
+            toast(`${getUserName(payload.new.user_id)} 新增了「${payload.new.name}」`);
+          }
+        }
+      })
+      .subscribe();
+  }catch(e){/* 靜默失敗 */}
+}
+function unsubscribeShoppingRealtime(){
+  if(_shoppingRealtimeChannel){
+    try{_shoppingRealtimeChannel.unsubscribe();}catch(e){}
+    _shoppingRealtimeChannel=null;
+  }
+}
+// ─── END 購物清單即時同步 ──────────────────────────────────────
+
 async function loadShopping(){
   const el=document.getElementById('shopping-list');
   el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
@@ -6843,6 +7490,186 @@ async function clearDoneItems(){
   try{await sb(`/rest/v1/shopping_items?is_done=eq.true&user_id=eq.${prof.id}`,{method:'DELETE'});toast('已清除');loadShopping();}catch(e){}
 }
 // ─── END SHOPPING LIST ────────────────────────────────────────
+
+// ─── 家事輪值表 ─────────────────────────────────────────────────
+let _chores=[];
+let _choreSelectedIcon='🧹';
+let _choreSelectedMembers=[];
+
+function getPeriodKey(freq,date=new Date()){
+  if(freq==='daily'){
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  }
+  if(freq==='monthly'){
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+  }
+  // weekly：用 ISO 週數
+  const tmp=new Date(date);
+  tmp.setHours(0,0,0,0);
+  tmp.setDate(tmp.getDate()+3-((tmp.getDay()+6)%7));
+  const week1=new Date(tmp.getFullYear(),0,4);
+  const weekNum=1+Math.round(((tmp-week1)/86400000-3+((week1.getDay()+6)%7))/7);
+  return `${tmp.getFullYear()}-W${String(weekNum).padStart(2,'0')}`;
+}
+
+function getPeriodsElapsed(freq,startDate,now=new Date()){
+  const start=new Date(startDate+'T00:00:00');
+  if(freq==='daily')return Math.floor((now-start)/86400000);
+  if(freq==='monthly')return (now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth());
+  // weekly
+  return Math.floor((now-start)/(7*86400000));
+}
+
+async function loadChores(){
+  const el=document.getElementById('chore-list');
+  el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    if(!allUsers.length)await loadAllUsers();
+    const [chores,completions]=await Promise.all([
+      sb('/rest/v1/chore_rotations?order=created_at.asc',{}),
+      sb('/rest/v1/chore_completions?order=completed_at.desc&limit=200',{})
+    ]);
+    _chores=chores;
+    if(!chores.length){
+      el.innerHTML='<div class="empty"><div class="empty-icon-wrap"><i class="ti ti-refresh" aria-hidden="true"></i></div><p>尚無家事輪值項目</p><div class="empty-sub">點右上角新增，讓家事分配更公平</div></div>';
+      return;
+    }
+    const freqLabel={daily:'每天',weekly:'每週',monthly:'每月'};
+    el.innerHTML=chores.map(chore=>{
+      const members=chore.member_order||[];
+      if(!members.length)return'';
+      const elapsed=getPeriodsElapsed(chore.frequency,chore.start_date);
+      const currentIdx=((elapsed%members.length)+members.length)%members.length;
+      const currentUserId=members[currentIdx];
+      const currentUser=allUsers.find(u=>u.id===currentUserId);
+      const currentName=currentUser?(currentUser.display_name||currentUser.username):'未知';
+      const periodKey=getPeriodKey(chore.frequency);
+      const done=completions.find(c=>c.chore_id===chore.id&&c.period_key===periodKey);
+      const doneName=done?(allUsers.find(u=>u.id===done.completed_by)?.display_name||allUsers.find(u=>u.id===done.completed_by)?.username||'某人'):null;
+
+      return`<div class="card" style="margin-bottom:12px;">
+        <div class="row-between" style="align-items:flex-start;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="envelope-icon-big" style="width:40px;height:40px;font-size:19px;">${chore.icon||'🧹'}</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:var(--text);">${chore.name}</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px;">${freqLabel[chore.frequency]}輪值 · ${members.length}人參與</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:2px;">
+            <button class="icon-btn" onclick="editChore('${chore.id}')"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" onclick="delChore('${chore.id}')" style="color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div style="margin-top:12px;padding:12px;background:${done?'rgba(93,189,138,0.08)':'var(--gold-dim)'};border-radius:12px;">
+          ${done
+            ?`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--green);"><i class="ti ti-circle-check" aria-hidden="true"></i> 本${freqLabel[chore.frequency]} <b>${doneName}</b> 已完成</div>`
+            :`<div class="row-between">
+                <div style="font-size:13px;"><span style="color:var(--text3);">本${freqLabel[chore.frequency]}輪到</span> <b style="color:var(--gold);">${currentName}</b></div>
+                <button class="btn btn-gold btn-sm" onclick="markChoreDone('${chore.id}','${periodKey}')">標記完成</button>
+              </div>`
+          }
+        </div>
+        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+          ${members.map((uid,i)=>{
+            const u=allUsers.find(x=>x.id===uid);
+            const name=u?(u.display_name||u.username):'?';
+            const isCurrent=i===currentIdx;
+            return`<span class="tag" style="background:${isCurrent?'var(--gold-dim)':'var(--bg4)'};color:${isCurrent?'var(--gold)':'var(--text3)'};">${isCurrent?'▶ ':''}${name}</span>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div class="empty"><p>'+friendlyError(e)+'</p></div>';
+  }
+}
+
+async function markChoreDone(choreId,periodKey){
+  try{
+    await sb('/rest/v1/chore_completions',{method:'POST',body:JSON.stringify({chore_id:choreId,period_key:periodKey,completed_by:prof.id})});
+    toast('已標記完成！');
+    loadChores();
+  }catch(e){toast(friendlyError(e),'err');}
+}
+
+async function openAddChore(){
+  document.getElementById('sh-chore-title').textContent='新增家事';
+  document.getElementById('chore-id').value='';
+  document.getElementById('chore-name').value='';
+  document.getElementById('chore-freq').value='weekly';
+  document.getElementById('chore-start-date').value=new Date().toISOString().slice(0,10);
+  selectChoreIcon('🧹');
+  if(!allUsers.length)await loadAllUsers();
+  _choreSelectedMembers=[prof.id];
+  renderChoreMemberPicker();
+  openSheet('sh-chore');
+}
+async function editChore(id){
+  const chore=_chores.find(c=>c.id===id);
+  if(!chore)return;
+  document.getElementById('sh-chore-title').textContent='編輯家事';
+  document.getElementById('chore-id').value=chore.id;
+  document.getElementById('chore-name').value=chore.name;
+  document.getElementById('chore-freq').value=chore.frequency;
+  document.getElementById('chore-start-date').value=chore.start_date;
+  selectChoreIcon(chore.icon||'🧹');
+  if(!allUsers.length)await loadAllUsers();
+  _choreSelectedMembers=[...(chore.member_order||[])];
+  renderChoreMemberPicker();
+  openSheet('sh-chore');
+}
+function selectChoreIcon(icon){
+  _choreSelectedIcon=icon;
+  document.querySelectorAll('#chore-icon-picker .envelope-icon-opt').forEach(btn=>{
+    btn.classList.toggle('on',btn.dataset.icon===icon);
+  });
+}
+function renderChoreMemberPicker(){
+  const listEl=document.getElementById('chore-member-list');
+  listEl.innerHTML=allUsers.map(u=>{
+    const name=u.display_name||u.username;
+    const idx=_choreSelectedMembers.indexOf(u.id);
+    const selected=idx>=0;
+    return`<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${selected?'var(--gold-dim)':'var(--bg4)'};border-radius:10px;cursor:pointer;" onclick="event.preventDefault();toggleChoreMember('${u.id}')">
+      <input type="checkbox" ${selected?'checked':''} style="width:20px;height:20px;accent-color:var(--gold);pointer-events:none;">
+      <span style="flex:1;font-size:14px;">${name}</span>
+      ${selected?`<span style="font-size:11px;color:var(--gold);font-weight:600;">順序 ${idx+1}</span>`:''}
+    </label>`;
+  }).join('');
+}
+function toggleChoreMember(uid){
+  const idx=_choreSelectedMembers.indexOf(uid);
+  if(idx>=0)_choreSelectedMembers.splice(idx,1);
+  else _choreSelectedMembers.push(uid);
+  renderChoreMemberPicker();
+}
+async function saveChore(){
+  const id=document.getElementById('chore-id').value;
+  const name=document.getElementById('chore-name').value.trim();
+  if(!name){toast('請填寫家事名稱','err');return;}
+  if(!_choreSelectedMembers.length){toast('請至少選擇一位參與成員','err');return;}
+  const body={
+    name,icon:_choreSelectedIcon,
+    frequency:document.getElementById('chore-freq').value,
+    member_order:_choreSelectedMembers,
+    start_date:document.getElementById('chore-start-date').value||new Date().toISOString().slice(0,10)
+  };
+  try{
+    if(id){
+      await sb(`/rest/v1/chore_rotations?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    } else {
+      body.created_by=prof.id;
+      await sb('/rest/v1/chore_rotations',{method:'POST',body:JSON.stringify(body)});
+    }
+    closeSheet('sh-chore');toast('已儲存');loadChores();
+  }catch(e){toast(friendlyError(e),'err');}
+}
+async function delChore(id){
+  if(!await customConfirm('確定刪除此家事輪值項目？','確認刪除','刪除',true))return;
+  try{await sb(`/rest/v1/chore_rotations?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadChores();}catch(e){}
+}
+// ─── END 家事輪值表 ────────────────────────────────────────────
 
 // ─── CONTACTS（聯絡人備忘） ───────────────────────────────────
 const CONTACT_CAT_LABEL={family:'家人',friend:'朋友',work:'同事',vendor:'廠商',other:'其他'};
@@ -7378,6 +8205,122 @@ async function delPeriod(id){
   try{await sb(`/rest/v1/period_logs?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadPeriodPage();}catch(e){}
 }
 // ─── END PERIOD TRACKER ─────────────────────────────────────────
+
+// ─── 信封預算 ───────────────────────────────────────────────────
+let _envelopeIcon='💰';
+let _envelopes=[];
+
+async function loadEnvelopes(){
+  const listEl=document.getElementById('envelope-list');
+  listEl.innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);">載入中...</div>';
+  try{
+    const envelopes=await sb(`/rest/v1/budget_envelopes?user_id=eq.${prof.id}&order=sort_order.asc,created_at.asc`,{});
+    _envelopes=envelopes;
+    if(!envelopes.length){
+      listEl.innerHTML='<div class="empty"><div class="empty-icon-wrap"><i class="ti ti-wallet" aria-hidden="true"></i></div><p>尚無信封</p><div class="empty-sub">點右上角新增第一個信封</div></div>';
+      return;
+    }
+    const now=new Date();
+    const mStart=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+    const mEnd=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+    const txns=await sb(`/rest/v1/transactions?user_id=eq.${prof.id}&type=eq.expense&date=gte.${mStart}&date=lte.${mEnd}`,{});
+
+    listEl.innerHTML=envelopes.map(env=>{
+      const spent=env.category_id
+        ? txns.filter(t=>t.category_id===env.category_id).reduce((s,t)=>s+Number(t.amount),0)
+        : 0;
+      const remain=Number(env.monthly_amount)-spent;
+      const pct=env.monthly_amount>0?Math.min(100,Math.round(spent/env.monthly_amount*100)):0;
+      const isOver=remain<0;
+      const barColor=isOver?'var(--red)':pct>=80?'var(--orange)':'var(--gold)';
+      return`<div class="envelope-card">
+        <div class="row-between">
+          <div class="envelope-header" style="margin-bottom:0;">
+            <div class="envelope-icon-big">${env.icon||'💰'}</div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:var(--text);">${env.name}</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px;">月額度 NT$${Number(env.monthly_amount).toLocaleString()}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:2px;">
+            <button class="icon-btn" onclick="editEnvelope('${env.id}')"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn" onclick="delEnvelope('${env.id}')" style="color:var(--red);"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <div class="envelope-progress-bg"><div class="envelope-progress-fill" style="width:${pct}%;background:${barColor};"></div></div>
+          <div class="row-between" style="font-size:12px;">
+            <span style="color:var(--text3);">已花 NT$${Math.round(spent).toLocaleString()}</span>
+            <span style="color:${isOver?'var(--red)':'var(--text2)'};font-weight:600;">${isOver?'超支 NT$'+Math.abs(Math.round(remain)).toLocaleString():'剩餘 NT$'+Math.round(remain).toLocaleString()}</span>
+          </div>
+        </div>
+        ${!env.category_id?'<div style="font-size:11px;color:var(--orange);margin-top:8px;">⚠️ 尚未連結消費類別，無法自動計算花費</div>':''}
+      </div>`;
+    }).join('');
+  }catch(e){
+    listEl.innerHTML='<div class="empty"><p>'+friendlyError(e)+'</p></div>';
+  }
+}
+
+async function openAddEnvelope(){
+  document.getElementById('sh-envelope-title').textContent='新增信封';
+  document.getElementById('envelope-id').value='';
+  document.getElementById('envelope-name').value='';
+  document.getElementById('envelope-amount').value='';
+  selectEnvelopeIcon('💰');
+  await loadEnvelopeCategoryOptions();
+  document.getElementById('envelope-category').value='';
+  openSheet('sh-envelope');
+}
+async function editEnvelope(id){
+  const env=_envelopes.find(e=>e.id===id);
+  if(!env)return;
+  document.getElementById('sh-envelope-title').textContent='編輯信封';
+  document.getElementById('envelope-id').value=env.id;
+  document.getElementById('envelope-name').value=env.name;
+  document.getElementById('envelope-amount').value=env.monthly_amount;
+  selectEnvelopeIcon(env.icon||'💰');
+  await loadEnvelopeCategoryOptions();
+  document.getElementById('envelope-category').value=env.category_id||'';
+  openSheet('sh-envelope');
+}
+function selectEnvelopeIcon(icon){
+  _envelopeIcon=icon;
+  document.querySelectorAll('.envelope-icon-opt').forEach(btn=>{
+    btn.classList.toggle('on',btn.dataset.icon===icon);
+  });
+}
+async function loadEnvelopeCategoryOptions(){
+  const sel=document.getElementById('envelope-category');
+  try{
+    const cats=await sb(`/rest/v1/expense_categories?or=(user_id.eq.${prof.id},is_default.eq.true)&type=neq.income&order=sort_order.asc`,{});
+    sel.innerHTML='<option value="">不連結</option>'+cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  }catch(e){}
+}
+async function saveEnvelope(){
+  const id=document.getElementById('envelope-id').value;
+  const name=document.getElementById('envelope-name').value.trim();
+  const amount=parseFloat(document.getElementById('envelope-amount').value)||0;
+  const categoryId=document.getElementById('envelope-category').value||null;
+  if(!name){toast('請填寫信封名稱','err');return;}
+  const body={name,icon:_envelopeIcon,monthly_amount:amount,category_id:categoryId};
+  try{
+    if(id){
+      await sb(`/rest/v1/budget_envelopes?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(body)});
+    } else {
+      body.user_id=prof.id;
+      body.sort_order=_envelopes.length;
+      await sb('/rest/v1/budget_envelopes',{method:'POST',body:JSON.stringify(body)});
+    }
+    closeSheet('sh-envelope');toast('已儲存');loadEnvelopes();
+  }catch(e){toast(friendlyError(e),'err');}
+}
+async function delEnvelope(id){
+  if(!await customConfirm('確定刪除此信封？','確認刪除','刪除',true))return;
+  try{await sb(`/rest/v1/budget_envelopes?id=eq.${id}`,{method:'DELETE'});toast('已刪除');loadEnvelopes();}catch(e){}
+}
+// ─── END 信封預算 ──────────────────────────────────────────────
 
 // ─── WRAPPED（年度回顧） ─────────────────────────────────────────
 function initWrapped(){
@@ -9720,6 +10663,20 @@ async function checkInAppReminders(){
       const key=`event_${ev.id}_${todayStr}`;
       if(diffMin>0&&diffMin<=minutesBefore&&!notified.has(key)){
         showInAppReminder('行程即將開始',`${ev.title} · ${ev.start_time.slice(0,5)}`,()=>goPage('cal'));
+        markReminderNotified(key);
+      }
+    });
+
+    // 帳單提醒（固定週期記帳，3天內到期）
+    const bills=await sb(`/rest/v1/recurring_transactions?user_id=eq.${prof.id}&is_active=eq.true&next_date=not.is.null`,{});
+    bills.forEach(b=>{
+      if(!b.next_date)return;
+      const dueDate=new Date(b.next_date+'T09:00:00');
+      const diffMin=(dueDate-now)/60000;
+      const diffDays=Math.ceil(diffMin/1440);
+      const key=`bill_${b.id}_${b.next_date}`;
+      if(diffDays>=0&&diffDays<=3&&!notified.has(key)){
+        showInAppReminder('帳單即將到期',`${b.name} · NT$${Math.round(b.amount).toLocaleString()} · ${diffDays===0?'今天':diffDays+'天後'}`,()=>goPage('more'));
         markReminderNotified(key);
       }
     });
